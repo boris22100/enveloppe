@@ -1,0 +1,6 @@
+.env
+upgrade-v*.sh
+frontend/node_modules/
+frontend/dist/
+backend/static/
+.DS_Store
