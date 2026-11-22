@@ -11,7 +11,9 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      registerType: 'autoUpdate',
+      registerType: "autoUpdate",
+      useCredentials: true,
+      useCredentials: true,
       manifest: {
         id: '/',
         name: 'Enveloppe',
