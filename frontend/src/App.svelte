@@ -176,6 +176,55 @@
 
   onMount(loadAccounts);
   onDestroy(() => sse?.close());
+
+  let ctxMenu = $state<{ x: number; y: number; type: "mail" | "mailbox"; mail?: EmailSummary; mailbox?: Mailbox } | null>(null);
+
+  if (typeof navigator !== "undefined" && navigator.storage?.persist) {
+    navigator.storage.persist().catch(() => {});
+  }
+
+  async function handleContextAction(action: string, payload?: any) {
+    if (!activeAccountId || !ctxMenu) return;
+    if (ctxMenu.type === "mail" && ctxMenu.mail) {
+      const m = ctxMenu.mail;
+      if (action === "archive") {
+        const arch = mailboxes.find((b) => b.role === "archive");
+        if (arch) await updateEmailMailbox(activeAccountId, m.id, arch.id);
+      } else if (action === "delete") {
+        const trash = mailboxes.find((b) => b.role === "trash");
+        if (trash && activeMailboxId !== trash.id) await updateEmailMailbox(activeAccountId, m.id, trash.id);
+        else await destroyEmail(activeAccountId, m.id);
+      } else if (action === "spam") {
+        const junk = mailboxes.find((b) => b.role === "junk");
+        if (junk) await updateEmailMailbox(activeAccountId, m.id, junk.id);
+      } else if (action === "move" && payload) {
+        await updateEmailMailbox(activeAccountId, m.id, payload);
+      } else if (action === "toggleRead") {
+        await setEmailKeyword(activeAccountId, m.id, "$seen", !m.keywords?.["$seen"]);
+      } else if (action === "toggleStar") {
+        await setEmailKeyword(activeAccountId, m.id, "$flagged", !m.keywords?.["$flagged"]);
+      } else if (action === "downloadEml" && m.blobId) {
+        window.open(`/api/jmap/${activeAccountId}/download/${m.blobId}/${encodeURIComponent((m.subject || "message") + ".eml")}`, "_blank");
+        return;
+      } else if (action === "print") {
+        await openEmail(m);
+        setTimeout(() => window.print(), 300);
+        return;
+      }
+      if (activeMailboxId) await selectMailbox(activeMailboxId);
+    } else if (ctxMenu.type === "mailbox" && ctxMenu.mailbox) {
+      const box = ctxMenu.mailbox;
+      if (action === "newSubfolder") {
+        const name = prompt(`Nom du sous-dossier dans "${box.name}" :`);
+        if (name?.trim()) { await createMailbox(activeAccountId, name.trim(), box.id); mailboxes = await fetchMailboxes(activeAccountId); }
+      } else if (action === "renameFolder") {
+        const name = prompt("Nouveau nom du dossier :", box.name);
+        if (name?.trim()) { await renameMailbox(activeAccountId, box.id, name.trim()); mailboxes = await fetchMailboxes(activeAccountId); }
+      } else if (action === "deleteFolder") {
+        if (confirm(`Supprimer le dossier "${box.name}" ?`)) { await deleteMailbox(activeAccountId, box.id); mailboxes = await fetchMailboxes(activeAccountId); }
+      }
+    }
+  }
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
