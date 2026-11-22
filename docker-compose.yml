@@ -9,4 +9,10 @@ services:
     env_file:
       - .env
     ports:
-      - "127.0.0.1:8080:8080"
+      - "8089:8080"
+    networks:
+      - proxy-net
+
+networks:
+  proxy-net:
+    external: true

@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { db, type CachedEmail } from './lib/db/cache';
   import {
-    archiveEmail, fetchEmailBody, fetchMailboxes, fetchMailboxEmails, fetchQuota, ROLE_META,
+    archiveEmail, createMailbox, deleteMailbox, destroyEmail, fetchEmailBody, fetchMailboxes, fetchMailboxEmails, fetchQuota, renameMailbox, ROLE_META, setEmailKeyword, updateEmailMailbox,
     sendEmail, uploadAttachment, type Account, type Attachment, type DiskQuota, type Mailbox
   } from './lib/jmap/client';
   import { enableWebPush } from './lib/jmap/push';
@@ -10,6 +10,7 @@
   import AccountModal from './components/AccountModal.svelte';
   import MailReader from './components/MailReader.svelte';
   import SenderAvatar from './components/SenderAvatar.svelte';
+  import ContextMenu from './components/ContextMenu.svelte';
   import ContactsView from './components/ContactsView.svelte';
   import CalendarView from './components/CalendarView.svelte';
   import SecurityView from './components/SecurityView.svelte';
@@ -257,6 +258,7 @@
           {#each mailboxes as box}
             <button
               onclick={() => selectMailbox(box.id)}
+              oncontextmenu={(e) => { e.preventDefault(); ctxMenu = { x: e.clientX, y: e.clientY, type: "mailbox", mailbox: box }; }}
               style="padding-left: {12 + (box.depth ?? 0) * 14}px"
               class="flex items-center justify-between py-1.5 pr-3 text-left text-xs transition-colors hover:bg-slate-800/50 {activeMailboxId === box.id ? 'bg-[#0D3A4D]/70 font-semibold text-[#48B17F]' : 'text-slate-300'}"
             >
@@ -293,7 +295,7 @@
         </div>
         <div class="flex-1 divide-y divide-slate-800/60 overflow-y-auto">
           {#each emails as mail}
-            <button onclick={() => openEmail(mail)} class="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-800/40 {selectedEmail?.id === mail.id ? 'bg-[#0D3A4D]/60' : ''}">
+            <button onclick={() => openEmail(mail)} oncontextmenu={(e) => { e.preventDefault(); ctxMenu = { x: e.clientX, y: e.clientY, type: "mail", mail }; }} class="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-800/40 {selectedEmail?.id === mail.id ? 'bg-[#0D3A4D]/60' : ''}">
               <SenderAvatar name={mail.from[0]?.name} email={mail.from[0]?.email} />
               <div class="min-w-0 flex-1">
               <div class="flex items-center justify-between gap-2">
@@ -366,4 +368,17 @@
       {/if}
     </form>
   </div>
+{/if}
+
+{#if ctxMenu}
+  <ContextMenu
+    x={ctxMenu.x}
+    y={ctxMenu.y}
+    type={ctxMenu.type}
+    mail={ctxMenu.mail}
+    mailbox={ctxMenu.mailbox}
+    {mailboxes}
+    onClose={() => (ctxMenu = null)}
+    onAction={handleContextAction}
+  />
 {/if}

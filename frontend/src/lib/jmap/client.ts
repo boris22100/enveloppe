@@ -241,3 +241,53 @@ export async function fetchQuota(accountId: string): Promise<DiskQuota | null> {
     return null;
   }
 }
+
+export async function updateEmailMailbox(accountId: string, emailId: string, targetMailboxId: string) {
+  const accId = await getPrimaryAccountId(accountId);
+  await jmapCall(accountId, [[
+    'Email/set',
+    { accountId: accId, update: { [emailId]: { mailboxIds: { [targetMailboxId]: true } } } },
+    'mv0'
+  ]]);
+}
+
+export async function destroyEmail(accountId: string, emailId: string) {
+  const accId = await getPrimaryAccountId(accountId);
+  await jmapCall(accountId, [['Email/set', { accountId: accId, destroy: [emailId] }, 'rm0']]);
+}
+
+export async function setEmailKeyword(accountId: string, emailId: string, keyword: string, value: boolean) {
+  const accId = await getPrimaryAccountId(accountId);
+  await jmapCall(accountId, [[
+    'Email/set',
+    { accountId: accId, update: { [emailId]: { [`keywords/${keyword}`]: value ? true : null } } },
+    'kw0'
+  ]]);
+}
+
+export async function createMailbox(accountId: string, name: string, parentId: string | null = null) {
+  const accId = await getPrimaryAccountId(accountId);
+  await jmapCall(accountId, [[
+    'Mailbox/set',
+    { accountId: accId, create: { mb1: { name, parentId } } },
+    'mbc0'
+  ]]);
+}
+
+export async function renameMailbox(accountId: string, mailboxId: string, name: string) {
+  const accId = await getPrimaryAccountId(accountId);
+  await jmapCall(accountId, [[
+    'Mailbox/set',
+    { accountId: accId, update: { [mailboxId]: { name } } },
+    'mbr0'
+  ]]);
+}
+
+export async function deleteMailbox(accountId: string, mailboxId: string) {
+  const accId = await getPrimaryAccountId(accountId);
+  await jmapCall(accountId, [[
+    'Mailbox/set',
+    { accountId: accId, destroy: [mailboxId], onDestroyRemoveEmails: false },
+    'mbd0'
+  ]]);
+}
