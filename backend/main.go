@@ -106,13 +106,15 @@ func resolveRedirectURI(r *http.Request) string {
 	return resolveBaseURL(r) + "/api/auth/oidc/callback"
 }
 
-func resolveOIDCClientID(r *http.Request, cfg *jmap.OIDCConfig) string {
+func resolveOIDCClientID(r *http.Request) string {
 	if cid := strings.TrimSpace(os.Getenv("OIDC_CLIENT_ID")); cid != "" {
 		return cid
 	}
-	base := resolveBaseURL(r)
-	if cfg != nil && cfg.ClientIDMetadataDocumentSupport && strings.HasPrefix(base, "https://") {
-		return base + "/oauth-client.json"
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("OIDC_USE_CIMD")), "true") {
+		base := resolveBaseURL(r)
+		if strings.HasPrefix(base, "https://") {
+			return base + "/oauth-client.json"
+		}
 	}
 	return "enveloppe"
 }
@@ -193,7 +195,7 @@ func main() {
 			return
 		}
 
-		clientID := resolveOIDCClientID(r, cfg)
+		clientID := resolveOIDCClientID(r)
 		redirectURI := resolveRedirectURI(r)
 		tx := oidcTransaction{
 			State:         state,
