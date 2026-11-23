@@ -132,7 +132,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	proxy := jmap.NewProxy(os.Getenv("ALLOWED_JMAP_SERVERS"), vault, oidcClientSecret)
+	proxy := jmap.NewProxy(os.Getenv("ALLOWED_JMAP_SERVERS"), vault, oidcClientSecret, os.Getenv("OIDC_ISSUER"))
 	subFS, _ := fs.Sub(staticFS, "static")
 	mux := http.NewServeMux()
 

@@ -37,11 +37,12 @@ type Proxy struct {
 	allowAll       bool
 	vault          *crypto.Vault
 	clientSecret   string
+	oidcIssuer     string
 	refreshMu      sync.Mutex
 	refreshedCache map[string]cachedRefresh
 }
 
-func NewProxy(allowedCSV string, vault *crypto.Vault, clientSecret string) *Proxy {
+func NewProxy(allowedCSV string, vault *crypto.Vault, clientSecret, oidcIssuer string) *Proxy {
 	p := &Proxy{
 		allowedServers: make(map[string]bool),
 		vault:          vault,
@@ -53,6 +54,11 @@ func NewProxy(allowedCSV string, vault *crypto.Vault, clientSecret string) *Prox
 	} else {
 		for _, host := range strings.Split(allowedCSV, ",") {
 			p.allowedServers[strings.ToLower(strings.TrimSpace(host))] = true
+		}
+	}
+	if p.oidcIssuer = p.NormalizeHost(oidcIssuer); p.oidcIssuer != "" {
+		if u, err := url.Parse(p.oidcIssuer); err == nil {
+			p.allowedServers[strings.ToLower(u.Hostname())] = true
 		}
 	}
 
