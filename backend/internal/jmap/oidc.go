@@ -51,6 +51,9 @@ func (p *Proxy) validateOIDCEndpoint(rawURL string) bool {
 
 func (p *Proxy) DiscoverOIDC(rawHost string) (*OIDCConfig, error) {
 	host := p.NormalizeHost(rawHost)
+	if p.oidcIssuer != "" {
+		host = p.oidcIssuer
+	}
 	if !p.IsSafeExternalURL(host) {
 		return nil, errors.New("serveur non autorisé")
 	}
