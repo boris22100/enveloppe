@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { createContact, fetchContacts, importContactsJSON, type JSContact } from '../lib/jmap/contacts';
+  import { createContact, deleteContact, fetchContacts, importContactsJSON, type JSContact } from '../lib/jmap/contacts';
   import { contactsToVcf, vcfToContacts } from '../lib/utils/formats';
+  import ConfirmModal from './ConfirmModal.svelte';
 
   let { accountId }: { accountId: string } = $props();
   let contacts = $state<JSContact[]>([]);
@@ -9,6 +10,7 @@
   let fullName = $state('');
   let email = $state('');
   let phone = $state('');
+  let contactToDelete = $state<{ id: string; name: string } | null>(null);
 
   async function load() {
     contacts = await fetchContacts(accountId);
@@ -47,6 +49,13 @@
     await createContact(accountId, fullName, email, phone);
     fullName = email = phone = '';
     showAdd = false;
+    await load();
+  }
+
+  async function confirmDeleteContact() {
+    if (!contactToDelete) return;
+    await deleteContact(accountId, contactToDelete.id);
+    contactToDelete = null;
     await load();
   }
 
@@ -109,8 +118,8 @@
           <div class="divide-y divide-slate-800/60">
             {#each list as c}
               {@const displayName = c.name?.full || Object.values(c.emails ?? {})[0]?.address || 'Sans nom'}
-              <div class="flex flex-wrap items-center justify-between gap-2 py-2.5 hover:bg-slate-800/20 px-2 rounded-lg">
-                <div class="flex items-center gap-3 min-w-0">
+              <div class="group flex flex-wrap items-center justify-between gap-2 rounded-lg px-2 py-2.5 hover:bg-slate-800/20">
+                <div class="flex min-w-0 items-center gap-3">
                   <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0D3A4D] text-xs font-bold text-[#48B17F]">
                     {displayName.slice(0, 2).toUpperCase()}
                   </div>
@@ -123,6 +132,16 @@
                   {#each Object.values(c.phones ?? {}) as ph}
                     <span class="text-slate-400">{ph.number}</span>
                   {/each}
+                  {#if c.id}
+                    <button
+                      type="button"
+                      title="Supprimer ce contact"
+                      onclick={() => (contactToDelete = { id: c.id!, name: displayName })}
+                      class="rounded-md px-2 py-1 text-slate-500 opacity-70 transition-opacity hover:bg-red-500/15 hover:text-red-400 group-hover:opacity-100"
+                    >
+                      🗑️
+                    </button>
+                  {/if}
                 </div>
               </div>
             {/each}
@@ -134,3 +153,13 @@
     </div>
   </div>
 </div>
+
+{#if contactToDelete}
+  <ConfirmModal
+    title="Supprimer le contact"
+    message={`Voulez-vous vraiment supprimer « ${contactToDelete.name} » de votre carnet d'adresses ? Cette action est définitive.`}
+    confirmLabel="Supprimer le contact"
+    onConfirm={confirmDeleteContact}
+    onCancel={() => (contactToDelete = null)}
+  />
+{/if}

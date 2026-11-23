@@ -4,11 +4,13 @@ export interface CachedEmail {
   uid: string; // `${accountId}:${emailId}`
   accountId: string;
   id: string;
+  blobId?: string;
   subject: string;
   from: { name?: string; email: string }[];
   receivedAt: string;
   preview: string;
   isUnread: boolean;
+  keywords?: Record<string, boolean>;
   htmlBody?: string;
   textBody?: string;
 }

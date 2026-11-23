@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { ROLE_META, type EmailSummary, type Mailbox } from '../lib/jmap/client';
+  import { ROLE_META, type Mailbox } from '../lib/jmap/client';
+  import type { CachedEmail } from '../lib/db/cache';
 
   let {
     x = 0,
@@ -14,7 +15,7 @@
     x: number;
     y: number;
     type: 'mail' | 'mailbox';
-    mail?: EmailSummary | null;
+    mail?: CachedEmail | null;
     mailbox?: Mailbox | null;
     mailboxes?: Mailbox[];
     onClose: () => void;
@@ -26,7 +27,7 @@
   let posX = $derived(typeof window !== 'undefined' ? Math.min(x, window.innerWidth - 250) : x);
   let posY = $derived(typeof window !== 'undefined' ? Math.min(y, window.innerHeight - 360) : y);
 
-  let isUnread = $derived(mail ? !mail.keywords?.['$seen'] : false);
+  let isUnread = $derived(mail ? (mail.keywords ? !mail.keywords['$seen'] : mail.isUnread) : false);
   let isStarred = $derived(mail ? !!mail.keywords?.['$flagged'] : false);
 
   function trigger(action: string, payload?: any) {
@@ -85,7 +86,7 @@
       <kbd class="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">S</kbd>
     </button>
     <button onclick={() => trigger('spam')} class="flex w-full items-center justify-between px-3 py-2 hover:bg-slate-800/80">
-      <span>🚫 Signaler comme spam</span><kbd class="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">!</kbd>
+      <span>🚫 Signaler comme indésirable</span><kbd class="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">!</kbd>
     </button>
 
     <div class="my-1 border-t border-slate-800"></div>
@@ -108,9 +109,26 @@
     </div>
 
   {:else if type === 'mailbox' && mailbox}
+    <button onclick={() => trigger('markRead')} class="flex w-full items-center gap-2 px-3 py-2 hover:bg-slate-800/80">
+      <span>📭 Marquer comme lu(s)</span>
+    </button>
+
+    {#if mailbox.role === 'junk'}
+      <button onclick={() => trigger('emptyJunk')} class="flex w-full items-center gap-2 px-3 py-2 text-red-300 hover:bg-red-500/15">
+        <span>🗑️ Supprimer les indésirables</span>
+      </button>
+    {:else if mailbox.role === 'trash'}
+      <button onclick={() => trigger('emptyTrash')} class="flex w-full items-center gap-2 px-3 py-2 text-red-300 hover:bg-red-500/15">
+        <span>🔥 Vider la corbeille</span>
+      </button>
+    {/if}
+
+    <div class="my-1 border-t border-slate-800"></div>
+
     <button onclick={() => trigger('newSubfolder')} class="flex w-full items-center gap-2 px-3 py-2 hover:bg-slate-800/80">
       <span>📁+ Nouveau sous-dossier</span>
     </button>
+
     {#if !mailbox.role}
       <button onclick={() => trigger('renameFolder')} class="flex w-full items-center gap-2 px-3 py-2 hover:bg-slate-800/80">
         <span>✏️ Renommer</span>

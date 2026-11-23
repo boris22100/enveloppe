@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { db, type CachedEmail } from './lib/db/cache';
   import {
-    archiveEmail, createMailbox, deleteMailbox, destroyEmail, fetchEmailBody, fetchMailboxes, fetchMailboxEmails, fetchQuota, renameMailbox, ROLE_META, setEmailKeyword, updateEmailMailbox,
+    archiveEmail, createMailbox, deleteMailbox, destroyEmail, emptyMailboxes, fetchEmailBody, fetchMailboxes, fetchMailboxEmails, fetchQuota, getMailboxSubtreeIds, getPrimaryAccountId, markMailboxesAsRead, renameMailbox, ROLE_META, setEmailKeyword, updateEmailMailbox,
     sendEmail, uploadAttachment, type Account, type Attachment, type DiskQuota, type Mailbox
   } from './lib/jmap/client';
   import { enableWebPush } from './lib/jmap/push';
@@ -11,6 +11,7 @@
   import MailReader from './components/MailReader.svelte';
   import SenderAvatar from './components/SenderAvatar.svelte';
   import ContextMenu from './components/ContextMenu.svelte';
+  import ConfirmModal from './components/ConfirmModal.svelte';
   import ContactsView from './components/ContactsView.svelte';
   import CalendarView from './components/CalendarView.svelte';
   import SecurityView from './components/SecurityView.svelte';
@@ -18,9 +19,9 @@
   let accounts = $state<Account[]>([]);
   let loaded = $state(false);
   let activeAccountId = $state<string | null>(null);
-  const savedTab = typeof localStorage !== "undefined" ? localStorage.getItem("enveloppe_tab") : null;
+  const savedTab = typeof localStorage !== 'undefined' ? localStorage.getItem('enveloppe_tab') : null;
   let activeTab = $state<'mail' | 'contacts' | 'calendar' | 'security'>(
-    (savedTab === "mail" || savedTab === "contacts" || savedTab === "calendar" || savedTab === "security") ? savedTab : "mail"
+    (savedTab === 'mail' || savedTab === 'contacts' || savedTab === 'calendar' || savedTab === 'security') ? savedTab : 'mail'
   );
   let railExpanded = $state(false);
 
@@ -40,15 +41,36 @@
   let composeText = $state('');
   let composeFiles = $state<Attachment[]>([]);
   let uploading = $state(false);
-  let pushStatus = $state('');
+  let statusToast = $state('');
+  let batchBusy = $state(false);
   let sse: EventSource | null = null;
 
+  let confirmDialog = $state<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    onConfirm: () => Promise<void>;
+  } | null>(null);
+
   let activeAccount = $derived(accounts.find((a) => a.id === activeAccountId) ?? null);
+  let activeMailbox = $derived(mailboxes.find((m) => m.id === activeMailboxId) ?? null);
+
+  function showToast(msg: string) {
+    statusToast = msg;
+    setTimeout(() => {
+      if (statusToast === msg) statusToast = '';
+    }, 4500);
+  }
+
+  function folderDisplayName(box: Mailbox | null): string {
+    if (!box) return 'Messages';
+    return (box.role && ROLE_META[box.role]?.label) || box.name;
+  }
 
   $effect(() => {
-    localStorage.setItem("enveloppe_tab", activeTab);
-    if (activeAccountId) localStorage.setItem("enveloppe_account", activeAccountId);
-    if (activeMailboxId) localStorage.setItem("enveloppe_mailbox", activeMailboxId);
+    localStorage.setItem('enveloppe_tab', activeTab);
+    if (activeAccountId) localStorage.setItem('enveloppe_account', activeAccountId);
+    if (activeMailboxId) localStorage.setItem('enveloppe_mailbox', activeMailboxId);
   });
 
   async function loadAccounts() {
@@ -56,7 +78,7 @@
     accounts = await res.json();
     loaded = true;
     if (accounts.length && !activeAccountId) {
-      const savedAcc = localStorage.getItem("enveloppe_account");
+      const savedAcc = localStorage.getItem('enveloppe_account');
       const target = accounts.find((a) => a.id === savedAcc) ?? accounts[0];
       selectAccount(target.id);
     }
@@ -65,9 +87,10 @@
   function connectRealtime(id: string) {
     sse?.close();
     sse = new EventSource(`/api/jmap/${id}/events`);
-    sse.addEventListener('state', () => {
+    sse.addEventListener('state', async () => {
       if (activeAccountId === id && activeTab === 'mail' && activeMailboxId) {
-        loadFolderEmails(id, activeMailboxId);
+        mailboxes = await fetchMailboxes(id);
+        await loadFolderEmails(id, activeMailboxId);
       }
     });
   }
@@ -79,8 +102,8 @@
     connectRealtime(id);
     mailboxes = await fetchMailboxes(id);
     quota = await fetchQuota(id);
-    const savedBox = localStorage.getItem("enveloppe_mailbox");
-    const targetBox = mailboxes.find((m) => m.id === savedBox) ?? mailboxes.find((m) => m.role === "inbox") ?? mailboxes[0];
+    const savedBox = localStorage.getItem('enveloppe_mailbox');
+    const targetBox = mailboxes.find((m) => m.id === savedBox) ?? mailboxes.find((m) => m.role === 'inbox') ?? mailboxes[0];
     if (targetBox) await selectMailbox(targetBox.id);
   }
 
@@ -98,38 +121,116 @@
       uid: `${accountId}:${e.id}`,
       accountId,
       id: e.id,
+      blobId: e.blobId,
       subject: e.subject,
       from: e.from ?? [],
       receivedAt: e.receivedAt,
       preview: e.preview,
+      keywords: e.keywords ?? {},
       isUnread: !e.keywords?.['$seen']
     }));
   }
 
   async function openEmail(mail: CachedEmail) {
+    const wasUnread = mail.isUnread;
     selectedEmail = mail;
     mail.isUnread = false;
+    if (mail.keywords) mail.keywords['$seen'] = true;
     activeBody = await fetchEmailBody(mail.accountId, mail.id);
+    if (wasUnread && activeAccountId) {
+      mailboxes = await fetchMailboxes(activeAccountId);
+    }
   }
 
   async function handleArchive(mail: CachedEmail) {
-    if (!activeMailboxId) return;
+    if (!activeMailboxId || !activeAccountId) return;
     const archiveBox = mailboxes.find((m) => m.role === 'archive');
     emails = emails.filter((e) => e.id !== mail.id);
     if (selectedEmail?.id === mail.id) { selectedEmail = null; activeBody = null; }
     await archiveEmail(mail.accountId, mail.id, activeMailboxId, archiveBox?.id);
+    mailboxes = await fetchMailboxes(activeAccountId);
   }
 
-  async function handleLogout() {
+  function requestDeleteMail(mail: CachedEmail) {
     if (!activeAccountId) return;
-    const idToRemove = activeAccountId;
-    sse?.close();
-    await fetch(`/api/accounts/${idToRemove}`, { method: 'DELETE' });
+    const accId = activeAccountId;
+    const trash = mailboxes.find((b) => b.role === 'trash');
+    const permanent = !trash || activeMailboxId === trash.id;
+    const label = mail.subject || '(Sans objet)';
+
+    confirmDialog = {
+      title: permanent ? 'Supprimer définitivement le message' : 'Déplacer vers la corbeille',
+      message: permanent
+        ? `Voulez-vous vraiment supprimer définitivement « ${label} » ? Cette action est irréversible.`
+        : `Voulez-vous vraiment déplacer « ${label} » dans la corbeille ?`,
+      confirmLabel: permanent ? 'Supprimer définitivement' : 'Mettre à la corbeille',
+      onConfirm: async () => {
+        if (permanent) await destroyEmail(accId, mail.id);
+        else await updateEmailMailbox(accId, mail.id, trash!.id);
+        confirmDialog = null;
+        if (selectedEmail?.id === mail.id) { selectedEmail = null; activeBody = null; }
+        mailboxes = await fetchMailboxes(accId);
+        quota = await fetchQuota(accId);
+        if (activeMailboxId) await loadFolderEmails(accId, activeMailboxId);
+      }
+    };
+  }
+
+  async function handleMarkMailboxRead(box: Mailbox) {
+    if (!activeAccountId || batchBusy) return;
+    const accId = activeAccountId;
+    batchBusy = true;
+    try {
+      const ids = getMailboxSubtreeIds(mailboxes, box.id);
+      const count = await markMailboxesAsRead(accId, ids);
+      mailboxes = await fetchMailboxes(accId);
+      if (activeMailboxId && ids.includes(activeMailboxId)) {
+        await loadFolderEmails(accId, activeMailboxId);
+      }
+      showToast(count > 0 ? `${count} message(s) marqué(s) comme lu(s) dans « ${folderDisplayName(box)} ».` : `Aucun message non lu dans « ${folderDisplayName(box)} ».`); } finally { batchBusy = false; } }  function requestEmptyMailbox(box: Mailbox) { if (!activeAccountId) return; const accId = activeAccountId; const isTrash = box.role === 'trash'; const isJunk = box.role === 'junk'; const ids = getMailboxSubtreeIds(mailboxes, box.id);  confirmDialog = { title: isTrash ? 'Vider la corbeille' : isJunk ? 'Supprimer les indésirables' : `Vider « ${box.name} »`,
+      message: isTrash
+        ? 'Voulez-vous vraiment supprimer définitivement tous les messages de la corbeille (et de ses sous-dossiers) ? Cette action est irréversible.'
+        : isJunk
+          ? 'Voulez-vous vraiment supprimer définitivement tous les messages indésirables ? Cette action est irréversible.'
+          : `Voulez-vous vraiment supprimer définitivement tous les messages de « ${box.name} » ? Cette action est irréversible.`,
+      confirmLabel: isTrash ? 'Vider la corbeille' : isJunk ? 'Supprimer les indésirables' : 'Supprimer tout',
+      onConfirm: async () => {
+        const count = await emptyMailboxes(accId, ids);
+        confirmDialog = null;
+        if (activeMailboxId && ids.includes(activeMailboxId)) {
+          selectedEmail = null;
+          activeBody = null;
+          await loadFolderEmails(accId, activeMailboxId);
+        }
+        mailboxes = await fetchMailboxes(accId);
+        quota = await fetchQuota(accId);
+        showToast(count > 0 ? `${count} message(s) supprimé(s) définitivement.` : 'Ce dossier était déjà vide.');
+      }
+    };
+  }
+
+  function requestDeleteFolder(box: Mailbox) {
+    if (!activeAccountId || box.role) return;
+    const accId = activeAccountId;
+    confirmDialog = {
+      title: 'Supprimer le dossier',
+      message: `Voulez-vous vraiment supprimer le dossier « ${box.name} » ?`,
+      confirmLabel: 'Supprimer le dossier',
+      onConfirm: async () => {
+        await deleteMailbox(accId, box.id);
+        confirmDialog = null;
+        mailboxes = await fetchMailboxes(accId);
+        if (activeMailboxId === box.id) {
+          const fallback = mailboxes.find((m) => m.role === 'inbox') ?? mailboxes[0];
+          if (fallback) await selectMailbox(fallback.id);
+          else { activeMailboxId = null; emails = []; selectedEmail = null; activeBody = null; }
+        }
+        showToast(`Dossier « ${box.name} » supprimé.`); } }; }  async function handleLogout() { if (!activeAccountId) return; const idToRemove = activeAccountId; sse?.close(); await fetch(`/api/accounts/${idToRemove}`, { method: 'DELETE' });
     await db.emails.where('accountId').equals(idToRemove).delete();
-    localStorage.removeItem("enveloppe_account");
-    localStorage.removeItem("enveloppe_mailbox");
-    localStorage.removeItem("enveloppe_tab");
-    activeTab = "mail";
+    localStorage.removeItem('enveloppe_account');
+    localStorage.removeItem('enveloppe_mailbox');
+    localStorage.removeItem('enveloppe_tab');
+    activeTab = 'mail';
     activeAccountId = null;
     selectedEmail = null;
     activeBody = null;
@@ -141,11 +242,10 @@
   async function handleEnablePush() {
     if (!activeAccountId) return;
     try {
-      pushStatus = await enableWebPush(activeAccountId);
+      showToast(await enableWebPush(activeAccountId));
     } catch (err: any) {
-      pushStatus = err.message;
+      showToast(err.message);
     }
-    setTimeout(() => (pushStatus = ''), 5000);
   }
 
   async function handleFileUpload(e: Event) {
@@ -166,62 +266,72 @@
     composeTo = composeSubject = composeText = '';
     composeFiles = [];
     showComposer = false;
+    showToast('Message envoyé.');
   }
 
   function handleKeydown(e: KeyboardEvent) {
+    if (confirmDialog || showComposer || showAccountModal) return;
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
     if (e.key === 'c') showComposer = true;
     if (e.key === 'e' && selectedEmail) handleArchive(selectedEmail);
+    if (e.key === 'Delete' && selectedEmail) requestDeleteMail(selectedEmail);
   }
 
   onMount(loadAccounts);
   onDestroy(() => sse?.close());
 
-  let ctxMenu = $state<{ x: number; y: number; type: "mail" | "mailbox"; mail?: EmailSummary; mailbox?: Mailbox } | null>(null);
+  let ctxMenu = $state<{ x: number; y: number; type: 'mail' | 'mailbox'; mail?: CachedEmail; mailbox?: Mailbox } | null>(null);
 
-  if (typeof navigator !== "undefined" && navigator.storage?.persist) {
+  if (typeof navigator !== 'undefined' && navigator.storage?.persist) {
     navigator.storage.persist().catch(() => {});
   }
 
   async function handleContextAction(action: string, payload?: any) {
     if (!activeAccountId || !ctxMenu) return;
-    if (ctxMenu.type === "mail" && ctxMenu.mail) {
+    const accId = activeAccountId;
+    if (ctxMenu.type === 'mail' && ctxMenu.mail) {
       const m = ctxMenu.mail;
-      if (action === "archive") {
-        const arch = mailboxes.find((b) => b.role === "archive");
-        if (arch) await updateEmailMailbox(activeAccountId, m.id, arch.id);
-      } else if (action === "delete") {
-        const trash = mailboxes.find((b) => b.role === "trash");
-        if (trash && activeMailboxId !== trash.id) await updateEmailMailbox(activeAccountId, m.id, trash.id);
-        else await destroyEmail(activeAccountId, m.id);
-      } else if (action === "spam") {
-        const junk = mailboxes.find((b) => b.role === "junk");
-        if (junk) await updateEmailMailbox(activeAccountId, m.id, junk.id);
-      } else if (action === "move" && payload) {
-        await updateEmailMailbox(activeAccountId, m.id, payload);
-      } else if (action === "toggleRead") {
-        await setEmailKeyword(activeAccountId, m.id, "$seen", !m.keywords?.["$seen"]);
-      } else if (action === "toggleStar") {
-        await setEmailKeyword(activeAccountId, m.id, "$flagged", !m.keywords?.["$flagged"]);
-      } else if (action === "downloadEml" && m.blobId) {
-        window.open(`/api/jmap/${activeAccountId}/download/${m.blobId}/${encodeURIComponent((m.subject || "message") + ".eml")}`, "_blank");
+      if (action === 'archive') {
+        const arch = mailboxes.find((b) => b.role === 'archive');
+        if (arch) await updateEmailMailbox(accId, m.id, arch.id);
+      } else if (action === 'delete') {
+        requestDeleteMail(m);
         return;
-      } else if (action === "print") {
+      } else if (action === 'spam') {
+        const junk = mailboxes.find((b) => b.role === 'junk');
+        if (junk) await updateEmailMailbox(accId, m.id, junk.id);
+      } else if (action === 'move' && payload) {
+        await updateEmailMailbox(accId, m.id, payload);
+      } else if (action === 'toggleRead') {
+        const currentlySeen = m.keywords ? !!m.keywords['$seen'] : !m.isUnread;
+        await setEmailKeyword(accId, m.id, '$seen', !currentlySeen);
+      } else if (action === 'toggleStar') {
+        await setEmailKeyword(accId, m.id, '$flagged', !m.keywords?.['$flagged']);
+      } else if (action === 'downloadEml' && m.blobId) {
+        const jmapAccId = await getPrimaryAccountId(accId);
+        window.open(`/api/jmap/${accId}/download/${encodeURIComponent(jmapAccId)}/${encodeURIComponent(m.blobId)}/${encodeURIComponent((m.subject || 'message') + '.eml')}?type=message%2Frfc822`, '_blank');
+        return;
+      } else if (action === 'print') {
         await openEmail(m);
         setTimeout(() => window.print(), 300);
         return;
       }
-      if (activeMailboxId) await selectMailbox(activeMailboxId);
-    } else if (ctxMenu.type === "mailbox" && ctxMenu.mailbox) {
+      mailboxes = await fetchMailboxes(accId);
+      if (activeMailboxId) await loadFolderEmails(accId, activeMailboxId);
+    } else if (ctxMenu.type === 'mailbox' && ctxMenu.mailbox) {
       const box = ctxMenu.mailbox;
-      if (action === "newSubfolder") {
-        const name = prompt(`Nom du sous-dossier dans "${box.name}" :`);
-        if (name?.trim()) { await createMailbox(activeAccountId, name.trim(), box.id); mailboxes = await fetchMailboxes(activeAccountId); }
-      } else if (action === "renameFolder") {
-        const name = prompt("Nouveau nom du dossier :", box.name);
-        if (name?.trim()) { await renameMailbox(activeAccountId, box.id, name.trim()); mailboxes = await fetchMailboxes(activeAccountId); }
-      } else if (action === "deleteFolder") {
-        if (confirm(`Supprimer le dossier "${box.name}" ?`)) { await deleteMailbox(activeAccountId, box.id); mailboxes = await fetchMailboxes(activeAccountId); }
+      if (action === 'markRead') {
+        await handleMarkMailboxRead(box);
+      } else if (action === 'emptyJunk' || action === 'emptyTrash') {
+        requestEmptyMailbox(box);
+      } else if (action === 'newSubfolder') {
+        const name = prompt(`Nom du sous-dossier dans « ${folderDisplayName(box)} » :`);
+        if (name?.trim()) { await createMailbox(accId, name.trim(), box.id); mailboxes = await fetchMailboxes(accId); }
+      } else if (action === 'renameFolder') {
+        const name = prompt('Nouveau nom du dossier :', box.name);
+        if (name?.trim()) { await renameMailbox(accId, box.id, name.trim()); mailboxes = await fetchMailboxes(accId); }
+      } else if (action === 'deleteFolder') {
+        requestDeleteFolder(box);
       }
     }
   }
@@ -229,9 +339,9 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-{#if pushStatus}
+{#if statusToast}
   <div class="fixed bottom-4 right-4 z-50 rounded-xl border border-[#48B17F]/40 bg-[#0D3A4D] px-4 py-2.5 text-xs text-white shadow-xl">
-    {pushStatus}
+    {statusToast}
   </div>
 {/if}
 
@@ -302,20 +412,68 @@
 
     {#if activeTab === 'mail'}
       {#if showFolders}
-        <nav class="flex w-56 flex-col overflow-y-auto border-r border-slate-800/80 bg-[#0A131E] py-3">
+        <nav class="flex w-60 flex-col overflow-y-auto border-r border-slate-800/80 bg-[#0A131E] py-3">
           <div class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Dossiers</div>
           {#each mailboxes as box}
-            <button
-              onclick={() => selectMailbox(box.id)}
-              oncontextmenu={(e) => { e.preventDefault(); ctxMenu = { x: e.clientX, y: e.clientY, type: "mailbox", mailbox: box }; }}
+            <div
+              oncontextmenu={(e) => { e.preventDefault(); ctxMenu = { x: e.clientX, y: e.clientY, type: 'mailbox', mailbox: box }; }}
               style="padding-left: {12 + (box.depth ?? 0) * 14}px"
-              class="flex items-center justify-between py-1.5 pr-3 text-left text-xs transition-colors hover:bg-slate-800/50 {activeMailboxId === box.id ? 'bg-[#0D3A4D]/70 font-semibold text-[#48B17F]' : 'text-slate-300'}"
+              class="group flex items-center justify-between gap-1 pr-2 text-xs transition-colors hover:bg-slate-800/50 {activeMailboxId === box.id ? 'bg-[#0D3A4D]/70 font-semibold text-[#48B17F]' : 'text-slate-300'}"
             >
-              <span class="flex items-center gap-2 truncate"><span>{box.depth ? '📁' : (box.role && ROLE_META[box.role]?.icon) || '📁'}</span><span class="truncate">{(box.role && ROLE_META[box.role]?.label) || box.name}</span></span>
-              {#if box.unreadEmails > 0}
-                <span class="ml-2 rounded-full bg-[#48B17F]/20 px-1.5 py-0.5 text-[10px] text-[#48B17F]">{box.unreadEmails}</span>
-              {/if}
-            </button>
+              <button
+                type="button"
+                onclick={() => selectMailbox(box.id)}
+                class="flex min-w-0 flex-1 items-center gap-2 py-1.5 text-left"
+              >
+                <span class="shrink-0">{box.depth ? '📁' : (box.role && ROLE_META[box.role]?.icon) || '📁'}</span>
+                <span class="truncate">{folderDisplayName(box)}</span>
+              </button>
+
+              <div class="flex shrink-0 items-center gap-1">
+                <button
+                  type="button"
+                  title="Marquer comme lu(s)"
+                  disabled={batchBusy}
+                  onclick={(e) => { e.stopPropagation(); handleMarkMailboxRead(box); }}
+                  class="rounded px-1 py-0.5 text-[11px] text-slate-400 opacity-0 transition-opacity hover:bg-slate-700/80 hover:text-[#48B17F] focus:opacity-100 group-hover:opacity-100"
+                >
+                  ✓
+                </button>
+
+                {#if box.role === 'trash'}
+                  <button
+                    type="button"
+                    title="Vider la corbeille"
+                    onclick={(e) => { e.stopPropagation(); requestEmptyMailbox(box); }}
+                    class="rounded px-1 py-0.5 text-[11px] text-slate-400 opacity-0 transition-opacity hover:bg-red-500/20 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
+                  >
+                    🗑️
+                  </button>
+                {:else if box.role === 'junk'}
+                  <button
+                    type="button"
+                    title="Supprimer les indésirables"
+                    onclick={(e) => { e.stopPropagation(); requestEmptyMailbox(box); }}
+                    class="rounded px-1 py-0.5 text-[11px] text-slate-400 opacity-0 transition-opacity hover:bg-red-500/20 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
+                  >
+                    🗑️
+                  </button>
+                {:else if !box.role}
+                  <button
+                    type="button"
+                    title="Supprimer le dossier"
+                    onclick={(e) => { e.stopPropagation(); requestDeleteFolder(box); }}
+                    class="rounded px-1 py-0.5 text-[11px] text-slate-400 opacity-0 transition-opacity hover:bg-red-500/20 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
+                  >
+                    🗑️
+                  </button>
+                {/if}
+
+                {#if box.unreadEmails > 0}
+                  <span class="ml-0.5 rounded-full bg-[#48B17F]/20 px-1.5 py-0.5 text-[10px] text-[#48B17F]">{box.unreadEmails}</span>
+                {/if}
+              </div>
+            </div>
           {/each}
           {#if quota}
             <div class="mt-auto border-t border-slate-800/80 p-3">
@@ -334,25 +492,63 @@
 
       <section class="flex w-96 flex-col border-r border-slate-800/80 bg-[#0B1622]">
         <div class="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-          <div class="flex items-center gap-2">
+          <div class="flex min-w-0 items-center gap-2">
             <button onclick={() => (showFolders = !showFolders)} title="Afficher/Masquer les dossiers" class="text-slate-400 hover:text-white">☰</button>
-            <span class="truncate text-sm font-semibold text-slate-200">
-              {(() => { const b = mailboxes.find((m) => m.id === activeMailboxId); return (b?.role && ROLE_META[b.role]?.label) || b?.name || 'Messages'; })()}
-            </span>
+            <span class="truncate text-sm font-semibold text-slate-200">{folderDisplayName(activeMailbox)}</span>
           </div>
-          <button onclick={() => (showComposer = true)} class="rounded-lg bg-[#48B17F] px-3 py-1 text-xs font-semibold text-[#0B1622]">Nouveau (C)</button>
+          <button onclick={() => (showComposer = true)} class="shrink-0 rounded-lg bg-[#48B17F] px-3 py-1 text-xs font-semibold text-[#0B1622]">Nouveau (C)</button>
         </div>
+
+        {#if activeMailbox}
+          <div class="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-800/80 bg-[#0A131E]/80 px-3 py-1.5 text-[11px]">
+            <button
+              type="button"
+              disabled={batchBusy}
+              onclick={() => handleMarkMailboxRead(activeMailbox!)}
+              class="rounded-md border border-slate-700/80 bg-slate-900/70 px-2 py-1 text-slate-300 hover:border-[#48B17F] hover:text-[#48B17F] disabled:opacity-50"
+            >
+              📭 Marquer comme lu(s)
+            </button>
+
+            {#if activeMailbox.role === 'trash'}
+              <button
+                type="button"
+                onclick={() => requestEmptyMailbox(activeMailbox!)}
+                class="rounded-md border border-red-500/40 bg-red-500/10 px-2 py-1 font-medium text-red-300 hover:bg-red-500/20"
+              >
+                🔥 Vider la corbeille
+              </button>
+            {:else if activeMailbox.role === 'junk'}
+              <button
+                type="button"
+                onclick={() => requestEmptyMailbox(activeMailbox!)}
+                class="rounded-md border border-red-500/40 bg-red-500/10 px-2 py-1 font-medium text-red-300 hover:bg-red-500/20"
+              >
+                🗑️ Supprimer les indésirables
+              </button>
+            {:else if !activeMailbox.role}
+              <button
+                type="button"
+                onclick={() => requestDeleteFolder(activeMailbox!)}
+                class="rounded-md border border-red-500/40 bg-red-500/10 px-2 py-1 font-medium text-red-300 hover:bg-red-500/20"
+              >
+                🗑️ Supprimer le dossier
+              </button>
+            {/if}
+          </div>
+        {/if}
+
         <div class="flex-1 divide-y divide-slate-800/60 overflow-y-auto">
           {#each emails as mail}
-            <button onclick={() => openEmail(mail)} oncontextmenu={(e) => { e.preventDefault(); ctxMenu = { x: e.clientX, y: e.clientY, type: "mail", mail }; }} class="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-800/40 {selectedEmail?.id === mail.id ? 'bg-[#0D3A4D]/60' : ''}">
+            <button onclick={() => openEmail(mail)} oncontextmenu={(e) => { e.preventDefault(); ctxMenu = { x: e.clientX, y: e.clientY, type: 'mail', mail }; }} class="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-800/40 {selectedEmail?.id === mail.id ? 'bg-[#0D3A4D]/60' : ''}">
               <SenderAvatar name={mail.from[0]?.name} email={mail.from[0]?.email} />
               <div class="min-w-0 flex-1">
-              <div class="flex items-center justify-between gap-2">
-                <span class="truncate text-sm {mail.isUnread ? 'font-bold text-white' : 'text-slate-300'}">{mail.from[0]?.name || mail.from[0]?.email || 'Inconnu'}</span>
-                <span class="shrink-0 text-[11px] text-slate-500">{new Date(mail.receivedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
-              </div>
-              <p class="truncate text-xs {mail.isUnread ? 'text-slate-200' : 'text-slate-400'}">{mail.subject || '(Sans objet)'}</p>
-              <p class="truncate text-xs text-slate-500">{mail.preview}</p>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="truncate text-sm {mail.isUnread ? 'font-bold text-white' : 'text-slate-300'}">{mail.from[0]?.name || mail.from[0]?.email || 'Inconnu'}</span>
+                  <span class="shrink-0 text-[11px] text-slate-500">{new Date(mail.receivedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
+                </div>
+                <p class="truncate text-xs {mail.isUnread ? 'text-slate-200' : 'text-slate-400'}">{mail.subject || '(Sans objet)'}</p>
+                <p class="truncate text-xs text-slate-500">{mail.preview}</p>
               </div>
             </button>
           {:else}
@@ -429,5 +625,15 @@
     {mailboxes}
     onClose={() => (ctxMenu = null)}
     onAction={handleContextAction}
+  />
+{/if}
+
+{#if confirmDialog}
+  <ConfirmModal
+    title={confirmDialog.title}
+    message={confirmDialog.message}
+    confirmLabel={confirmDialog.confirmLabel}
+    onConfirm={confirmDialog.onConfirm}
+    onCancel={() => (confirmDialog = null)}
   />
 {/if}
