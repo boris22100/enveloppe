@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Account } from '../lib/jmap/client';
+  import { getAccountSignature, setAccountSignature } from '../lib/signatures';
   import {
     createAppPassword,
     deleteAppPassword,
@@ -20,6 +21,8 @@
   let generatedSecret = $state('');
   let appError = $state('');
   let loading = $state(false);
+  let signature = $state('');
+  let sigSaved = $state(false);
 
   async function loadAppPasswords() {
     appError = '';
@@ -31,8 +34,18 @@
   }
 
   $effect(() => {
-    if (account?.id) loadAppPasswords();
+    if (account?.id) {
+      loadAppPasswords();
+      signature = getAccountSignature(account.id);
+    }
   });
+
+  function saveSignature(e: Event) {
+    e.preventDefault();
+    setAccountSignature(account.id, signature);
+    sigSaved = true;
+    setTimeout(() => (sigSaved = false), 3000);
+  }
 
   async function changePassword(e: Event) {
     e.preventDefault();
@@ -155,5 +168,25 @@
         <p class="env-faint py-2 text-xs">Aucun mot de passe d'application configuré.</p>
       {/each}
     </div>
+  </section>
+
+  <section class="env-card max-w-xl space-y-4 rounded-3xl border p-6 shadow-xs">
+    <h3 class="env-text text-base font-semibold">Signature de messagerie</h3>
+    <p class="env-muted text-xs">Ajoutée automatiquement à la fin de vos nouveaux messages pour ce compte.</p>
+    {#if sigSaved}
+      <p role="status" class="env-accent-soft rounded-2xl p-3 text-xs font-medium">Signature enregistrée pour ce compte.</p>
+    {/if}
+    <form onsubmit={saveSignature} class="space-y-3">
+      <textarea
+        bind:value={signature}
+        rows="4"
+        aria-label="Signature de messagerie"
+        placeholder={'-- \nPrénom Nom — Fonction\nhttps://exemple.fr'}
+        class="env-input w-full rounded-2xl border p-3.5 text-sm"
+      ></textarea>
+      <button class="env-accent-bg rounded-xl px-4 py-2.5 text-sm font-semibold hover:opacity-95">
+        Enregistrer la signature
+      </button>
+    </form>
   </section>
 </div>

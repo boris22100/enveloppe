@@ -7,9 +7,10 @@
   } from './lib/jmap/client';
   import { enableWebPush } from './lib/jmap/push';
   import { applyTheme, getSavedTheme, type ThemeMode } from './lib/theme';
+  import { getAccountSignature } from './lib/signatures';
   import LoginPage from './components/LoginPage.svelte';
   import AccountModal from './components/AccountModal.svelte';
-  import MailReader from './components/MailReader.svelte';
+  import MailReader, { type ThreadMessageItem } from './components/MailReader.svelte';
   import SenderAvatar from './components/SenderAvatar.svelte';
   import ContextMenu from './components/ContextMenu.svelte';
   import ConfirmModal from './components/ConfirmModal.svelte';
@@ -50,6 +51,11 @@
   let quota = $state<DiskQuota | null>(null);
 
   let emails = $state<CachedEmail[]>([]);
+  let searchQuery = $state('');
+  let filterUnreadOnly = $state(false);
+  let filterAttachmentsOnly = $state(false);
+  let groupThreads = $state(true);
+
   let selectedEmail = $state<CachedEmail | null>(null);
   let activeBody = $state<{ jmapAccountId: string; html: string | null; text: string; attachments: Attachment[] } | null>(null);
 
@@ -73,6 +79,74 @@
 
   let activeAccount = $derived(accounts.find((a) => a.id === activeAccountId) ?? null);
   let activeMailbox = $derived(mailboxes.find((m) => m.id === activeMailboxId) ?? null);
+
+  let filteredEmails = $derived.by(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return emails.filter((m) => {
+      if (filterUnreadOnly && !m.isUnread) return false;
+      if (filterAttachmentsOnly && !m.hasAttachment) return false;
+      if (!q) return true;
+      const fromStr = (m.from ?? []).map((f) => (f.name || '') + ' ' + f.email).join(' ').toLowerCase();
+      const subj = (m.subject || '').toLowerCase();
+      const prev = (m.preview || '').toLowerCase();
+      return fromStr.includes(q) || subj.includes(q) || prev.includes(q);
+    });
+  });
+
+  interface MailListEntry {
+    key: string;
+    lead: CachedEmail;
+    threadItems: CachedEmail[];
+    unreadCount: number;
+    hasAttachment: boolean;
+  }
+
+  let displayedEntries = $derived.by<MailListEntry[]>(() => {
+    if (!groupThreads) {
+      return filteredEmails.map((m) => ({
+        key: m.id,
+        lead: m,
+        threadItems: [m],
+        unreadCount: m.isUnread ? 1 : 0,
+        hasAttachment: Boolean(m.hasAttachment)
+      }));
+    }
+    const map = new Map<string, CachedEmail[]>();
+    const order: string[] = [];
+    for (const m of filteredEmails) {
+      const tKey = m.threadId || m.id;
+      if (!map.has(tKey)) {
+        map.set(tKey, []);
+        order.push(tKey);
+      }
+      map.get(tKey)!.push(m);
+    }
+    return order.map((tKey) => {
+      const items = map.get(tKey)!;
+      const lead = items[0];
+      return {
+        key: tKey,
+        lead,
+        threadItems: items,
+        unreadCount: items.filter((x) => x.isUnread).length,
+        hasAttachment: items.some((x) => Boolean(x.hasAttachment))
+      };
+    });
+  });
+
+  let activeThreadMessages = $derived.by<ThreadMessageItem[]>(() => {
+    if (!selectedEmail) return [];
+    const tKey = selectedEmail.threadId || selectedEmail.id;
+    const sameThread = emails.filter((m) => (m.threadId || m.id) === tKey);
+    if (sameThread.length <= 1) return [];
+    return [...sameThread].reverse().map((m) => ({
+      id: m.id,
+      fromLabel: m.from?.[0]?.name || m.from?.[0]?.email || 'Inconnu',
+      receivedAt: m.receivedAt,
+      preview: m.preview || '(Sans aperçu)',
+      isUnread: m.isUnread
+    }));
+  });
 
   function showToast(msg: string) {
     statusToast = msg;
@@ -136,17 +210,19 @@
 
   async function loadFolderEmails(accountId: string, mailboxId: string) {
     const list = await fetchMailboxEmails(accountId, mailboxId);
-    emails = list.map((e) => ({
+    emails = list.map((e: any) => ({
       uid: accountId + ':' + e.id,
       accountId,
       id: e.id,
+      threadId: e.threadId,
       blobId: e.blobId,
       subject: e.subject,
       from: e.from ?? [],
       receivedAt: e.receivedAt,
       preview: e.preview,
       keywords: e.keywords ?? {},
-      isUnread: !e.keywords?.['$seen']
+      isUnread: !e.keywords?.['$seen'],
+      hasAttachment: Boolean(e.hasAttachment)
     }));
   }
 
@@ -159,6 +235,52 @@
     if (wasUnread && activeAccountId) {
       mailboxes = await fetchMailboxes(activeAccountId);
     }
+  }
+
+  function openNewComposer() {
+    const sig = getAccountSignature(activeAccountId);
+    composeTo = '';
+    composeSubject = '';
+    composeText = sig ? '\n\n' + sig : '';
+    composeFiles = [];
+    showComposer = true;
+  }
+
+  function formatQuotedBody(): string {
+    const raw = (activeBody?.text || selectedEmail?.preview || '').trim();
+    const quoted = raw
+      .split('\n')
+      .map((line) => '> ' + line)
+      .join('\n');
+    const who = selectedEmail?.from?.[0]?.email || selectedEmail?.from?.[0]?.name || '';
+    const dateStr = selectedEmail?.receivedAt
+      ? new Date(selectedEmail.receivedAt).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })
+      : '';
+    const sig = getAccountSignature(activeAccountId);
+    const sigBlock = sig ? '\n\n' + sig : '';
+    return sigBlock + '\n\n--- Le ' + dateStr + ', ' + who + ' a écrit :\n' + quoted;
+  }
+
+  function startReply(all = false) {
+    if (!selectedEmail) return;
+    const sender = selectedEmail.from?.[0]?.email || '';
+    const others = all && activeAccount?.username ? activeAccount.username : '';
+    composeTo = [sender, others].filter(Boolean).join(', ');
+    const baseSubj = selectedEmail.subject || '(Sans objet)';
+    composeSubject = /^re:/i.test(baseSubj) ? baseSubj : 'Re: ' + baseSubj;
+    composeText = formatQuotedBody();
+    composeFiles = [];
+    showComposer = true;
+  }
+
+  function startForward() {
+    if (!selectedEmail) return;
+    composeTo = '';
+    const baseSubj = selectedEmail.subject || '(Sans objet)';
+    composeSubject = /^fwd?:/i.test(baseSubj) ? baseSubj : 'Fwd: ' + baseSubj;
+    composeText = formatQuotedBody();
+    composeFiles = [];
+    showComposer = true;
   }
 
   async function handleArchive(mail: CachedEmail) {
@@ -312,11 +434,15 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (confirmDialog || showComposer || showAccountModal) return;
+    if (confirmDialog || showComposer || showAccountModal || activeTab !== 'mail') return;
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
-    if (e.key === 'c') showComposer = true;
-    if (e.key === 'e' && selectedEmail) handleArchive(selectedEmail);
-    if (e.key === 'Delete' && selectedEmail) requestDeleteMail(selectedEmail);
+    const k = e.key.toLowerCase();
+    if (k === 'c') { e.preventDefault(); openNewComposer(); }
+    else if (k === 'e' && selectedEmail) { e.preventDefault(); handleArchive(selectedEmail); }
+    else if (k === 'r' && selectedEmail) { e.preventDefault(); startReply(e.shiftKey); }
+    else if (k === 'a' && selectedEmail) { e.preventDefault(); startReply(true); }
+    else if (k === 'f' && selectedEmail) { e.preventDefault(); startForward(); }
+    else if (e.key === 'Delete' && selectedEmail) { e.preventDefault(); requestDeleteMail(selectedEmail); }
   }
 
   onMount(loadAccounts);
@@ -397,7 +523,6 @@
   <LoginPage onLoggedIn={loadAccounts} />
 {:else}
   <div class="env-app flex h-screen w-screen gap-2.5 overflow-hidden p-2.5">
-    <!-- Rail gauche flottant et arrondi -->
     <aside aria-label="Navigation principale" class="env-panel flex shrink-0 flex-col justify-between rounded-3xl border py-3.5 shadow-sm transition-all duration-200 {railExpanded ? 'w-56 px-3.5' : 'w-16 items-center'}">
       <div class="flex flex-col gap-2 {railExpanded ? 'w-full' : 'items-center'}">
         <button
@@ -452,7 +577,7 @@
         <button type="button" onclick={() => (activeTab = 'sieve')} aria-current={activeTab === 'sieve' ? 'page' : undefined} title="Filtres (Sieve)" class="flex items-center gap-3 rounded-2xl text-sm font-medium {railExpanded ? 'w-full px-3.5 py-2.5' : 'h-11 w-11 justify-center'} {activeTab === 'sieve' ? 'env-accent-soft font-semibold' : 'env-muted env-hover'}">
           <span>⚡</span>{#if railExpanded}<span>Filtres</span>{/if}
         </button>
-        <button type="button" onclick={() => (activeTab = 'security')} aria-current={activeTab === 'security' ? 'page' : undefined} title="Sécurité" class="flex items-center gap-3 rounded-2xl text-sm font-medium {railExpanded ? 'w-full px-3.5 py-2.5' : 'h-11 w-11 justify-center'} {activeTab === 'security' ? 'env-accent-soft font-semibold' : 'env-muted env-hover'}">
+        <button type="button" onclick={() => (activeTab = 'security')} aria-current={activeTab === 'security' ? 'page' : undefined} title="Sécurité & Signatures" class="flex items-center gap-3 rounded-2xl text-sm font-medium {railExpanded ? 'w-full px-3.5 py-2.5' : 'h-11 w-11 justify-center'} {activeTab === 'security' ? 'env-accent-soft font-semibold' : 'env-muted env-hover'}">
           <span>🛡️</span>{#if railExpanded}<span>Sécurité</span>{/if}
         </button>
 
@@ -548,56 +673,79 @@
         </nav>
       {/if}
 
-      <section aria-label="Liste des messages" class="env-panel flex w-[26rem] shrink-0 flex-col overflow-hidden rounded-3xl border shadow-sm">
+      <section aria-label="Liste des messages" class="env-panel flex w-[27rem] shrink-0 flex-col overflow-hidden rounded-3xl border shadow-sm">
         <div class="env-border flex items-center justify-between border-b px-4 py-3.5">
           <div class="flex min-w-0 items-center gap-2.5">
             <button type="button" onclick={() => (showFolders = !showFolders)} title="Afficher/Masquer les dossiers" aria-label="Afficher/Masquer les dossiers" class="env-muted env-hover rounded-xl p-2 text-base">☰</button>
             <span class="env-text truncate text-base font-semibold">{folderDisplayName(activeMailbox)}</span>
           </div>
-          <button type="button" onclick={() => (showComposer = true)} class="env-accent-bg shrink-0 rounded-xl px-3.5 py-2 text-xs font-semibold shadow-xs hover:opacity-95">Nouveau (C)</button>
+          <button type="button" onclick={openNewComposer} class="env-accent-bg shrink-0 rounded-xl px-3.5 py-2 text-xs font-semibold shadow-xs hover:opacity-95">Nouveau (C)</button>
         </div>
 
-        {#if activeMailbox}
-          <div class="env-subtle env-border flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2 text-xs">
-            <button
-              type="button"
-              disabled={batchBusy}
-              onclick={() => handleMarkMailboxRead(activeMailbox!)}
-              class="env-input env-hover rounded-xl border px-3 py-1.5 font-medium disabled:opacity-50"
-            >
-              📭 Marquer comme lu(s)
-            </button>
-
-            {#if activeMailbox.role === 'trash'}
+        <!-- Barre de recherche & filtres rapides -->
+        <div class="env-border space-y-2 border-b px-4 py-2.5">
+          <div class="relative flex items-center">
+            <input
+              bind:value={searchQuery}
+              type="search"
+              aria-label="Rechercher dans les messages"
+              placeholder="Rechercher (expéditeur, objet, texte)..."
+              class="env-input w-full rounded-xl border py-2 pl-3.5 pr-8 text-xs"
+            />
+            {#if searchQuery}
               <button
                 type="button"
-                onclick={() => requestEmptyMailbox(activeMailbox!)}
-                class="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 font-semibold text-red-400 hover:bg-red-500/20"
+                onclick={() => (searchQuery = '')}
+                aria-label="Effacer la recherche"
+                class="env-faint hover:env-text absolute right-2.5 text-xs"
               >
-                🔥 Vider la corbeille
-              </button>
-            {:else if activeMailbox.role === 'junk'}
-              <button
-                type="button"
-                onclick={() => requestEmptyMailbox(activeMailbox!)}
-                class="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 font-semibold text-red-400 hover:bg-red-500/20"
-              >
-                🗑️ Supprimer les indésirables
-              </button>
-            {:else if !activeMailbox.role}
-              <button
-                type="button"
-                onclick={() => requestDeleteFolder(activeMailbox!)}
-                class="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 font-semibold text-red-400 hover:bg-red-500/20"
-              >
-                🗑️ Supprimer le dossier
+                ✕
               </button>
             {/if}
           </div>
-        {/if}
+
+          <div class="flex flex-wrap items-center justify-between gap-1.5 text-xs">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onclick={() => (filterUnreadOnly = !filterUnreadOnly)}
+                class="rounded-xl border px-2.5 py-1 font-medium {filterUnreadOnly ? 'env-accent-soft border-[#48B17F]/50 font-semibold' : 'env-input env-muted'}"
+              >
+                Non lus
+              </button>
+              <button
+                type="button"
+                onclick={() => (filterAttachmentsOnly = !filterAttachmentsOnly)}
+                class="rounded-xl border px-2.5 py-1 font-medium {filterAttachmentsOnly ? 'env-accent-soft border-[#48B17F]/50 font-semibold' : 'env-input env-muted'}"
+              >
+                📎 PJ
+              </button>
+              <button
+                type="button"
+                onclick={() => (groupThreads = !groupThreads)}
+                class="rounded-xl border px-2.5 py-1 font-medium {groupThreads ? 'env-accent-soft border-[#48B17F]/50 font-semibold' : 'env-input env-muted'}"
+              >
+                Fils
+              </button>
+            </div>
+
+            {#if activeMailbox}
+              <button
+                type="button"
+                disabled={batchBusy}
+                onclick={() => handleMarkMailboxRead(activeMailbox!)}
+                class="env-input env-hover env-muted rounded-xl border px-2.5 py-1 font-medium disabled:opacity-50"
+              >
+                ✓ Tout lu
+              </button>
+            {/if}
+          </div>
+        </div>
 
         <div class="env-divider flex-1 divide-y overflow-y-auto p-2">
-          {#each emails as mail}
+          {#each displayedEntries as entry}
+            {@const mail = entry.lead}
+            {@const isRowUnread = entry.unreadCount > 0 || mail.isUnread}
             <button
               type="button"
               onclick={() => openEmail(mail)}
@@ -607,15 +755,25 @@
               <SenderAvatar name={mail.from[0]?.name} email={mail.from[0]?.email} />
               <div class="min-w-0 flex-1">
                 <div class="flex items-center justify-between gap-2">
-                  <span class="truncate text-sm {mail.isUnread ? 'env-text font-bold' : 'env-muted font-medium'}">{mail.from[0]?.name || mail.from[0]?.email || 'Inconnu'}</span>
-                  <span class="env-faint shrink-0 text-xs">{new Date(mail.receivedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
+                  <span class="truncate text-sm {isRowUnread ? 'env-text font-bold' : 'env-muted font-medium'}">{mail.from[0]?.name || mail.from[0]?.email || 'Inconnu'}</span>
+                  <div class="flex shrink-0 items-center gap-1.5">
+                    {#if entry.hasAttachment}
+                      <span class="env-faint text-xs" title="Pièce jointe">📎</span>
+                    {/if}
+                    {#if entry.threadItems.length > 1}
+                      <span class="env-accent-soft rounded-full px-1.5 py-0.5 text-[11px] font-semibold">{entry.threadItems.length}</span>
+                    {/if}
+                    <span class="env-faint text-xs">{new Date(mail.receivedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
+                  </div>
                 </div>
-                <p class="truncate text-sm {mail.isUnread ? 'env-text font-medium' : 'env-muted'}">{mail.subject || '(Sans objet)'}</p>
+                <p class="truncate text-sm {isRowUnread ? 'env-text font-medium' : 'env-muted'}">{mail.subject || '(Sans objet)'}</p>
                 <p class="env-faint truncate text-xs">{mail.preview}</p>
               </div>
             </button>
           {:else}
-            <div class="env-faint p-10 text-center text-sm">Aucun message dans ce dossier.</div>
+            <div class="env-faint p-10 text-center text-sm">
+              {searchQuery || filterUnreadOnly || filterAttachmentsOnly ? 'Aucun message ne correspond aux filtres.' : 'Aucun message dans ce dossier.'}
+            </div>
           {/each}
         </div>
       </section>
@@ -627,10 +785,20 @@
             jmapAccountId={activeBody.jmapAccountId}
             subject={selectedEmail.subject}
             from={selectedEmail.from.map((f) => f.name ? f.name + ' <' + f.email + '>' : f.email).join(', ')}
+            receivedAt={selectedEmail.receivedAt}
             html={activeBody.html}
             text={activeBody.text}
             attachments={activeBody.attachments}
+            threadMessages={activeThreadMessages}
+            selectedMessageId={selectedEmail.id}
+            onSelectThreadMessage={async (msgId) => {
+              const found = emails.find((x) => x.id === msgId);
+              if (found) await openEmail(found);
+            }}
             onArchive={() => handleArchive(selectedEmail!)}
+            onReply={() => startReply(false)}
+            onReplyAll={() => startReply(true)}
+            onForward={startForward}
           />
         {:else}
           <div class="env-card env-faint flex h-full items-center justify-center rounded-3xl border text-sm shadow-sm">Sélectionne un message</div>
@@ -665,9 +833,9 @@
     <div role="presentation" onclick={(e) => e.stopPropagation()} class="w-full max-w-lg">
       <form onsubmit={handleSend} class="env-card space-y-3.5 rounded-3xl border p-7 shadow-2xl">
         <h3 id="composer-title" class="env-text text-lg font-semibold">Nouveau message</h3>
-        <input bind:value={composeTo} type="email" aria-label="Destinataire" placeholder="Destinataire" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+        <input bind:value={composeTo} type="text" aria-label="Destinataire" placeholder="Destinataire(s)" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
         <input bind:value={composeSubject} aria-label="Objet" placeholder="Objet" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
-        <textarea bind:value={composeText} rows="7" aria-label="Message" placeholder="Message..." required class="env-input w-full rounded-2xl border p-3.5 text-sm"></textarea>
+        <textarea bind:value={composeText} rows="9" aria-label="Message" placeholder="Message..." required class="env-input w-full rounded-2xl border p-3.5 text-sm"></textarea>
         <div class="flex items-center justify-between gap-2 pt-1">
           <label class="env-input env-hover env-muted cursor-pointer rounded-xl border px-3.5 py-2 text-xs font-medium">
             {uploading ? 'Upload...' : '📎 Joindre un fichier'}
