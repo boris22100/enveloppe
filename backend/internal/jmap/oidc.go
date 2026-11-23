@@ -13,10 +13,11 @@ import (
 )
 
 type OIDCConfig struct {
-	Issuer                string   `json:"issuer"`
-	AuthorizationEndpoint string   `json:"authorization_endpoint"`
-	TokenEndpoint         string   `json:"token_endpoint"`
-	ScopesSupported       []string `json:"scopes_supported"`
+	Issuer                          string   `json:"issuer"`
+	AuthorizationEndpoint           string   `json:"authorization_endpoint"`
+	TokenEndpoint                   string   `json:"token_endpoint"`
+	ScopesSupported                 []string `json:"scopes_supported"`
+	ClientIDMetadataDocumentSupport bool     `json:"client_id_metadata_document_supported"`
 }
 
 type OIDCTokenResponse struct {
