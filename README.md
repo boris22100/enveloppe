@@ -23,6 +23,8 @@ Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContac
 * **Messagerie JMAP complète** : gestion des dossiers et sous-dossiers, menus contextuels au clic droit sur les emails (*Archiver, Supprimer, Lu/Non lu, Favori, Spam, Déplacer vers, Exporter en `.eml`, Imprimer*) et sur les dossiers (*Nouveau sous-dossier, Renommer, Supprimer*).
 * **Calendrier (JSCalendar)** : vues *Mois*, *Semaine* et *Jour*, création directe au clic sur une date ou une tranche horaire (**Événement** avec invitation de participants, **Tâche**, **Anniversaire** à récurrence annuelle), import/export `.ics` et `.json`.
 * **Contacts (JSContact)** : consultation et gestion synchronisée avec le serveur.
+* **Trois thèmes harmonisés (Abysses, Sombre, Clair)** : sélecteur instantané dans le rail latéral sur la même charte graphique, persisté localement et adapté au lecteur d'emails.
+* **Interface adoucie et accessibilité (`a11y`)** : panneaux flottants arrondis, espacement et typographie confortables, focus clavier visible, attributs ARIA et labels associés.
 * **Filtres serveur Sieve (JMAP RFC 9661)** : éditeur hybride façon *SievePad* combinant un constructeur visuel de règles (*Conditions → Actions* + répondeur *Vacances*) et un éditeur de code Sieve brut avec coloration syntaxique, modèles prêts à l'emploi, validation syntaxique auprès de Stalwart et gestion multi-scripts.
 * **Sécurité du compte** : changement de mot de passe intégré (API Stalwart) avec déconnexion automatique immédiate.
 * **Expérience PWA** : installable sur desktop et mobile, cache hors-ligne (IndexedDB avec persistance navigateur `navigator.storage.persist()`), notifications push (auto-découverte de la clé VAPID du serveur).
