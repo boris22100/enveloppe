@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"jmap-pwa/internal/crypto"
@@ -28,9 +29,13 @@ type Proxy struct {
 	sseClient      *http.Client
 	allowedServers map[string]bool
 	allowAll       bool
+	vault          *crypto.Vault
+	clientSecret   string
+	refreshMu      sync.Mutex
+	refreshedCache map[string]crypto.Account
 }
 
-func NewProxy(allowedCSV string) *Proxy {
+func NewProxy(allowedCSV string, vault *crypto.Vault, clientSecret string) *Proxy {
 	redirectFn := func(req *http.Request, via []*http.Request) error {
 		if len(via) >= 5 {
 			return errors.New("trop de redirections")
@@ -46,6 +51,9 @@ func NewProxy(allowedCSV string) *Proxy {
 		allowedServers: make(map[string]bool),
 		client:         &http.Client{Timeout: 30 * time.Second, CheckRedirect: redirectFn},
 		sseClient:      &http.Client{Timeout: 0, CheckRedirect: redirectFn},
+		vault:          vault,
+		clientSecret:   clientSecret,
+		refreshedCache: make(map[string]crypto.Account),
 	}
 	if strings.TrimSpace(allowedCSV) == "" || strings.TrimSpace(allowedCSV) == "*" {
 		p.allowAll = true
@@ -68,16 +76,61 @@ func (p *Proxy) IsHostAllowed(rawURL string) bool {
 	return p.allowedServers[strings.ToLower(u.Hostname())]
 }
 
+func (p *Proxy) applyAuth(w http.ResponseWriter, r *http.Request, req *http.Request, acc *crypto.Account) error {
+	if acc.AuthType == "oidc" {
+		if acc.ExpiresAt > 0 && time.Now().Unix() >= acc.ExpiresAt-60 && acc.RefreshToken != "" && acc.TokenEndpoint != "" {
+			p.refreshMu.Lock()
+			if cached, ok := p.refreshedCache[acc.RefreshToken]; ok && time.Now().Unix() < cached.ExpiresAt-60 {
+				*acc = cached
+			} else {
+				oldRT := acc.RefreshToken
+				tok, err := p.RefreshOIDCToken(acc.TokenEndpoint, acc.ClientID, p.clientSecret, acc.RefreshToken)
+				if err != nil {
+					p.refreshMu.Unlock()
+					return err
+				}
+				acc.AccessToken = tok.AccessToken
+				if tok.RefreshToken != "" {
+					acc.RefreshToken = tok.RefreshToken
+				}
+				if tok.ExpiresIn > 0 {
+					acc.ExpiresAt = time.Now().Unix() + tok.ExpiresIn
+				} else {
+					acc.ExpiresAt = time.Now().Unix() + 3600
+				}
+				p.refreshedCache[oldRT] = *acc
+			}
+			p.refreshMu.Unlock()
+
+			if w != nil && r != nil && p.vault != nil {
+				_ = p.vault.UpdateAccount(w, r, *acc)
+			}
+		}
+		req.Header.Set("Authorization", "Bearer "+acc.AccessToken)
+		return nil
+	}
+	req.SetBasicAuth(acc.Username, acc.Password)
+	return nil
+}
+
 func (p *Proxy) Discover(host, username, password string) (*SessionResponse, error) {
+	acc := crypto.Account{Host: host, Username: username, Password: password}
+	return p.DiscoverWithAccount(nil, nil, &acc)
+}
+
+func (p *Proxy) DiscoverWithAccount(w http.ResponseWriter, r *http.Request, acc *crypto.Account) (*SessionResponse, error) {
+	host := p.NormalizeHost(acc.Host)
 	if !p.IsHostAllowed(host) {
 		return nil, errors.New("serveur JMAP non autorisé")
 	}
-	endpoint := strings.TrimRight(host, "/") + "/.well-known/jmap"
+	endpoint := host + "/.well-known/jmap"
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.SetBasicAuth(username, password)
+	if err := p.applyAuth(w, r, req, acc); err != nil {
+		return nil, err
+	}
 	req.Header.Set("Accept", "application/json")
 
 	resp, err := p.client.Do(req)
@@ -102,7 +155,10 @@ func (p *Proxy) ForwardAPI(w http.ResponseWriter, r *http.Request, acc crypto.Ac
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
-	req.SetBasicAuth(acc.Username, acc.Password)
+	if err := p.applyAuth(w, r, req, &acc); err != nil {
+		http.Error(w, "session OIDC expirée", http.StatusUnauthorized)
+		return
+	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := p.client.Do(req)
 	if err != nil {
@@ -123,7 +179,10 @@ func (p *Proxy) ForwardUpload(w http.ResponseWriter, r *http.Request, acc crypto
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
-	req.SetBasicAuth(acc.Username, acc.Password)
+	if err := p.applyAuth(w, r, req, &acc); err != nil {
+		http.Error(w, "session OIDC expirée", http.StatusUnauthorized)
+		return
+	}
 	if ct := r.Header.Get("Content-Type"); ct != "" {
 		req.Header.Set("Content-Type", ct)
 	}
@@ -151,7 +210,10 @@ func (p *Proxy) ForwardDownload(w http.ResponseWriter, r *http.Request, acc cryp
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
-	req.SetBasicAuth(acc.Username, acc.Password)
+	if err := p.applyAuth(w, r, req, &acc); err != nil {
+		http.Error(w, "session OIDC expirée", http.StatusUnauthorized)
+		return
+	}
 	resp, err := p.client.Do(req)
 	if err != nil {
 		http.Error(w, "erreur download JMAP", http.StatusBadGateway)
@@ -181,7 +243,10 @@ func (p *Proxy) ForwardEvents(w http.ResponseWriter, r *http.Request, acc crypto
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
-	req.SetBasicAuth(acc.Username, acc.Password)
+	if err := p.applyAuth(w, r, req, &acc); err != nil {
+		http.Error(w, "session OIDC expirée", http.StatusUnauthorized)
+		return
+	}
 	req.Header.Set("Accept", "text/event-stream")
 
 	resp, err := p.sseClient.Do(req)
@@ -210,7 +275,6 @@ func (p *Proxy) ForwardEvents(w http.ResponseWriter, r *http.Request, acc crypto
 	}
 }
 
-// ForwardStalwartAPI relaie les appels REST de gestion de compte/sécurité vers Stalwart
 func (p *Proxy) ForwardStalwartAPI(w http.ResponseWriter, r *http.Request, acc crypto.Account, targetPath string) {
 	target := strings.TrimRight(acc.Host, "/") + targetPath
 	req, err := http.NewRequestWithContext(r.Context(), r.Method, target, r.Body)
@@ -218,7 +282,10 @@ func (p *Proxy) ForwardStalwartAPI(w http.ResponseWriter, r *http.Request, acc c
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
-	req.SetBasicAuth(acc.Username, acc.Password)
+	if err := p.applyAuth(w, r, req, &acc); err != nil {
+		http.Error(w, "session OIDC expirée", http.StatusUnauthorized)
+		return
+	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 

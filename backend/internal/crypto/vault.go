@@ -20,11 +20,17 @@ type Account struct {
 	Color          string `json:"color"`
 	Host           string `json:"host"`
 	Username       string `json:"username"`
-	Password       string `json:"password"`
+	Password       string `json:"password,omitempty"`
 	APIUrl         string `json:"apiUrl"`
 	DownloadUrl    string `json:"downloadUrl"`
 	UploadUrl      string `json:"uploadUrl"`
 	EventSourceUrl string `json:"eventSourceUrl"`
+	AuthType       string `json:"authType,omitempty"`
+	AccessToken    string `json:"accessToken,omitempty"`
+	RefreshToken   string `json:"refreshToken,omitempty"`
+	TokenEndpoint  string `json:"tokenEndpoint,omitempty"`
+	ClientID       string `json:"clientId,omitempty"`
+	ExpiresAt      int64  `json:"expiresAt,omitempty"`
 }
 
 type PublicAccount struct {
@@ -33,6 +39,7 @@ type PublicAccount struct {
 	Color    string `json:"color"`
 	Host     string `json:"host"`
 	Username string `json:"username"`
+	AuthType string `json:"authType,omitempty"`
 }
 
 type Vault struct {
@@ -53,40 +60,52 @@ func NewVault(secret string, secureCookie bool) (*Vault, error) {
 	return &Vault{gcm: gcm, secure: secureCookie}, nil
 }
 
+func (v *Vault) SealJSON(payload any) (string, error) {
+	plain, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+	nonce := make([]byte, v.gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", err
+	}
+	sealed := v.gcm.Seal(nonce, nonce, plain, nil)
+	return base64.RawURLEncoding.EncodeToString(sealed), nil
+}
+
+func (v *Vault) OpenJSON(encoded string, dst any) error {
+	raw, err := base64.RawURLEncoding.DecodeString(encoded)
+	if err != nil || len(raw) < v.gcm.NonceSize() {
+		return errors.New("données chiffrées invalides")
+	}
+	nonce, ciphertext := raw[:v.gcm.NonceSize()], raw[v.gcm.NonceSize():]
+	plain, err := v.gcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return errors.New("échec déchiffrement")
+	}
+	return json.Unmarshal(plain, dst)
+}
+
 func (v *Vault) Load(r *http.Request) ([]Account, error) {
 	c, err := r.Cookie(CookieName)
 	if err != nil {
 		return []Account{}, nil
 	}
-	raw, err := base64.RawURLEncoding.DecodeString(c.Value)
-	if err != nil || len(raw) < v.gcm.NonceSize() {
-		return nil, errors.New("cookie invalide")
-	}
-	nonce, ciphertext := raw[:v.gcm.NonceSize()], raw[v.gcm.NonceSize():]
-	plain, err := v.gcm.Open(nil, nonce, ciphertext, nil)
-	if err != nil {
-		return nil, errors.New("échec déchiffrement vault")
-	}
 	var accounts []Account
-	if err := json.Unmarshal(plain, &accounts); err != nil {
+	if err := v.OpenJSON(c.Value, &accounts); err != nil {
 		return nil, err
 	}
 	return accounts, nil
 }
 
 func (v *Vault) Save(w http.ResponseWriter, accounts []Account) error {
-	plain, err := json.Marshal(accounts)
+	sealed, err := v.SealJSON(accounts)
 	if err != nil {
 		return err
 	}
-	nonce := make([]byte, v.gcm.NonceSize())
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return err
-	}
-	sealed := v.gcm.Seal(nonce, nonce, plain, nil)
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
-		Value:    base64.RawURLEncoding.EncodeToString(sealed),
+		Value:    sealed,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   v.secure,
@@ -94,4 +113,22 @@ func (v *Vault) Save(w http.ResponseWriter, accounts []Account) error {
 		MaxAge:   86400 * 30,
 	})
 	return nil
+}
+
+func (v *Vault) UpdateAccount(w http.ResponseWriter, r *http.Request, updated Account) error {
+	accounts, err := v.Load(r)
+	if err != nil {
+		return err
+	}
+	for i := range accounts {
+		if accounts[i].ID == updated.ID {
+			accounts[i] = updated
+			return v.Save(w, accounts)
+		}
+	}
+	return nil
+}
+
+func (v *Vault) Secure() bool {
+	return v.secure
 }
