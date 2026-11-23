@@ -34,7 +34,7 @@ Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContac
 ## 🌱 Sobriété & Green-IT
 
 * **Taille de l'image Docker** : `9,95 Mo` (binaire Go statique sur `distroless/static-debian12:nonroot`, multi-arch `linux/amd64` & `linux/arm64`).
-* **Empreinte mémoire** : `7,86 Mio` de RAM (`0,00 %` CPU au repos).
+* **Empreinte mémoire** : `8,04 Mio` de RAM (`0,00 %` CPU au repos).
 * **Réseau optimisé** : compression **Gzip** native, cache immuable (`max-age=31536000, immutable`) sur les assets statiques et requêtes JMAP groupées.
 
 ---
