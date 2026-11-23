@@ -2,10 +2,14 @@
 
 Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContact, Calendrier JSCalendar*), conçu pour **Stalwart Mail Server** et compatible multi-serveurs.
 
-![Version](https://img.shields.io/badge/version-v0.1.2-48B17F?style=flat-square)
+![Version](https://img.shields.io/badge/version-v0.1.3-48B17F?style=flat-square)
 ![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)
+![Image Size](https://img.shields.io/badge/image-9.84%20Mo-48B17F?style=flat-square)
 ![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)
 ![OWASP ZAP](https://img.shields.io/badge/OWASP%20ZAP-0%20FAIL%20%7C%2063%20PASS-48B17F?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)
+
+![Aperçu d'Enveloppe](docs/screenshot.png)
 
 ---
 
@@ -19,11 +23,19 @@ Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContac
 
 ---
 
+## 🌱 Sobriété & Green-IT
+
+* **Taille de l'image Docker** : `9,84 Mo` (binaire Go statique sur `distroless/static-debian12:nonroot`).
+* **Empreinte mémoire** : `~5,9 Mio` de RAM (`0,00 %` CPU au repos).
+* **Réseau optimisé** : compression **Gzip** native, cache immuable (`max-age=31536000, immutable`) sur les assets statiques et requêtes JMAP groupées.
+
+---
+
 ## 🏗️ Architecture & Persistance
 
 Enveloppe repose sur un **BFF (Backend-for-Frontend) en Go** qui sert l'interface **Svelte/Vite** et proxyfie les appels JMAP vers votre serveur de messagerie.
 
-* **Backend 100 % *stateless*** : aucun volume Docker n'est requis, le conteneur tourne en lecture seule (`read_only: true`) sur une image `distroless/static-debian12:nonroot`.
+* **Backend 100 % *stateless*** : aucun volume Docker n'est requis, le conteneur tourne en lecture seule (`read_only: true`).
 * **Données persistantes** : vos emails, dossiers, contacts et calendriers restent exclusivement sur votre serveur Stalwart. Tant que la variable `SESSION_SECRET` est conservée, les sessions survivent aux mises à jour du conteneur.
 * **Cache local** : les préférences et le cache hors-ligne sont stockés dans le navigateur (`localStorage` + `IndexedDB`).
 
@@ -72,7 +84,7 @@ docker compose pull && docker compose up -d
 
 ---
 
-## 🛡️ Sécurité & Audit (`v0.1.2`)
+## 🛡️ Sécurité & Audit
 
 ### Mesures intégrées
 * **Sessions chiffrées** : identifiants stockés uniquement dans un cookie chiffré en **AES-GCM** côté client avec les drapeaux `HttpOnly`, `Secure` et `SameSite`.
@@ -80,7 +92,7 @@ docker compose pull && docker compose up -d
 * **Durcissement HTTP** : en-têtes `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` et `Permissions-Policy`.
 * **Proxy sécurisé** : timeouts HTTP serveur (`ReadHeaderTimeout`, `IdleTimeout`), non-propagation du header `Authorization` sur redirection cross-domain, sanitisation des logs.
 
-### Résultats de l'audit automatisé (`v0.1.2`)
+### Résultats de l'audit automatisé
 
 | Outil | Périmètre analysé | Résultat |
 | :--- | :--- | :--- |
@@ -97,3 +109,7 @@ docker compose pull && docker compose up -d
 ```
 ghcr.io/boris22100/enveloppe:latest
 ```
+
+## 📄 Licence
+
+Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
