@@ -7,7 +7,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Étape 2 : Build Backend Go (avec embed du frontend)
-FROM golang:1.23-alpine AS backend-builder
+FROM golang:alpine AS backend-builder
 WORKDIR /build
 COPY backend/ ./
 COPY --from=frontend-builder /build/dist ./static

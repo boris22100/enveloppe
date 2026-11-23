@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"time"
 	"os"
 	"strings"
 
@@ -17,6 +18,19 @@ import (
 
 //go:embed all:static
 var staticFS embed.FS
+
+
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		w.Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
+		w.Header().Set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self'; frame-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
+		next.ServeHTTP(w, r)
+	})
+}
 
 func main() {
 	secret := os.Getenv("SESSION_SECRET")
@@ -187,7 +201,13 @@ func main() {
 	})
 
 	log.Println("JMAP PWA BFF v2 démarré sur :8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	srv := &http.Server{
+		Addr:              ":8080",
+		Handler:           securityHeaders(mux),
+		ReadHeaderTimeout: 10 * time.Second,
+		IdleTimeout:       120 * time.Second,
+	}
+	log.Fatal(srv.ListenAndServe())
 }
 
 func findAccount(v *crypto.Vault, r *http.Request, id string) (crypto.Account, bool) {

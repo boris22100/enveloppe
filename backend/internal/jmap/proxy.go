@@ -35,8 +35,10 @@ func NewProxy(allowedCSV string) *Proxy {
 		if len(via) >= 5 {
 			return errors.New("trop de redirections")
 		}
-		if auth := via[0].Header.Get("Authorization"); auth != "" {
-			req.Header.Set("Authorization", auth)
+		if req.URL.Host == via[0].URL.Host && req.URL.Scheme == via[0].URL.Scheme {
+			if auth := via[0].Header.Get("Authorization"); auth != "" {
+				req.Header.Set("Authorization", auth)
+			}
 		}
 		return nil
 	}
@@ -109,7 +111,7 @@ func (p *Proxy) ForwardAPI(w http.ResponseWriter, r *http.Request, acc crypto.Ac
 	}
 	defer resp.Body.Close()
 	w.Header().Set("Content-Type", "application/json")
-	log.Printf("[Stalwart API] %s %s -> %d", r.Method, req.URL.String(), resp.StatusCode)
+	log.Printf("[Stalwart API] %q %q -> %d", r.Method, req.URL.Path, resp.StatusCode)
 	w.WriteHeader(resp.StatusCode)
 	_, _ = io.Copy(w, resp.Body)
 }
@@ -132,7 +134,7 @@ func (p *Proxy) ForwardUpload(w http.ResponseWriter, r *http.Request, acc crypto
 	}
 	defer resp.Body.Close()
 	w.Header().Set("Content-Type", "application/json")
-	log.Printf("[Stalwart API] %s %s -> %d", r.Method, req.URL.String(), resp.StatusCode)
+	log.Printf("[Stalwart API] %q %q -> %d", r.Method, req.URL.Path, resp.StatusCode)
 	w.WriteHeader(resp.StatusCode)
 	_, _ = io.Copy(w, resp.Body)
 }
@@ -158,7 +160,7 @@ func (p *Proxy) ForwardDownload(w http.ResponseWriter, r *http.Request, acc cryp
 	defer resp.Body.Close()
 	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 	w.Header().Set("Content-Disposition", `attachment; filename="`+name+`"`)
-	log.Printf("[Stalwart API] %s %s -> %d", r.Method, req.URL.String(), resp.StatusCode)
+	log.Printf("[Stalwart API] %q %q -> %d", r.Method, req.URL.Path, resp.StatusCode)
 	w.WriteHeader(resp.StatusCode)
 	_, _ = io.Copy(w, resp.Body)
 }
@@ -228,7 +230,7 @@ func (p *Proxy) ForwardStalwartAPI(w http.ResponseWriter, r *http.Request, acc c
 	defer resp.Body.Close()
 
 	w.Header().Set("Content-Type", "application/json")
-	log.Printf("[Stalwart API] %s %s -> %d", r.Method, req.URL.String(), resp.StatusCode)
+	log.Printf("[Stalwart API] %q %q -> %d", r.Method, req.URL.Path, resp.StatusCode)
 	w.WriteHeader(resp.StatusCode)
 	_, _ = io.Copy(w, resp.Body)
 }
