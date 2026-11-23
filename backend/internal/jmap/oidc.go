@@ -57,7 +57,14 @@ func (p *Proxy) DiscoverOIDC(rawHost string) (*OIDCConfig, error) {
 	if !p.IsSafeExternalURL(host) {
 		return nil, errors.New("serveur non autorisé")
 	}
-	endpoint := host + "/.well-known/openid-configuration"
+	issuerBase := host
+	if p.oidcIssuer != "" {
+		if !p.IsSafeExternalURL(p.oidcIssuer) {
+			return nil, errors.New("issuer OIDC non autorisé")
+		}
+		issuerBase = p.oidcIssuer
+	}
+	endpoint := issuerBase + "/.well-known/openid-configuration"
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err

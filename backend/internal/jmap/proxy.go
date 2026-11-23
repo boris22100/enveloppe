@@ -35,6 +35,7 @@ type Proxy struct {
 	sseClient      *http.Client
 	allowedServers map[string]bool
 	allowAll       bool
+	oidcIssuer     string
 	vault          *crypto.Vault
 	clientSecret   string
 	oidcIssuer     string
@@ -42,7 +43,7 @@ type Proxy struct {
 	refreshedCache map[string]cachedRefresh
 }
 
-func NewProxy(allowedCSV string, vault *crypto.Vault, clientSecret, oidcIssuer string) *Proxy {
+func NewProxy(allowedCSV, oidcIssuer string, vault *crypto.Vault, clientSecret string) *Proxy {
 	p := &Proxy{
 		allowedServers: make(map[string]bool),
 		vault:          vault,
@@ -56,8 +57,9 @@ func NewProxy(allowedCSV string, vault *crypto.Vault, clientSecret, oidcIssuer s
 			p.allowedServers[strings.ToLower(strings.TrimSpace(host))] = true
 		}
 	}
-	if p.oidcIssuer = p.NormalizeHost(oidcIssuer); p.oidcIssuer != "" {
-		if u, err := url.Parse(p.oidcIssuer); err == nil {
+	if iss := strings.TrimSpace(oidcIssuer); iss != "" {
+		p.oidcIssuer = p.NormalizeHost(iss)
+		if u, err := url.Parse(p.oidcIssuer); err == nil && u.Hostname() != "" {
 			p.allowedServers[strings.ToLower(u.Hostname())] = true
 		}
 	}

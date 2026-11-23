@@ -2,7 +2,7 @@
 
 Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContact, Calendrier JSCalendar*), conçu pour **Stalwart Mail Server** et compatible multi-serveurs.
 
-![Version](https://img.shields.io/badge/version-v0.4.0-48B17F?style=flat-square)
+![Version](https://img.shields.io/badge/version-v0.4.1-48B17F?style=flat-square)
 ![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)
 ![Image Size](https://img.shields.io/badge/image-9.95%20Mo-48B17F?style=flat-square)
 ![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)
@@ -34,7 +34,7 @@ Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContac
 ## 🌱 Sobriété & Green-IT
 
 * **Taille de l'image Docker** : `9,95 Mo` (binaire Go statique sur `distroless/static-debian12:nonroot`, multi-arch `linux/amd64` & `linux/arm64`).
-* **Empreinte mémoire** : `7,86 Mio` de RAM (`0,00 %` CPU au repos).
+* **Empreinte mémoire** : `8,04 Mio` de RAM (`0,00 %` CPU au repos).
 * **Réseau optimisé** : compression **Gzip** native, cache immuable (`max-age=31536000, immutable`) sur les assets statiques et requêtes JMAP groupées.
 
 ---

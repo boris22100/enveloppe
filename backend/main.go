@@ -127,12 +127,13 @@ func main() {
 	publicAppURL := os.Getenv("PUBLIC_APP_URL")
 	secureCookie := strings.HasPrefix(publicAppURL, "https://") || publicAppURL == ""
 	oidcClientSecret := strings.TrimSpace(os.Getenv("OIDC_CLIENT_SECRET"))
+	oidcIssuer := strings.TrimSpace(os.Getenv("OIDC_ISSUER"))
 
 	vault, err := crypto.NewVault(secret, secureCookie)
 	if err != nil {
 		log.Fatal(err)
 	}
-	proxy := jmap.NewProxy(os.Getenv("ALLOWED_JMAP_SERVERS"), vault, oidcClientSecret, os.Getenv("OIDC_ISSUER"))
+	proxy := jmap.NewProxy(os.Getenv("ALLOWED_JMAP_SERVERS"), oidcIssuer, vault, oidcClientSecret)
 	subFS, _ := fs.Sub(staticFS, "static")
 	mux := http.NewServeMux()
 
