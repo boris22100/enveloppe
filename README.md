@@ -4,7 +4,7 @@ Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContac
 
 ![Version](https://img.shields.io/badge/version-v0.3.0-48B17F?style=flat-square)
 ![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)
-![Image Size](https://img.shields.io/badge/image-9.9%20Mo-48B17F?style=flat-square)
+![Image Size](https://img.shields.io/badge/image-9.95%20Mo-48B17F?style=flat-square)
 ![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)
 ![OWASP ZAP](https://img.shields.io/badge/OWASP%20ZAP-0%20FAIL%20%7C%2063%20PASS-48B17F?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)
@@ -31,8 +31,8 @@ Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContac
 
 ## 🌱 Sobriété & Green-IT
 
-* **Taille de l'image Docker** : `9,9 Mo` (binaire Go statique sur `distroless/static-debian12:nonroot`, multi-arch `linux/amd64` & `linux/arm64`).
-* **Empreinte mémoire** : `~6 à 10 Mio` de RAM (`0,00 %` CPU au repos).
+* **Taille de l'image Docker** : `9,95 Mo` (binaire Go statique sur `distroless/static-debian12:nonroot`, multi-arch `linux/amd64` & `linux/arm64`).
+* **Empreinte mémoire** : `7,86 Mio` de RAM (`0,00 %` CPU au repos).
 * **Réseau optimisé** : compression **Gzip** native, cache immuable (`max-age=31536000, immutable`) sur les assets statiques et requêtes JMAP groupées.
 
 ---
