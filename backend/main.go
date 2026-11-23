@@ -91,15 +91,30 @@ func securityHeaders(next http.Handler) http.Handler {
 	})
 }
 
-func resolveRedirectURI(r *http.Request) string {
+func resolveBaseURL(r *http.Request) string {
 	if pub := strings.TrimRight(strings.TrimSpace(os.Getenv("PUBLIC_APP_URL")), "/"); pub != "" {
-		return pub + "/api/auth/oidc/callback"
+		return pub
 	}
 	proto := r.Header.Get("X-Forwarded-Proto")
 	if proto == "" {
 		proto = "https"
 	}
-	return proto + "://" + r.Host + "/api/auth/oidc/callback"
+	return proto + "://" + r.Host
+}
+
+func resolveRedirectURI(r *http.Request) string {
+	return resolveBaseURL(r) + "/api/auth/oidc/callback"
+}
+
+func resolveOIDCClientID(r *http.Request) string {
+	if cid := strings.TrimSpace(os.Getenv("OIDC_CLIENT_ID")); cid != "" {
+		return cid
+	}
+	base := resolveBaseURL(r)
+	if strings.HasPrefix(base, "https://") {
+		return base + "/oauth-client.json"
+	}
+	return "enveloppe"
 }
 
 func main() {
@@ -109,11 +124,6 @@ func main() {
 	}
 	publicAppURL := os.Getenv("PUBLIC_APP_URL")
 	secureCookie := strings.HasPrefix(publicAppURL, "https://") || publicAppURL == ""
-
-	oidcClientID := strings.TrimSpace(os.Getenv("OIDC_CLIENT_ID"))
-	if oidcClientID == "" {
-		oidcClientID = "enveloppe"
-	}
 	oidcClientSecret := strings.TrimSpace(os.Getenv("OIDC_CLIENT_SECRET"))
 
 	vault, err := crypto.NewVault(secret, secureCookie)
@@ -121,7 +131,26 @@ func main() {
 		log.Fatal(err)
 	}
 	proxy := jmap.NewProxy(os.Getenv("ALLOWED_JMAP_SERVERS"), vault, oidcClientSecret)
+	subFS, _ := fs.Sub(staticFS, "static")
 	mux := http.NewServeMux()
+
+	// Client ID Metadata Document (CIMD) pour pré-enregistrement OAuth automatique sur Stalwart
+	mux.HandleFunc("GET /oauth-client.json", func(w http.ResponseWriter, r *http.Request) {
+		base := resolveBaseURL(r)
+		meta := map[string]any{
+			"client_id":                  base + "/oauth-client.json",
+			"client_name":                "Enveloppe",
+			"client_uri":                 base,
+			"redirect_uris":              []string{base + "/api/auth/oidc/callback"},
+			"grant_types":                []string{"authorization_code", "refresh_token"},
+			"response_types":             []string{"code"},
+			"token_endpoint_auth_method": "none",
+		}
+		if _, err := fs.Stat(subFS, "icon-192.png"); err == nil {
+			meta["logo_uri"] = base + "/icon-192.png"
+		}
+		writeJSON(w, http.StatusOK, meta)
+	})
 
 	// Auto-découverte OIDC à partir de l'URL du serveur
 	mux.HandleFunc("GET /api/auth/oidc/discover", func(w http.ResponseWriter, r *http.Request) {
@@ -163,6 +192,7 @@ func main() {
 			return
 		}
 
+		clientID := resolveOIDCClientID(r)
 		redirectURI := resolveRedirectURI(r)
 		tx := oidcTransaction{
 			State:         state,
@@ -171,7 +201,7 @@ func main() {
 			Label:         label,
 			Color:         color,
 			TokenEndpoint: cfg.TokenEndpoint,
-			ClientID:      oidcClientID,
+			ClientID:      clientID,
 			RedirectURI:   redirectURI,
 		}
 		sealed, err := vault.SealJSON(tx)
@@ -190,7 +220,7 @@ func main() {
 			MaxAge:   600,
 		})
 
-		authURL := jmap.BuildOIDCAuthURL(cfg, oidcClientID, redirectURI, state, challenge)
+		authURL := jmap.BuildOIDCAuthURL(cfg, clientID, redirectURI, state, challenge)
 		http.Redirect(w, r, authURL, http.StatusFound)
 	})
 
@@ -446,7 +476,6 @@ func main() {
 		proxy.ForwardEvents(w, r, acc)
 	})
 
-	subFS, _ := fs.Sub(staticFS, "static")
 	fileServer := http.FileServer(http.FS(subFS))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		path := strings.TrimPrefix(r.URL.Path, "/")
