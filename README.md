@@ -9,7 +9,11 @@ Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContac
 ![OWASP ZAP](https://img.shields.io/badge/OWASP%20ZAP-0%20FAIL%20%7C%2063%20PASS-48B17F?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)
 
-![Aperçu d'Enveloppe](docs/screenshot.png)
+
+
+| Messagerie | Contacts | Agenda |
+| :---: | :---: | :---: |
+| ![Messagerie](docs/screenshot-mail.png) | ![Contacts](docs/screenshot-contacts.png) | ![Agenda](docs/screenshot-calendar.png) |
 
 ---
 
