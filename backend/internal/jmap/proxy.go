@@ -38,7 +38,6 @@ type Proxy struct {
 	oidcIssuer     string
 	vault          *crypto.Vault
 	clientSecret   string
-	oidcIssuer     string
 	refreshMu      sync.Mutex
 	refreshedCache map[string]cachedRefresh
 }
