@@ -1,9 +1,9 @@
-const STORAGE_KEY = 'enveloppe_signatures_v1';
+const SIGNATURES_STORE = 'enveloppe_signatures_v1';
 
 export function getSignaturesMap(): Record<string, string> {
   if (typeof localStorage === 'undefined') return {};
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(SIGNATURES_STORE);
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
@@ -23,5 +23,5 @@ export function setAccountSignature(accountId: string, signature: string): void 
   } else {
     delete map[accountId];
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  localStorage.setItem(SIGNATURES_STORE, JSON.stringify(map));
 }
