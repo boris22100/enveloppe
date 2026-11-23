@@ -8,6 +8,8 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"io"
+	"compress/gzip"
 	"time"
 	"os"
 	"strings"
@@ -19,6 +21,51 @@ import (
 //go:embed all:static
 var staticFS embed.FS
 
+
+
+type gzipResponseWriter struct {
+	io.Writer
+	http.ResponseWriter
+}
+
+func (w gzipResponseWriter) Write(b []byte) (int, error) {
+	return w.Writer.Write(b)
+}
+
+func (w gzipResponseWriter) Flush() {
+	if gz, ok := w.Writer.(*gzip.Writer); ok {
+		_ = gz.Flush()
+	}
+	if f, ok := w.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
+func greenMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/assets/"):
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		case strings.HasPrefix(r.URL.Path, "/api/"):
+			w.Header().Set("Cache-Control", "no-store")
+		default:
+			w.Header().Set("Cache-Control", "no-cache")
+		}
+
+		isSSE := strings.Contains(r.URL.Path, "/events") || strings.Contains(r.Header.Get("Accept"), "text/event-stream")
+		isDownload := strings.Contains(r.URL.Path, "/download/")
+		if !isSSE && !isDownload && strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+			w.Header().Set("Content-Encoding", "gzip")
+			w.Header().Add("Vary", "Accept-Encoding")
+			w.Header().Del("Content-Length")
+			gz, _ := gzip.NewWriterLevel(w, gzip.DefaultCompression)
+			defer gz.Close()
+			next.ServeHTTP(gzipResponseWriter{Writer: gz, ResponseWriter: w}, r)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
 
 func securityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -203,7 +250,7 @@ func main() {
 	log.Println("JMAP PWA BFF v2 démarré sur :8080")
 	srv := &http.Server{
 		Addr:              ":8080",
-		Handler:           securityHeaders(mux),
+		Handler:           securityHeaders(greenMiddleware(mux)),
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
