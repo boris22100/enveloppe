@@ -2,7 +2,7 @@
 
 Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContact, Calendrier JSCalendar*), conçu pour **Stalwart Mail Server** et compatible multi-serveurs.
 
-![Version](https://img.shields.io/badge/version-v0.1.4-48B17F?style=flat-square)
+![Version](https://img.shields.io/badge/version-v0.1.7-48B17F?style=flat-square)
 ![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)
 ![Image Size](https://img.shields.io/badge/image-9.84%20Mo-48B17F?style=flat-square)
 ![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)
@@ -17,7 +17,7 @@ Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContac
 
 ## ✨ Fonctionnalités
 
-* **Connexion OIDC / SSO automatique (PKCE)** : saisie de l'URL du serveur JMAP, détection automatique de `/.well-known/openid-configuration` et authentification via **Authorization Code + PKCE (`S256`)** avec rafraîchissement transparent des jetons (connexion classique par identifiant/mot de passe d'application également disponible).
+* **Connexion OIDC / SSO automatique (PKCE)** : saisie de l'URL du serveur JMAP, détection automatique de `/.well-known/openid-configuration`, support **Authorization Code + PKCE (`S256`)** avec rafraîchissement transparent des jetons et support **CIMD** (`/oauth-client.json`). La connexion par identifiant/mot de passe d'application reste disponible en secours.
 * **Messagerie JMAP complète** : gestion des dossiers et sous-dossiers, menus contextuels au clic droit sur les emails (*Archiver, Supprimer, Lu/Non lu, Favori, Spam, Déplacer vers, Exporter en `.eml`, Imprimer*) et sur les dossiers (*Nouveau sous-dossier, Renommer, Supprimer*).
 * **Calendrier (JSCalendar)** : vues *Mois*, *Semaine* et *Jour*, création directe au clic sur une date ou une tranche horaire (**Événement** avec invitation de participants, **Tâche**, **Anniversaire** à récurrence annuelle), import/export `.ics` et `.json`.
 * **Contacts (JSContact)** : consultation et gestion synchronisée avec le serveur.
@@ -66,18 +66,28 @@ sed -i "s/remplace_moi_par_une_chaine_aleatoire_longue/$(openssl rand -hex 32)/"
 | Variable | Description | Exemple / Défaut |
 | :--- | :--- | :--- |
 | `PUBLIC_APP_URL` | URL HTTPS publique de votre instance | `https://webmail.mondomaine.fr` |
-| `SESSION_SECRET` | Clé secrète (64 caractères hex) utilisée pour chiffrer les cookies de session en AES-GCM | *(générée via `openssl rand -hex 32`)* |
-| `ALLOWED_JMAP_SERVERS` | Domaines JMAP autorisés (`*` pour tous, ou liste séparée par des virgules pour restreindre) | `mail.mondomaine.fr` |
-| `OIDC_CLIENT_ID` | *(Optionnel)* Identifiant du client OAuth2 déclaré dans Stalwart | `enveloppe` *(défaut)* |
-| `OIDC_CLIENT_SECRET` | *(Optionnel)* Secret client OAuth2 uniquement si vous utilisez un client confidentiel plutôt que PKCE public | *(vide par défaut)* |
+| `SESSION_SECRET` | Clé secrète (64 caractères hex) pour chiffrer les cookies de session en AES-GCM | *(générée via `openssl rand -hex 32`)* |
+| `ALLOWED_JMAP_SERVERS` | Domaines JMAP autorisés (`*` pour tous, ou liste séparée par des virgules) | `mail.mondomaine.fr` |
+| `OIDC_USE_CIMD` | *(Optionnel)* Utilise l'URL `https://<PUBLIC_APP_URL>/oauth-client.json` comme `client_id` (CIMD) | `false` *(défaut)* |
+| `OIDC_CLIENT_ID` | *(Optionnel)* Identifiant d'un client OAuth2 déclaré manuellement dans Stalwart (prioritaire sur CIMD) | `enveloppe` *(défaut)* |
+| `OIDC_CLIENT_SECRET` | *(Optionnel)* Secret client uniquement pour un client confidentiel (inutile en PKCE public) | *(vide par défaut)* |
 
 ### 3. Activer la connexion OIDC dans Stalwart (Optionnel)
 
-Dans l'interface d'administration de Stalwart (**Settings → OAuth2 → Create OAuth client**) :
-1. **Client ID** : `enveloppe` (laissez **Client Secret** vide pour un client public PKCE) et renseignez `Enveloppe` dans **Description**.
-2. **Redirect URIs** : ajoutez `https://<votre-domaine-enveloppe>/api/auth/oidc/callback` (en cliquant sur `+`).
-3. **Allowed Scopes** : cochez **Mail**, **Contacts** et **Calendars**.
-4. **Allowed Grant Types** : laissez cochés **Authorization code** et **Refresh token**.
+Deux modes sont possibles selon votre préférence :
+
+#### Option A — Automatique via CIMD (sans créer de client)
+1. Dans `.env`, ajoutez `OIDC_USE_CIMD=true`.
+2. Dans Stalwart (**Settings → OAuth2 → Client Registration**), passez **Client ID Metadata Documents** sur **`Same domain only`** (si Enveloppe et Stalwart partagent le même domaine racine) ou **`Any HTTPS URL`**.
+3. *(Optionnel, pour retirer le badge « Unverified application » et afficher votre logo)* : dans **Settings → OAuth2 → Create OAuth client**, pré-enregistrez `https://<votre-domaine>/oauth-client.json` comme **Client ID**, renseignez `Enveloppe` dans **Description**, ajoutez un logo en `data:image/...`, la Redirect URI `https://<votre-domaine>/api/auth/oidc/callback` et les scopes **Mail**, **Contacts**, **Calendars**.
+
+#### Option B — Client OAuth classique
+1. Laissez `OIDC_USE_CIMD` désactivé (le `client_id` par défaut est `enveloppe`).
+2. Dans Stalwart (**Settings → OAuth2 → Create OAuth client**) :
+   * **Client ID** : `enveloppe` (laissez **Client Secret** vide pour PKCE public) et **Description** : `Enveloppe`.
+   * **Redirect URIs** : `https://<votre-domaine>/api/auth/oidc/callback` (puis cliquez sur `+`).
+   * **Allowed Scopes** : cochez **Mail**, **Contacts** et **Calendars**.
+   * **Allowed Grant Types** : laissez cochés **Authorization code** et **Refresh token**.
 
 ### 4. Lancer le conteneur
 
@@ -85,9 +95,9 @@ Dans l'interface d'administration de Stalwart (**Settings → OAuth2 → Create 
 docker compose up -d
 ```
 
-L'application écoute sur `http://127.0.0.1:8080`. Exposez-la impérativement en **HTTPS** derrière votre reverse-proxy (Traefik, Nginx, Caddy, Pangolin...) afin d'activer les cookies `Secure` et l'installation PWA.
+L'application écoute sur le port `8080` du conteneur (mappé sur `8089` par défaut dans `docker-compose.yml` — adaptez le port et le réseau à votre reverse-proxy). Exposez-la impérativement en **HTTPS** afin d'activer les cookies `Secure`, OIDC et l'installation PWA.
 
-> **Note SSO (Pangolin, Authelia, Authentik...)** : si vous placez Enveloppe derrière un portail SSO, pensez à autoriser le chemin `/manifest.webmanifest` (ou à laisser les credentials actifs) pour éviter les erreurs CORS au chargement de la PWA.
+> **Note SSO (Pangolin, Authelia, Authentik...)** : si vous placez Enveloppe derrière un portail SSO, autorisez l'accès public à `/manifest.webmanifest` (et à `/oauth-client.json` si vous utilisez CIMD) afin que le navigateur et Stalwart puissent les lire sans blocage.
 
 ### Mise à jour
 
@@ -100,9 +110,9 @@ docker compose pull && docker compose up -d
 ## 🛡️ Sécurité & Audit
 
 ### Mesures intégrées
-* **Sessions chiffrées** : identifiants ou jetons OAuth2 (`access_token` / `refresh_token`) stockés uniquement dans un cookie chiffré en **AES-GCM** côté client avec les drapeaux `HttpOnly`, `Secure` et `SameSite=Lax`.
+* **Sessions chiffrées** : identifiants ou jetons OAuth2 (`access_token` / `refresh_token`) stockés uniquement dans un cookie chiffré en **AES-GCM** côté client (`HttpOnly`, `Secure`, `SameSite=Lax`).
 * **Isolation du conteneur** : image Distroless sans shell, utilisateur non-root, système de fichiers `read_only: true`, `no-new-privileges:true`.
-* **Durcissement HTTP** : en-têtes `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` et `Permissions-Policy`.
+* **Durcissement HTTP** : `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` et `Permissions-Policy`.
 * **Proxy sécurisé** : timeouts HTTP serveur (`ReadHeaderTimeout`, `IdleTimeout`), non-propagation du header `Authorization` sur redirection cross-domain, sanitisation des logs.
 
 ### Résultats de l'audit automatisé
