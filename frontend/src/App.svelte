@@ -14,15 +14,17 @@
   import ConfirmModal from './components/ConfirmModal.svelte';
   import ContactsView from './components/ContactsView.svelte';
   import CalendarView from './components/CalendarView.svelte';
+  import SieveView from './components/SieveView.svelte';
   import SecurityView from './components/SecurityView.svelte';
 
   let accounts = $state<Account[]>([]);
   let loaded = $state(false);
   let activeAccountId = $state<string | null>(null);
   const savedTab = typeof localStorage !== 'undefined' ? localStorage.getItem('enveloppe_tab') : null;
-  let activeTab = $state<'mail' | 'contacts' | 'calendar' | 'security'>(
-    (savedTab === 'mail' || savedTab === 'contacts' || savedTab === 'calendar' || savedTab === 'security') ? savedTab : 'mail'
+  let activeTab = $state<'mail' | 'contacts' | 'calendar' | 'sieve' | 'security'>(
+    (savedTab === 'mail' || savedTab === 'contacts' || savedTab === 'calendar' || savedTab === 'sieve' || savedTab === 'security') ? savedTab : 'mail'
   );
+  let sievePrefill = $state<{ from?: string; subject?: string } | null>(null);
   let railExpanded = $state(false);
 
   let mailboxes = $state<Mailbox[]>([]);
@@ -315,6 +317,10 @@
         await openEmail(m);
         setTimeout(() => window.print(), 300);
         return;
+      } else if (action === 'createFilter') {
+        sievePrefill = { from: m.from?.[0]?.email || '', subject: m.subject || '' };
+        activeTab = 'sieve';
+        return;
       }
       mailboxes = await fetchMailboxes(accId);
       if (activeMailboxId) await loadFolderEmails(accId, activeMailboxId);
@@ -397,6 +403,9 @@
         </button>
         <button onclick={() => (activeTab = 'calendar')} title="Calendrier" class="flex items-center gap-3 rounded-xl {railExpanded ? 'w-full px-3 py-2 text-xs' : 'h-10 w-10 justify-center'} {activeTab === 'calendar' ? 'bg-[#0D3A4D] text-[#48B17F]' : 'text-slate-400 hover:text-white'}">
           <span>📅</span>{#if railExpanded}<span>Calendrier</span>{/if}
+        </button>
+        <button onclick={() => (activeTab = 'sieve')} title="Filtres (Sieve)" class="flex items-center gap-3 rounded-xl {railExpanded ? 'w-full px-3 py-2 text-xs' : 'h-10 w-10 justify-center'} {activeTab === 'sieve' ? 'bg-[#0D3A4D] text-[#48B17F]' : 'text-slate-400 hover:text-white'}">
+          <span>⚡</span>{#if railExpanded}<span>Filtres</span>{/if}
         </button>
         <button onclick={() => (activeTab = 'security')} title="Sécurité" class="flex items-center gap-3 rounded-xl {railExpanded ? 'w-full px-3 py-2 text-xs' : 'h-10 w-10 justify-center'} {activeTab === 'security' ? 'bg-[#0D3A4D] text-[#48B17F]' : 'text-slate-400 hover:text-white'}">
           <span>🛡️</span>{#if railExpanded}<span>Sécurité</span>{/if}
@@ -577,6 +586,8 @@
       <main class="flex-1 bg-[#0B1622]"><ContactsView accountId={activeAccountId} /></main>
     {:else if activeTab === 'calendar' && activeAccountId}
       <main class="flex-1 bg-[#0B1622]"><CalendarView accountId={activeAccountId} /></main>
+    {:else if activeTab === 'sieve' && activeAccountId}
+      <main class="flex-1 bg-[#0B1622]"><SieveView accountId={activeAccountId} {mailboxes} prefill={sievePrefill} onPrefillConsumed={() => (sievePrefill = null)} /></main>
     {:else if activeTab === 'security' && activeAccount}
       <main class="flex-1 bg-[#0B1622]"><SecurityView account={activeAccount} onLogout={handleLogout} /></main>
     {/if}

@@ -104,6 +104,9 @@
           <button onclick={() => trigger('print')} class="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-slate-800/80">
             <span>🖨️ Imprimer</span>
           </button>
+          <button onclick={() => trigger('createFilter')} class="flex w-full items-center gap-2 px-3 py-2 text-left text-[#48B17F] hover:bg-slate-800/80">
+            <span>⚡ Créer un filtre</span>
+          </button>
         </div>
       {/if}
     </div>
