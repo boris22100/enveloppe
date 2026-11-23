@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -40,9 +41,17 @@ func (p *Proxy) NormalizeHost(raw string) string {
 	return strings.TrimRight(h, "/")
 }
 
+func (p *Proxy) validateOIDCEndpoint(rawURL string) bool {
+	if !p.IsSafeExternalURL(rawURL) {
+		return false
+	}
+	u, err := url.Parse(rawURL)
+	return err == nil && u.Scheme == "https"
+}
+
 func (p *Proxy) DiscoverOIDC(rawHost string) (*OIDCConfig, error) {
 	host := p.NormalizeHost(rawHost)
-	if !p.IsHostAllowed(host) {
+	if !p.IsSafeExternalURL(host) {
 		return nil, errors.New("serveur non autorisé")
 	}
 	endpoint := host + "/.well-known/openid-configuration"
@@ -62,11 +71,11 @@ func (p *Proxy) DiscoverOIDC(rawHost string) (*OIDCConfig, error) {
 		return nil, errors.New("OIDC non disponible sur ce serveur")
 	}
 	var cfg OIDCConfig
-	if err := json.NewDecoder(resp.Body).Decode(&cfg); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&cfg); err != nil {
 		return nil, err
 	}
-	if cfg.AuthorizationEndpoint == "" || cfg.TokenEndpoint == "" {
-		return nil, errors.New("configuration OIDC incomplète")
+	if !p.validateOIDCEndpoint(cfg.AuthorizationEndpoint) || !p.validateOIDCEndpoint(cfg.TokenEndpoint) {
+		return nil, errors.New("endpoints OIDC invalides ou non sécurisés")
 	}
 	return &cfg, nil
 }
@@ -146,6 +155,9 @@ func (p *Proxy) RefreshOIDCToken(tokenEndpoint, clientID, clientSecret, refreshT
 }
 
 func (p *Proxy) postTokenForm(tokenEndpoint string, form url.Values) (*OIDCTokenResponse, error) {
+	if !p.validateOIDCEndpoint(tokenEndpoint) {
+		return nil, errors.New("token_endpoint OIDC non autorisé")
+	}
 	req, err := http.NewRequest(http.MethodPost, tokenEndpoint, strings.NewReader(form.Encode()))
 	if err != nil {
 		return nil, err
@@ -163,7 +175,7 @@ func (p *Proxy) postTokenForm(tokenEndpoint string, form url.Values) (*OIDCToken
 		return nil, errors.New("échec échange token OIDC (" + resp.Status + ")")
 	}
 	var tok OIDCTokenResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tok); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&tok); err != nil {
 		return nil, err
 	}
 	if tok.AccessToken == "" {
