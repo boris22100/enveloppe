@@ -36,19 +36,19 @@
 
   async function changePassword(e: Event) {
     e.preventDefault();
-    pwdMessage = "";
-    pwdError = "";
+    pwdMessage = '';
+    pwdError = '';
     if (newPassword !== confirmPassword) {
-      pwdError = "Les nouveaux mots de passe ne correspondent pas.";
+      pwdError = 'Les nouveaux mots de passe ne correspondent pas.';
       return;
     }
     try {
       await updateAccountPassword(account.id, currentPassword, newPassword);
-      pwdMessage = "Mot de passe mis à jour. Déconnexion en cours...";
-      currentPassword = newPassword = confirmPassword = "";
+      pwdMessage = 'Mot de passe mis à jour. Déconnexion en cours...';
+      currentPassword = newPassword = confirmPassword = '';
       setTimeout(() => onLogout(), 1200);
     } catch (err: any) {
-      pwdError = err.message || "Impossible de modifier le mot de passe.";
+      pwdError = err.message || 'Impossible de modifier le mot de passe.';
     }
   }
 
@@ -80,79 +80,79 @@
 </script>
 
 <div class="flex h-full flex-col space-y-6 overflow-y-auto p-6">
-  <div class="flex flex-wrap items-center justify-between gap-2">
+  <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
-      <h2 class="text-xl font-bold text-white">Sécurité — {account.label}</h2>
-      <p class="text-xs text-slate-400">{account.username} ({account.host})</p>
+      <h2 class="env-text text-xl font-bold">Sécurité — {account.label}</h2>
+      <p class="env-muted text-sm">{account.username} ({account.host})</p>
     </div>
     <a
       href="{account.host}/account"
       target="_blank"
       rel="noreferrer"
-      class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-[#48B17F] hover:text-white"
+      class="env-input env-hover rounded-xl border px-4 py-2 text-xs font-medium"
     >
       Ouvrir le portail Stalwart ↗
     </a>
   </div>
 
-  <!-- Changement de mot de passe -->
-  <section class="max-w-xl space-y-4 rounded-xl border border-slate-800 bg-[#0D1B2A] p-5">
-    <h3 class="text-sm font-semibold text-white">Changer le mot de passe du compte</h3>
-    {#if pwdMessage}<p class="rounded-lg bg-[#48B17F]/15 p-2.5 text-xs text-[#48B17F]">{pwdMessage}</p>{/if}
-    {#if pwdError}<p class="rounded-lg bg-red-500/15 p-2.5 text-xs text-red-300">{pwdError}</p>{/if}
+  <section class="env-card max-w-xl space-y-4 rounded-3xl border p-6 shadow-xs">
+    <h3 class="env-text text-base font-semibold">Changer le mot de passe du compte</h3>
+    {#if pwdMessage}<p role="status" class="env-accent-soft rounded-2xl p-3 text-xs font-medium">{pwdMessage}</p>{/if}
+    {#if pwdError}<p role="alert" class="rounded-2xl bg-red-500/15 p-3 text-xs font-medium text-red-400">{pwdError}</p>{/if}
     <form onsubmit={changePassword} class="space-y-3">
-      <input type="password" bind:value={currentPassword} placeholder="Mot de passe actuel" required class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white" />
-      <input type="password" bind:value={newPassword} placeholder="Nouveau mot de passe" required class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white" />
-      <input type="password" bind:value={confirmPassword} placeholder="Confirmer le nouveau mot de passe" required class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white" />
-      <button class="rounded-lg bg-[#48B17F] px-4 py-2 text-sm font-semibold text-[#08101A]">Mettre à jour</button>
+      <input type="password" bind:value={currentPassword} aria-label="Mot de passe actuel" placeholder="Mot de passe actuel" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+      <input type="password" bind:value={newPassword} aria-label="Nouveau mot de passe" placeholder="Nouveau mot de passe" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+      <input type="password" bind:value={confirmPassword} aria-label="Confirmer le nouveau mot de passe" placeholder="Confirmer le nouveau mot de passe" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+      <button class="env-accent-bg rounded-xl px-4 py-2.5 text-sm font-semibold hover:opacity-95">Mettre à jour</button>
     </form>
   </section>
 
-  <!-- Mots de passe d'application (JMAP natif urn:stalwart:jmap) -->
-  <section class="max-w-xl space-y-4 rounded-xl border border-slate-800 bg-[#0D1B2A] p-5">
-    <h3 class="text-sm font-semibold text-white">Mots de passe d'application</h3>
+  <section class="env-card max-w-xl space-y-4 rounded-3xl border p-6 shadow-xs">
+    <h3 class="env-text text-base font-semibold">Mots de passe d'application</h3>
 
     {#if appError}
-      <p class="rounded-lg bg-red-500/15 p-2.5 text-xs text-red-300">{appError}</p>
+      <p role="alert" class="rounded-2xl bg-red-500/15 p-3 text-xs font-medium text-red-400">{appError}</p>
     {/if}
 
     {#if generatedSecret}
-      <div class="rounded-lg border border-[#48B17F] bg-[#0D3A4D]/60 p-3 text-xs text-white">
-        <p class="mb-1 text-slate-300">Copie ce mot de passe maintenant (il ne sera plus affiché) :</p>
-        <code class="block select-all break-all rounded bg-slate-950 px-2 py-1.5 font-mono text-sm text-[#48B17F]">{generatedSecret}</code>
+      <div class="env-accent-soft rounded-2xl border border-[#48B17F] p-4 text-xs">
+        <p class="env-text mb-1.5 font-medium">Copie ce mot de passe maintenant (il ne sera plus affiché) :</p>
+        <code class="env-card env-accent-text block select-all break-all rounded-xl border px-3 py-2 font-mono text-sm">{generatedSecret}</code>
       </div>
     {/if}
 
-    <form onsubmit={handleCreate} class="flex gap-2">
+    <form onsubmit={handleCreate} class="flex gap-2.5">
       <input
         bind:value={newAppName}
+        aria-label="Description du mot de passe d'application"
         placeholder="Description (ex: Pixel 11, Thunderbird)"
         required
-        class="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+        class="env-input flex-1 rounded-xl border px-3.5 py-2.5 text-sm"
       />
-      <button disabled={loading} class="rounded-lg bg-[#48B17F] px-4 py-2 text-sm font-semibold text-[#08101A] disabled:opacity-50">
+      <button disabled={loading} class="env-accent-bg rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50">
         {loading ? '...' : 'Ajouter'}
       </button>
     </form>
 
-    <div class="divide-y divide-slate-800">
+    <div class="env-divider divide-y">
       {#each appPasswords as item}
-        <div class="flex items-center justify-between py-2.5">
+        <div class="flex items-center justify-between py-3">
           <div>
-            <p class="text-sm font-medium text-white">{item.description || item.id}</p>
+            <p class="env-text text-sm font-medium">{item.description || item.id}</p>
             {#if item.expiresAt}
-              <p class="text-xs text-slate-500">Expire le {item.expiresAt}</p>
+              <p class="env-faint text-xs">Expire le {item.expiresAt}</p>
             {/if}
           </div>
           <button
+            type="button"
             onclick={() => handleDelete(item.id)}
-            class="rounded-lg bg-red-500/15 px-3 py-1 text-xs text-red-300 hover:bg-red-500/25"
+            class="rounded-xl bg-red-500/15 px-3.5 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/25"
           >
             Supprimer
           </button>
         </div>
       {:else}
-        <p class="py-2 text-xs text-slate-500">Aucun mot de passe d'application configuré.</p>
+        <p class="env-faint py-2 text-xs">Aucun mot de passe d'application configuré.</p>
       {/each}
     </div>
   </section>

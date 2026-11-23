@@ -24,8 +24,8 @@
 
   let subMenu = $state<'move' | 'more' | null>(null);
 
-  let posX = $derived(typeof window !== 'undefined' ? Math.min(x, window.innerWidth - 250) : x);
-  let posY = $derived(typeof window !== 'undefined' ? Math.min(y, window.innerHeight - 360) : y);
+  let posX = $derived(typeof window !== 'undefined' ? Math.min(x, window.innerWidth - 270) : x);
+  let posY = $derived(typeof window !== 'undefined' ? Math.min(y, window.innerHeight - 380) : y);
 
   let isUnread = $derived(mail ? (mail.keywords ? !mail.keywords['$seen'] : mail.isUnread) : false);
   let isStarred = $derived(mail ? !!mail.keywords?.['$flagged'] : false);
@@ -38,108 +38,106 @@
 
 <svelte:window onclick={onClose} onkeydown={(e) => e.key === 'Escape' && onClose()} />
 
-<div
-  role="menu"
-  tabindex="-1"
-  onclick={(e) => e.stopPropagation()}
-  oncontextmenu={(e) => e.preventDefault()}
-  style="left: {posX}px; top: {posY}px;"
-  class="fixed z-50 w-60 rounded-xl border border-slate-700/90 bg-[#0D1B2A] py-1.5 text-xs text-slate-200 shadow-2xl backdrop-blur"
->
-  {#if type === 'mail' && mail}
-    <button onclick={() => trigger('archive')} class="flex w-full items-center justify-between px-3 py-2 hover:bg-slate-800/80">
-      <span>🗄️ Archiver</span><kbd class="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">E</kbd>
-    </button>
-    <button onclick={() => trigger('delete')} class="flex w-full items-center justify-between px-3 py-2 text-red-300 hover:bg-red-500/15">
-      <span>🗑️ Supprimer</span><kbd class="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">Suppr</kbd>
-    </button>
-    <button onclick={() => trigger('toggleRead')} class="flex w-full items-center justify-between px-3 py-2 hover:bg-slate-800/80">
-      <span>{isUnread ? '📭 Marquer comme lu' : '✉️ Marquer comme non lu'}</span>
-      <kbd class="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">U</kbd>
-    </button>
-
-    <div class="my-1 border-t border-slate-800"></div>
-
-    <!-- Sous-menu Déplacer vers -->
-    <div class="relative" onmouseenter={() => (subMenu = 'move')} onmouseleave={() => (subMenu = null)}>
-      <button class="flex w-full items-center justify-between px-3 py-2 hover:bg-slate-800/80">
-        <span>📁 Déplacer vers</span><span class="text-slate-400">›</span>
+<div role="presentation" onclick={(e) => e.stopPropagation()}>
+  <div
+    role="menu"
+    tabindex="-1"
+    oncontextmenu={(e) => e.preventDefault()}
+    style="left: {posX}px; top: {posY}px;"
+    class="env-card fixed z-50 w-64 rounded-2xl border py-2 text-sm shadow-2xl backdrop-blur"
+  >
+    {#if type === 'mail' && mail}
+      <button type="button" onclick={() => trigger('archive')} class="env-text env-hover flex w-full items-center justify-between px-4 py-2.5">
+        <span>🗄️ Archiver</span><kbd class="env-subtle env-faint rounded-md px-2 py-0.5 text-xs">E</kbd>
       </button>
-      {#if subMenu === 'move'}
-        <div class="absolute left-full top-0 ml-1 max-h-64 w-52 overflow-y-auto rounded-xl border border-slate-700 bg-[#0D1B2A] py-1 shadow-2xl">
-          {#each mailboxes as box}
-            <button
-              onclick={() => trigger('move', box.id)}
-              class="flex w-full items-center gap-2 truncate px-3 py-1.5 text-left hover:bg-slate-800/80"
-              style="padding-left: {12 + (box.depth ?? 0) * 10}px"
-            >
-              <span>{(box.role && ROLE_META[box.role]?.icon) || '📁'}</span>
-              <span class="truncate">{(box.role && ROLE_META[box.role]?.label) || box.name}</span>
+      <button type="button" onclick={() => trigger('delete')} class="env-hover flex w-full items-center justify-between px-4 py-2.5 text-red-400">
+        <span>🗑️ Supprimer</span><kbd class="env-subtle env-faint rounded-md px-2 py-0.5 text-xs">Suppr</kbd>
+      </button>
+      <button type="button" onclick={() => trigger('toggleRead')} class="env-text env-hover flex w-full items-center justify-between px-4 py-2.5">
+        <span>{isUnread ? '📭 Marquer comme lu' : '✉️ Marquer comme non lu'}</span>
+      </button>
+
+      <div class="env-border my-1.5 border-t"></div>
+
+      <div role="none" class="relative" onmouseenter={() => (subMenu = 'move')} onmouseleave={() => (subMenu = null)}>
+        <button type="button" onclick={() => (subMenu = subMenu === 'move' ? null : 'move')} class="env-text env-hover flex w-full items-center justify-between px-4 py-2.5">
+          <span>📁 Déplacer vers</span><span class="env-faint">›</span>
+        </button>
+        {#if subMenu === 'move'}
+          <div role="menu" tabindex="-1" class="env-card fixed max-h-64 w-56 overflow-y-auto rounded-2xl border py-1.5 shadow-2xl" style="left: {Math.min(posX + 252, typeof window !== 'undefined' ? window.innerWidth - 236 : posX + 252)}px; top: {posY}px;">
+            {#each mailboxes as box}
+              <button
+                type="button"
+                onclick={() => trigger('move', box.id)}
+                class="env-text env-hover flex w-full items-center gap-2 truncate px-3.5 py-2 text-left text-xs"
+                style="padding-left: {14 + (box.depth ?? 0) * 12}px"
+              >
+                <span>{(box.role && ROLE_META[box.role]?.icon) || '📁'}</span>
+                <span class="truncate">{(box.role && ROLE_META[box.role]?.label) || box.name}</span>
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
+
+      <button type="button" onclick={() => trigger('toggleStar')} class="env-text env-hover flex w-full items-center justify-between px-4 py-2.5">
+        <span>{isStarred ? '★ Retirer des favoris' : '☆ Marquer comme favori'}</span>
+      </button>
+      <button type="button" onclick={() => trigger('spam')} class="env-text env-hover flex w-full items-center justify-between px-4 py-2.5">
+        <span>🚫 Signaler comme indésirable</span>
+      </button>
+
+      <div class="env-border my-1.5 border-t"></div>
+
+      <div role="none" class="relative" onmouseenter={() => (subMenu = 'more')} onmouseleave={() => (subMenu = null)}>
+        <button type="button" onclick={() => (subMenu = subMenu === 'more' ? null : 'more')} class="env-text env-hover flex w-full items-center justify-between px-4 py-2.5">
+          <span>⋯ Plus d'actions</span><span class="env-faint">›</span>
+        </button>
+        {#if subMenu === 'more'}
+          <div role="menu" tabindex="-1" class="env-card fixed w-52 rounded-2xl border py-1.5 shadow-2xl" style="left: {Math.min(posX + 252, typeof window !== 'undefined' ? window.innerWidth - 216 : posX + 252)}px; top: {posY + 90}px;">
+            <button type="button" onclick={() => trigger('downloadEml')} class="env-text env-hover flex w-full items-center gap-2 px-4 py-2 text-left text-xs">
+              <span>⬇️ Exporter en .eml</span>
             </button>
-          {/each}
-        </div>
+            <button type="button" onclick={() => trigger('print')} class="env-text env-hover flex w-full items-center gap-2 px-4 py-2 text-left text-xs">
+              <span>🖨️ Imprimer</span>
+            </button>
+            <button type="button" onclick={() => trigger('createFilter')} class="env-accent-text env-hover flex w-full items-center gap-2 px-4 py-2 text-left text-xs font-semibold">
+              <span>⚡ Créer un filtre</span>
+            </button>
+          </div>
+        {/if}
+      </div>
+
+    {:else if type === 'mailbox' && mailbox}
+      <button type="button" onclick={() => trigger('markRead')} class="env-text env-hover flex w-full items-center gap-2.5 px-4 py-2.5 text-left">
+        <span>📭 Marquer comme lu(s)</span>
+      </button>
+
+      {#if mailbox.role === 'junk'}
+        <button type="button" onclick={() => trigger('emptyJunk')} class="env-hover flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-red-400">
+          <span>🗑️ Supprimer les indésirables</span>
+        </button>
+      {:else if mailbox.role === 'trash'}
+        <button type="button" onclick={() => trigger('emptyTrash')} class="env-hover flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-red-400">
+          <span>🔥 Vider la corbeille</span>
+        </button>
       {/if}
-    </div>
 
-    <button onclick={() => trigger('toggleStar')} class="flex w-full items-center justify-between px-3 py-2 hover:bg-slate-800/80">
-      <span>{isStarred ? '★ Retirer des favoris' : '☆ Marquer comme favori'}</span>
-      <kbd class="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">S</kbd>
-    </button>
-    <button onclick={() => trigger('spam')} class="flex w-full items-center justify-between px-3 py-2 hover:bg-slate-800/80">
-      <span>🚫 Signaler comme indésirable</span><kbd class="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">!</kbd>
-    </button>
+      <div class="env-border my-1.5 border-t"></div>
 
-    <div class="my-1 border-t border-slate-800"></div>
-
-    <!-- Sous-menu Plus d'actions -->
-    <div class="relative" onmouseenter={() => (subMenu = 'more')} onmouseleave={() => (subMenu = null)}>
-      <button class="flex w-full items-center justify-between px-3 py-2 hover:bg-slate-800/80">
-        <span>⋯ Plus d'actions</span><span class="text-slate-400">›</span>
+      <button type="button" onclick={() => trigger('newSubfolder')} class="env-text env-hover flex w-full items-center gap-2.5 px-4 py-2.5 text-left">
+        <span>📁+ Nouveau sous-dossier</span>
       </button>
-      {#if subMenu === 'more'}
-        <div class="absolute left-full bottom-0 ml-1 w-48 rounded-xl border border-slate-700 bg-[#0D1B2A] py-1 shadow-2xl">
-          <button onclick={() => trigger('downloadEml')} class="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-slate-800/80">
-            <span>⬇️ Exporter en .eml</span>
-          </button>
-          <button onclick={() => trigger('print')} class="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-slate-800/80">
-            <span>🖨️ Imprimer</span>
-          </button>
-          <button onclick={() => trigger('createFilter')} class="flex w-full items-center gap-2 px-3 py-2 text-left text-[#48B17F] hover:bg-slate-800/80">
-            <span>⚡ Créer un filtre</span>
-          </button>
-        </div>
+
+      {#if !mailbox.role}
+        <button type="button" onclick={() => trigger('renameFolder')} class="env-text env-hover flex w-full items-center gap-2.5 px-4 py-2.5 text-left">
+          <span>✏️ Renommer</span>
+        </button>
+        <div class="env-border my-1.5 border-t"></div>
+        <button type="button" onclick={() => trigger('deleteFolder')} class="env-hover flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-red-400">
+          <span>🗑️ Supprimer le dossier</span>
+        </button>
       {/if}
-    </div>
-
-  {:else if type === 'mailbox' && mailbox}
-    <button onclick={() => trigger('markRead')} class="flex w-full items-center gap-2 px-3 py-2 hover:bg-slate-800/80">
-      <span>📭 Marquer comme lu(s)</span>
-    </button>
-
-    {#if mailbox.role === 'junk'}
-      <button onclick={() => trigger('emptyJunk')} class="flex w-full items-center gap-2 px-3 py-2 text-red-300 hover:bg-red-500/15">
-        <span>🗑️ Supprimer les indésirables</span>
-      </button>
-    {:else if mailbox.role === 'trash'}
-      <button onclick={() => trigger('emptyTrash')} class="flex w-full items-center gap-2 px-3 py-2 text-red-300 hover:bg-red-500/15">
-        <span>🔥 Vider la corbeille</span>
-      </button>
     {/if}
-
-    <div class="my-1 border-t border-slate-800"></div>
-
-    <button onclick={() => trigger('newSubfolder')} class="flex w-full items-center gap-2 px-3 py-2 hover:bg-slate-800/80">
-      <span>📁+ Nouveau sous-dossier</span>
-    </button>
-
-    {#if !mailbox.role}
-      <button onclick={() => trigger('renameFolder')} class="flex w-full items-center gap-2 px-3 py-2 hover:bg-slate-800/80">
-        <span>✏️ Renommer</span>
-      </button>
-      <div class="my-1 border-t border-slate-800"></div>
-      <button onclick={() => trigger('deleteFolder')} class="flex w-full items-center gap-2 px-3 py-2 text-red-300 hover:bg-red-500/15">
-        <span>🗑️ Supprimer le dossier</span>
-      </button>
-    {/if}
-  {/if}
+  </div>
 </div>

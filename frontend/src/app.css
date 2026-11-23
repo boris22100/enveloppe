@@ -1,1 +1,90 @@
 @import "tailwindcss";
+
+:root,
+:root.theme-abysses {
+  --env-bg-app: #08101A;
+  --env-bg-panel: #0B1622;
+  --env-bg-card: #0D1B2A;
+  --env-bg-subtle: #0A131E;
+  --env-bg-hover: rgba(30, 41, 59, 0.55);
+  --env-bg-active: rgba(13, 58, 77, 0.75);
+  --env-bg-input: #0F172A;
+  --env-border: rgba(30, 41, 59, 0.85);
+  --env-border-strong: #334155;
+  --env-text: #F1F5F9;
+  --env-text-muted: #94A3B8;
+  --env-text-faint: #64748B;
+  --env-accent: #48B17F;
+  --env-accent-soft: rgba(72, 177, 127, 0.16);
+  --env-accent-ink: #08101A;
+}
+
+:root.theme-dark {
+  --env-bg-app: #0B0E14;
+  --env-bg-panel: #11161F;
+  --env-bg-card: #181E2A;
+  --env-bg-subtle: #0E121A;
+  --env-bg-hover: rgba(51, 65, 85, 0.45);
+  --env-bg-active: rgba(13, 58, 77, 0.65);
+  --env-bg-input: #0D1117;
+  --env-border: rgba(51, 65, 85, 0.65);
+  --env-border-strong: #475569;
+  --env-text: #F8FAFC;
+  --env-text-muted: #94A3B8;
+  --env-text-faint: #64748B;
+  --env-accent: #48B17F;
+  --env-accent-soft: rgba(72, 177, 127, 0.16);
+  --env-accent-ink: #08101A;
+}
+
+:root.theme-light {
+  --env-bg-app: #EEF2F6;
+  --env-bg-panel: #FFFFFF;
+  --env-bg-card: #FFFFFF;
+  --env-bg-subtle: #F8FAFC;
+  --env-bg-hover: #F1F5F9;
+  --env-bg-active: #E6F4EE;
+  --env-bg-input: #F8FAFC;
+  --env-border: #CBD5E1;
+  --env-border-strong: #94A3B8;
+  --env-text: #0F172A;
+  --env-text-muted: #475569;
+  --env-text-faint: #64748B;
+  --env-accent: #2E8B63;
+  --env-accent-soft: rgba(46, 139, 99, 0.14);
+  --env-accent-ink: #FFFFFF;
+}
+
+@layer base {
+  html, body {
+    background-color: var(--env-bg-app);
+    color: var(--env-text);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  :where(button, a, input, select, textarea, [role="button"], [tabindex]):focus-visible {
+    outline: 2px solid var(--env-accent);
+    outline-offset: 2px;
+  }
+}
+
+.env-app { background-color: var(--env-bg-app); color: var(--env-text); }
+.env-panel { background-color: var(--env-bg-panel); border-color: var(--env-border); }
+.env-card { background-color: var(--env-bg-card); border-color: var(--env-border); }
+.env-subtle { background-color: var(--env-bg-subtle); border-color: var(--env-border); }
+.env-hover:hover { background-color: var(--env-bg-hover); }
+.env-active { background-color: var(--env-bg-active); }
+.env-input {
+  background-color: var(--env-bg-input);
+  color: var(--env-text);
+  border-color: var(--env-border-strong);
+}
+.env-border { border-color: var(--env-border); }
+.env-divider > :not([hidden]) ~ :not([hidden]) { border-color: var(--env-border); }
+.env-text { color: var(--env-text); }
+.env-muted { color: var(--env-text-muted); }
+.env-faint { color: var(--env-text-faint); }
+.env-accent-bg { background-color: var(--env-accent); color: var(--env-accent-ink); }
+.env-accent-soft { background-color: var(--env-accent-soft); color: var(--env-accent); }
+.env-accent-text { color: var(--env-accent); }

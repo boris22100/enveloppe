@@ -6,6 +6,7 @@
     sendEmail, uploadAttachment, type Account, type Attachment, type DiskQuota, type Mailbox
   } from './lib/jmap/client';
   import { enableWebPush } from './lib/jmap/push';
+  import { applyTheme, getSavedTheme, type ThemeMode } from './lib/theme';
   import LoginPage from './components/LoginPage.svelte';
   import AccountModal from './components/AccountModal.svelte';
   import MailReader from './components/MailReader.svelte';
@@ -16,6 +17,22 @@
   import CalendarView from './components/CalendarView.svelte';
   import SieveView from './components/SieveView.svelte';
   import SecurityView from './components/SecurityView.svelte';
+
+  let themeMode = $state<ThemeMode>(getSavedTheme());
+  $effect(() => {
+    applyTheme(themeMode);
+  });
+
+  function cycleTheme() {
+    themeMode = themeMode === 'abysses' ? 'dark' : themeMode === 'dark' ? 'light' : 'abysses';
+  }
+
+  let themeLabel = $derived(
+    themeMode === 'abysses' ? 'Thème : Abysses' : themeMode === 'dark' ? 'Thème : Sombre' : 'Thème : Clair'
+  );
+  let themeIcon = $derived(
+    themeMode === 'abysses' ? '🌊' : themeMode === 'dark' ? '🌙' : '☀️'
+  );
 
   let accounts = $state<Account[]>([]);
   let loaded = $state(false);
@@ -88,7 +105,7 @@
 
   function connectRealtime(id: string) {
     sse?.close();
-    sse = new EventSource(`/api/jmap/${id}/events`);
+    sse = new EventSource('/api/jmap/' + id + '/events');
     sse.addEventListener('state', async () => {
       if (activeAccountId === id && activeTab === 'mail' && activeMailboxId) {
         mailboxes = await fetchMailboxes(id);
@@ -120,7 +137,7 @@
   async function loadFolderEmails(accountId: string, mailboxId: string) {
     const list = await fetchMailboxEmails(accountId, mailboxId);
     emails = list.map((e) => ({
-      uid: `${accountId}:${e.id}`,
+      uid: accountId + ':' + e.id,
       accountId,
       id: e.id,
       blobId: e.blobId,
@@ -163,8 +180,8 @@
     confirmDialog = {
       title: permanent ? 'Supprimer définitivement le message' : 'Déplacer vers la corbeille',
       message: permanent
-        ? `Voulez-vous vraiment supprimer définitivement « ${label} » ? Cette action est irréversible.`
-        : `Voulez-vous vraiment déplacer « ${label} » dans la corbeille ?`,
+        ? 'Voulez-vous vraiment supprimer définitivement « ' + label + ' » ? Cette action est irréversible.'
+        : 'Voulez-vous vraiment déplacer « ' + label + ' » dans la corbeille ?',
       confirmLabel: permanent ? 'Supprimer définitivement' : 'Mettre à la corbeille',
       onConfirm: async () => {
         if (permanent) await destroyEmail(accId, mail.id);
@@ -189,12 +206,26 @@
       if (activeMailboxId && ids.includes(activeMailboxId)) {
         await loadFolderEmails(accId, activeMailboxId);
       }
-      showToast(count > 0 ? `${count} message(s) marqué(s) comme lu(s) dans « ${folderDisplayName(box)} ».` : `Aucun message non lu dans « ${folderDisplayName(box)} ».`); } finally { batchBusy = false; } }  function requestEmptyMailbox(box: Mailbox) { if (!activeAccountId) return; const accId = activeAccountId; const isTrash = box.role === 'trash'; const isJunk = box.role === 'junk'; const ids = getMailboxSubtreeIds(mailboxes, box.id);  confirmDialog = { title: isTrash ? 'Vider la corbeille' : isJunk ? 'Supprimer les indésirables' : `Vider « ${box.name} »`,
+      showToast(count > 0 ? count + ' message(s) marqué(s) comme lu(s) dans « ' + folderDisplayName(box) + ' ».' : 'Aucun message non lu dans « ' + folderDisplayName(box) + ' ».');
+    } finally {
+      batchBusy = false;
+    }
+  }
+
+  function requestEmptyMailbox(box: Mailbox) {
+    if (!activeAccountId) return;
+    const accId = activeAccountId;
+    const isTrash = box.role === 'trash';
+    const isJunk = box.role === 'junk';
+    const ids = getMailboxSubtreeIds(mailboxes, box.id);
+
+    confirmDialog = {
+      title: isTrash ? 'Vider la corbeille' : isJunk ? 'Supprimer les indésirables' : 'Vider « ' + box.name + ' »',
       message: isTrash
         ? 'Voulez-vous vraiment supprimer définitivement tous les messages de la corbeille (et de ses sous-dossiers) ? Cette action est irréversible.'
         : isJunk
           ? 'Voulez-vous vraiment supprimer définitivement tous les messages indésirables ? Cette action est irréversible.'
-          : `Voulez-vous vraiment supprimer définitivement tous les messages de « ${box.name} » ? Cette action est irréversible.`,
+          : 'Voulez-vous vraiment supprimer définitivement tous les messages de « ' + box.name + ' » ? Cette action est irréversible.',
       confirmLabel: isTrash ? 'Vider la corbeille' : isJunk ? 'Supprimer les indésirables' : 'Supprimer tout',
       onConfirm: async () => {
         const count = await emptyMailboxes(accId, ids);
@@ -206,7 +237,7 @@
         }
         mailboxes = await fetchMailboxes(accId);
         quota = await fetchQuota(accId);
-        showToast(count > 0 ? `${count} message(s) supprimé(s) définitivement.` : 'Ce dossier était déjà vide.');
+        showToast(count > 0 ? count + ' message(s) supprimé(s) définitivement.' : 'Ce dossier était déjà vide.');
       }
     };
   }
@@ -216,7 +247,7 @@
     const accId = activeAccountId;
     confirmDialog = {
       title: 'Supprimer le dossier',
-      message: `Voulez-vous vraiment supprimer le dossier « ${box.name} » ?`,
+      message: 'Voulez-vous vraiment supprimer le dossier « ' + box.name + ' » ?',
       confirmLabel: 'Supprimer le dossier',
       onConfirm: async () => {
         await deleteMailbox(accId, box.id);
@@ -227,7 +258,16 @@
           if (fallback) await selectMailbox(fallback.id);
           else { activeMailboxId = null; emails = []; selectedEmail = null; activeBody = null; }
         }
-        showToast(`Dossier « ${box.name} » supprimé.`); } }; }  async function handleLogout() { if (!activeAccountId) return; const idToRemove = activeAccountId; sse?.close(); await fetch(`/api/accounts/${idToRemove}`, { method: 'DELETE' });
+        showToast('Dossier « ' + box.name + ' » supprimé.');
+      }
+    };
+  }
+
+  async function handleLogout() {
+    if (!activeAccountId) return;
+    const idToRemove = activeAccountId;
+    sse?.close();
+    await fetch('/api/accounts/' + idToRemove, { method: 'DELETE' });
     await db.emails.where('accountId').equals(idToRemove).delete();
     localStorage.removeItem('enveloppe_account');
     localStorage.removeItem('enveloppe_mailbox');
@@ -273,7 +313,7 @@
 
   function handleKeydown(e: KeyboardEvent) {
     if (confirmDialog || showComposer || showAccountModal) return;
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
     if (e.key === 'c') showComposer = true;
     if (e.key === 'e' && selectedEmail) handleArchive(selectedEmail);
     if (e.key === 'Delete' && selectedEmail) requestDeleteMail(selectedEmail);
@@ -311,7 +351,7 @@
         await setEmailKeyword(accId, m.id, '$flagged', !m.keywords?.['$flagged']);
       } else if (action === 'downloadEml' && m.blobId) {
         const jmapAccId = await getPrimaryAccountId(accId);
-        window.open(`/api/jmap/${accId}/download/${encodeURIComponent(jmapAccId)}/${encodeURIComponent(m.blobId)}/${encodeURIComponent((m.subject || 'message') + '.eml')}?type=message%2Frfc822`, '_blank');
+        window.open('/api/jmap/' + accId + '/download/' + encodeURIComponent(jmapAccId) + '/' + encodeURIComponent(m.blobId) + '/' + encodeURIComponent((m.subject || 'message') + '.eml') + '?type=message%2Frfc822', '_blank');
         return;
       } else if (action === 'print') {
         await openEmail(m);
@@ -331,7 +371,7 @@
       } else if (action === 'emptyJunk' || action === 'emptyTrash') {
         requestEmptyMailbox(box);
       } else if (action === 'newSubfolder') {
-        const name = prompt(`Nom du sous-dossier dans « ${folderDisplayName(box)} » :`);
+        const name = prompt('Nom du sous-dossier dans « ' + folderDisplayName(box) + ' » :');
         if (name?.trim()) { await createMailbox(accId, name.trim(), box.id); mailboxes = await fetchMailboxes(accId); }
       } else if (action === 'renameFolder') {
         const name = prompt('Nouveau nom du dossier :', box.name);
@@ -346,48 +386,53 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if statusToast}
-  <div class="fixed bottom-4 right-4 z-50 rounded-xl border border-[#48B17F]/40 bg-[#0D3A4D] px-4 py-2.5 text-xs text-white shadow-xl">
+  <div role="status" class="env-card env-accent-text fixed bottom-5 right-5 z-50 rounded-2xl border px-4 py-3 text-sm font-medium shadow-xl">
     {statusToast}
   </div>
 {/if}
 
 {#if !loaded}
-  <div class="flex h-screen items-center justify-center bg-[#08101A] text-slate-400">Chargement...</div>
+  <div class="env-app env-muted flex h-screen items-center justify-center text-sm">Chargement...</div>
 {:else if accounts.length === 0}
   <LoginPage onLoggedIn={loadAccounts} />
 {:else}
-  <div class="flex h-screen w-screen overflow-hidden">
-    <!-- Rail gauche extensible / rétractable -->
-    <aside class="flex flex-col justify-between border-r border-slate-800/80 bg-[#08101A] py-3 transition-all duration-200 {railExpanded ? 'w-52 px-3' : 'w-16 items-center'}">
+  <div class="env-app flex h-screen w-screen gap-2.5 overflow-hidden p-2.5">
+    <!-- Rail gauche flottant et arrondi -->
+    <aside aria-label="Navigation principale" class="env-panel flex shrink-0 flex-col justify-between rounded-3xl border py-3.5 shadow-sm transition-all duration-200 {railExpanded ? 'w-56 px-3.5' : 'w-16 items-center'}">
       <div class="flex flex-col gap-2 {railExpanded ? 'w-full' : 'items-center'}">
         <button
+          type="button"
           onclick={() => (railExpanded = !railExpanded)}
+          aria-expanded={railExpanded}
           title={railExpanded ? 'Rétracter le menu' : 'Agrandir le menu'}
-          class="mb-2 flex h-9 items-center justify-center rounded-xl border border-slate-800 text-xs text-slate-400 hover:border-[#48B17F] hover:text-white {railExpanded ? 'w-full justify-between px-3' : 'w-10'}"
+          class="env-input env-hover env-muted mb-1.5 flex h-10 items-center justify-center rounded-2xl border text-sm font-medium {railExpanded ? 'w-full justify-between px-3.5' : 'w-11'}"
         >
-          {#if railExpanded}<span class="font-bold text-white">Enveloppe</span>{/if}
+          {#if railExpanded}<span class="env-text font-bold">Enveloppe</span>{/if}
           <span>{railExpanded ? '«' : '»'}</span>
         </button>
 
         {#each accounts as acc}
           <button
+            type="button"
             onclick={() => selectAccount(acc.id)}
+            aria-current={activeAccountId === acc.id ? 'true' : undefined}
             title="{acc.label} ({acc.host})"
-            class="flex items-center gap-3 rounded-xl transition-all {railExpanded ? 'w-full px-2 py-1.5 text-left' : 'h-10 w-10 justify-center'} {activeAccountId === acc.id ? 'bg-slate-800/70 ring-1 ring-[#48B17F]' : 'opacity-70 hover:opacity-100'}"
+            class="flex items-center gap-3 rounded-2xl transition-all {railExpanded ? 'w-full px-2.5 py-2 text-left' : 'h-11 w-11 justify-center'} {activeAccountId === acc.id ? 'env-active ring-2 ring-[#48B17F]' : 'opacity-80 hover:opacity-100'}"
           >
-            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold" style="background-color: {acc.color}; color: #08101A;">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold shadow-xs" style="background-color: {acc.color}; color: #08101A;">
               {acc.label.slice(0, 2).toUpperCase()}
             </span>
             {#if railExpanded}
-              <span class="truncate text-xs font-medium text-white">{acc.label}</span>
+              <span class="env-text truncate text-sm font-medium">{acc.label}</span>
             {/if}
           </button>
         {/each}
 
         <button
+          type="button"
           onclick={() => (showAccountModal = true)}
           title="Ajouter un serveur"
-          class="flex items-center gap-3 rounded-xl border border-dashed border-slate-700 text-slate-400 hover:border-[#48B17F] hover:text-[#48B17F] {railExpanded ? 'w-full px-3 py-2 text-xs' : 'h-10 w-10 justify-center'}"
+          class="env-input env-hover env-muted flex items-center gap-3 rounded-2xl border border-dashed text-sm {railExpanded ? 'w-full px-3.5 py-2.5' : 'h-11 w-11 justify-center'}"
         >
           <span>+</span>
           {#if railExpanded}<span>Ajouter un compte</span>{/if}
@@ -395,25 +440,31 @@
       </div>
 
       <div class="flex flex-col gap-1.5 {railExpanded ? 'w-full' : 'items-center'}">
-        <button onclick={() => (activeTab = 'mail')} title="Messagerie" class="flex items-center gap-3 rounded-xl {railExpanded ? 'w-full px-3 py-2 text-xs' : 'h-10 w-10 justify-center'} {activeTab === 'mail' ? 'bg-[#0D3A4D] text-[#48B17F]' : 'text-slate-400 hover:text-white'}">
+        <button type="button" onclick={() => (activeTab = 'mail')} aria-current={activeTab === 'mail' ? 'page' : undefined} title="Messagerie" class="flex items-center gap-3 rounded-2xl text-sm font-medium {railExpanded ? 'w-full px-3.5 py-2.5' : 'h-11 w-11 justify-center'} {activeTab === 'mail' ? 'env-accent-soft font-semibold' : 'env-muted env-hover'}">
           <span>✉️</span>{#if railExpanded}<span>Messagerie</span>{/if}
         </button>
-        <button onclick={() => (activeTab = 'contacts')} title="Contacts" class="flex items-center gap-3 rounded-xl {railExpanded ? 'w-full px-3 py-2 text-xs' : 'h-10 w-10 justify-center'} {activeTab === 'contacts' ? 'bg-[#0D3A4D] text-[#48B17F]' : 'text-slate-400 hover:text-white'}">
+        <button type="button" onclick={() => (activeTab = 'contacts')} aria-current={activeTab === 'contacts' ? 'page' : undefined} title="Contacts" class="flex items-center gap-3 rounded-2xl text-sm font-medium {railExpanded ? 'w-full px-3.5 py-2.5' : 'h-11 w-11 justify-center'} {activeTab === 'contacts' ? 'env-accent-soft font-semibold' : 'env-muted env-hover'}">
           <span>👤</span>{#if railExpanded}<span>Contacts</span>{/if}
         </button>
-        <button onclick={() => (activeTab = 'calendar')} title="Calendrier" class="flex items-center gap-3 rounded-xl {railExpanded ? 'w-full px-3 py-2 text-xs' : 'h-10 w-10 justify-center'} {activeTab === 'calendar' ? 'bg-[#0D3A4D] text-[#48B17F]' : 'text-slate-400 hover:text-white'}">
+        <button type="button" onclick={() => (activeTab = 'calendar')} aria-current={activeTab === 'calendar' ? 'page' : undefined} title="Calendrier" class="flex items-center gap-3 rounded-2xl text-sm font-medium {railExpanded ? 'w-full px-3.5 py-2.5' : 'h-11 w-11 justify-center'} {activeTab === 'calendar' ? 'env-accent-soft font-semibold' : 'env-muted env-hover'}">
           <span>📅</span>{#if railExpanded}<span>Calendrier</span>{/if}
         </button>
-        <button onclick={() => (activeTab = 'sieve')} title="Filtres (Sieve)" class="flex items-center gap-3 rounded-xl {railExpanded ? 'w-full px-3 py-2 text-xs' : 'h-10 w-10 justify-center'} {activeTab === 'sieve' ? 'bg-[#0D3A4D] text-[#48B17F]' : 'text-slate-400 hover:text-white'}">
+        <button type="button" onclick={() => (activeTab = 'sieve')} aria-current={activeTab === 'sieve' ? 'page' : undefined} title="Filtres (Sieve)" class="flex items-center gap-3 rounded-2xl text-sm font-medium {railExpanded ? 'w-full px-3.5 py-2.5' : 'h-11 w-11 justify-center'} {activeTab === 'sieve' ? 'env-accent-soft font-semibold' : 'env-muted env-hover'}">
           <span>⚡</span>{#if railExpanded}<span>Filtres</span>{/if}
         </button>
-        <button onclick={() => (activeTab = 'security')} title="Sécurité" class="flex items-center gap-3 rounded-xl {railExpanded ? 'w-full px-3 py-2 text-xs' : 'h-10 w-10 justify-center'} {activeTab === 'security' ? 'bg-[#0D3A4D] text-[#48B17F]' : 'text-slate-400 hover:text-white'}">
+        <button type="button" onclick={() => (activeTab = 'security')} aria-current={activeTab === 'security' ? 'page' : undefined} title="Sécurité" class="flex items-center gap-3 rounded-2xl text-sm font-medium {railExpanded ? 'w-full px-3.5 py-2.5' : 'h-11 w-11 justify-center'} {activeTab === 'security' ? 'env-accent-soft font-semibold' : 'env-muted env-hover'}">
           <span>🛡️</span>{#if railExpanded}<span>Sécurité</span>{/if}
         </button>
-        <button onclick={handleEnablePush} title="Activer les notifications" class="flex items-center gap-3 rounded-xl text-slate-400 hover:text-[#48B17F] {railExpanded ? 'w-full px-3 py-2 text-xs' : 'h-10 w-10 justify-center'}">
+
+        <div class="env-border my-1 border-t {railExpanded ? 'w-full' : 'w-8'}"></div>
+
+        <button type="button" onclick={cycleTheme} title={themeLabel} aria-label={themeLabel} class="env-muted env-hover flex items-center gap-3 rounded-2xl text-sm font-medium {railExpanded ? 'w-full px-3.5 py-2.5' : 'h-11 w-11 justify-center'}">
+          <span>{themeIcon}</span>{#if railExpanded}<span class="truncate">{themeLabel}</span>{/if}
+        </button>
+        <button type="button" onclick={handleEnablePush} title="Activer les notifications" class="env-muted env-hover flex items-center gap-3 rounded-2xl text-sm font-medium {railExpanded ? 'w-full px-3.5 py-2.5' : 'h-11 w-11 justify-center'}">
           <span>🔔</span>{#if railExpanded}<span>Notifications</span>{/if}
         </button>
-        <button onclick={handleLogout} title="Déconnecter ce compte" class="flex items-center gap-3 rounded-xl text-slate-400 hover:bg-red-500/15 hover:text-red-400 {railExpanded ? 'w-full px-3 py-2 text-xs' : 'h-10 w-10 justify-center'}">
+        <button type="button" onclick={handleLogout} title="Déconnecter ce compte" class="env-muted flex items-center gap-3 rounded-2xl text-sm font-medium hover:bg-red-500/15 hover:text-red-400 {railExpanded ? 'w-full px-3.5 py-2.5' : 'h-11 w-11 justify-center'}">
           <span>🚪</span>{#if railExpanded}<span>Déconnexion</span>{/if}
         </button>
       </div>
@@ -421,100 +472,98 @@
 
     {#if activeTab === 'mail'}
       {#if showFolders}
-        <nav class="flex w-60 flex-col overflow-y-auto border-r border-slate-800/80 bg-[#0A131E] py-3">
-          <div class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Dossiers</div>
-          {#each mailboxes as box}
-            <div
-              oncontextmenu={(e) => { e.preventDefault(); ctxMenu = { x: e.clientX, y: e.clientY, type: 'mailbox', mailbox: box }; }}
-              style="padding-left: {12 + (box.depth ?? 0) * 14}px"
-              class="group flex items-center justify-between gap-1 pr-2 text-xs transition-colors hover:bg-slate-800/50 {activeMailboxId === box.id ? 'bg-[#0D3A4D]/70 font-semibold text-[#48B17F]' : 'text-slate-300'}"
-            >
-              <button
-                type="button"
-                onclick={() => selectMailbox(box.id)}
-                class="flex min-w-0 flex-1 items-center gap-2 py-1.5 text-left"
+        <nav aria-label="Dossiers de messagerie" class="env-panel flex w-64 shrink-0 flex-col overflow-y-auto rounded-3xl border py-4 shadow-sm">
+          <div class="env-faint px-4 pb-2.5 text-xs font-semibold uppercase tracking-wider">Dossiers</div>
+          <div class="space-y-0.5 px-2">
+            {#each mailboxes as box}
+              <div
+                role="group"
+                oncontextmenu={(e) => { e.preventDefault(); ctxMenu = { x: e.clientX, y: e.clientY, type: 'mailbox', mailbox: box }; }}
+                style="padding-left: {8 + (box.depth ?? 0) * 14}px"
+                class="group flex items-center justify-between gap-1 rounded-xl pr-2 text-sm transition-colors {activeMailboxId === box.id ? 'env-active env-accent-text font-semibold' : 'env-text env-hover'}"
               >
-                <span class="shrink-0">{box.depth ? '📁' : (box.role && ROLE_META[box.role]?.icon) || '📁'}</span>
-                <span class="truncate">{folderDisplayName(box)}</span>
-              </button>
-
-              <div class="flex shrink-0 items-center gap-1">
                 <button
                   type="button"
-                  title="Marquer comme lu(s)"
-                  disabled={batchBusy}
-                  onclick={(e) => { e.stopPropagation(); handleMarkMailboxRead(box); }}
-                  class="rounded px-1 py-0.5 text-[11px] text-slate-400 opacity-0 transition-opacity hover:bg-slate-700/80 hover:text-[#48B17F] focus:opacity-100 group-hover:opacity-100"
+                  onclick={() => selectMailbox(box.id)}
+                  class="flex min-w-0 flex-1 items-center gap-2.5 py-2 text-left"
                 >
-                  ✓
+                  <span class="shrink-0">{box.depth ? '📁' : (box.role && ROLE_META[box.role]?.icon) || '📁'}</span>
+                  <span class="truncate">{folderDisplayName(box)}</span>
                 </button>
 
-                {#if box.role === 'trash'}
+                <div class="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
-                    title="Vider la corbeille"
-                    onclick={(e) => { e.stopPropagation(); requestEmptyMailbox(box); }}
-                    class="rounded px-1 py-0.5 text-[11px] text-slate-400 opacity-0 transition-opacity hover:bg-red-500/20 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
+                    title="Marquer comme lu(s)"
+                    aria-label="Marquer comme lu(s)"
+                    disabled={batchBusy}
+                    onclick={(e) => { e.stopPropagation(); handleMarkMailboxRead(box); }}
+                    class="env-muted rounded-lg px-1.5 py-1 text-xs opacity-0 transition-opacity hover:opacity-100 focus:opacity-100 group-hover:opacity-100"
                   >
-                    🗑️
+                    ✓
                   </button>
-                {:else if box.role === 'junk'}
-                  <button
-                    type="button"
-                    title="Supprimer les indésirables"
-                    onclick={(e) => { e.stopPropagation(); requestEmptyMailbox(box); }}
-                    class="rounded px-1 py-0.5 text-[11px] text-slate-400 opacity-0 transition-opacity hover:bg-red-500/20 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
-                  >
-                    🗑️
-                  </button>
-                {:else if !box.role}
-                  <button
-                    type="button"
-                    title="Supprimer le dossier"
-                    onclick={(e) => { e.stopPropagation(); requestDeleteFolder(box); }}
-                    class="rounded px-1 py-0.5 text-[11px] text-slate-400 opacity-0 transition-opacity hover:bg-red-500/20 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
-                  >
-                    🗑️
-                  </button>
-                {/if}
 
-                {#if box.unreadEmails > 0}
-                  <span class="ml-0.5 rounded-full bg-[#48B17F]/20 px-1.5 py-0.5 text-[10px] text-[#48B17F]">{box.unreadEmails}</span>
-                {/if}
+                  {#if box.role === 'trash' || box.role === 'junk'}
+                    <button
+                      type="button"
+                      title={box.role === 'trash' ? 'Vider la corbeille' : 'Supprimer les indésirables'}
+                      aria-label={box.role === 'trash' ? 'Vider la corbeille' : 'Supprimer les indésirables'}
+                      onclick={(e) => { e.stopPropagation(); requestEmptyMailbox(box); }}
+                      class="env-muted rounded-lg px-1.5 py-1 text-xs opacity-0 transition-opacity hover:bg-red-500/15 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
+                    >
+                      🗑️
+                    </button>
+                  {:else if !box.role}
+                    <button
+                      type="button"
+                      title="Supprimer le dossier"
+                      aria-label="Supprimer le dossier"
+                      onclick={(e) => { e.stopPropagation(); requestDeleteFolder(box); }}
+                      class="env-muted rounded-lg px-1.5 py-1 text-xs opacity-0 transition-opacity hover:bg-red-500/15 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
+                    >
+                      🗑️
+                    </button>
+                  {/if}
+
+                  {#if box.unreadEmails > 0}
+                    <span class="env-accent-soft ml-0.5 rounded-full px-2 py-0.5 text-xs font-semibold">{box.unreadEmails}</span>
+                  {/if}
+                </div>
               </div>
-            </div>
-          {/each}
+            {/each}
+          </div>
+
           {#if quota}
-            <div class="mt-auto border-t border-slate-800/80 p-3">
-              <div class="mb-1 flex items-center justify-between text-[11px] text-slate-400">
+            <div class="env-border mt-auto border-t p-4">
+              <div class="env-muted mb-1.5 flex items-center justify-between text-xs">
                 <span>Stockage</span>
-                <span class="font-semibold text-white">{quota.percent} %</span>
+                <span class="env-text font-semibold">{quota.percent} %</span>
               </div>
-              <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+              <div class="env-subtle h-2 w-full overflow-hidden rounded-full">
                 <div class="h-full rounded-full transition-all {quota.percent > 85 ? 'bg-red-500' : 'bg-[#48B17F]'}" style="width: {quota.percent}%"></div>
               </div>
-              <p class="mt-1 text-[10px] text-slate-500">{(quota.used / 1048576).toFixed(1)} Mo / {(quota.limit / 1073741824).toFixed(1)} Go</p>
+              <p class="env-faint mt-1.5 text-xs">{(quota.used / 1048576).toFixed(1)} Mo / {(quota.limit / 1073741824).toFixed(1)} Go</p>
             </div>
           {/if}
         </nav>
       {/if}
 
-      <section class="flex w-96 flex-col border-r border-slate-800/80 bg-[#0B1622]">
-        <div class="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-          <div class="flex min-w-0 items-center gap-2">
-            <button onclick={() => (showFolders = !showFolders)} title="Afficher/Masquer les dossiers" class="text-slate-400 hover:text-white">☰</button>
-            <span class="truncate text-sm font-semibold text-slate-200">{folderDisplayName(activeMailbox)}</span>
+      <section aria-label="Liste des messages" class="env-panel flex w-[26rem] shrink-0 flex-col overflow-hidden rounded-3xl border shadow-sm">
+        <div class="env-border flex items-center justify-between border-b px-4 py-3.5">
+          <div class="flex min-w-0 items-center gap-2.5">
+            <button type="button" onclick={() => (showFolders = !showFolders)} title="Afficher/Masquer les dossiers" aria-label="Afficher/Masquer les dossiers" class="env-muted env-hover rounded-xl p-2 text-base">☰</button>
+            <span class="env-text truncate text-base font-semibold">{folderDisplayName(activeMailbox)}</span>
           </div>
-          <button onclick={() => (showComposer = true)} class="shrink-0 rounded-lg bg-[#48B17F] px-3 py-1 text-xs font-semibold text-[#0B1622]">Nouveau (C)</button>
+          <button type="button" onclick={() => (showComposer = true)} class="env-accent-bg shrink-0 rounded-xl px-3.5 py-2 text-xs font-semibold shadow-xs hover:opacity-95">Nouveau (C)</button>
         </div>
 
         {#if activeMailbox}
-          <div class="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-800/80 bg-[#0A131E]/80 px-3 py-1.5 text-[11px]">
+          <div class="env-subtle env-border flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2 text-xs">
             <button
               type="button"
               disabled={batchBusy}
               onclick={() => handleMarkMailboxRead(activeMailbox!)}
-              class="rounded-md border border-slate-700/80 bg-slate-900/70 px-2 py-1 text-slate-300 hover:border-[#48B17F] hover:text-[#48B17F] disabled:opacity-50"
+              class="env-input env-hover rounded-xl border px-3 py-1.5 font-medium disabled:opacity-50"
             >
               📭 Marquer comme lu(s)
             </button>
@@ -523,7 +572,7 @@
               <button
                 type="button"
                 onclick={() => requestEmptyMailbox(activeMailbox!)}
-                class="rounded-md border border-red-500/40 bg-red-500/10 px-2 py-1 font-medium text-red-300 hover:bg-red-500/20"
+                class="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 font-semibold text-red-400 hover:bg-red-500/20"
               >
                 🔥 Vider la corbeille
               </button>
@@ -531,7 +580,7 @@
               <button
                 type="button"
                 onclick={() => requestEmptyMailbox(activeMailbox!)}
-                class="rounded-md border border-red-500/40 bg-red-500/10 px-2 py-1 font-medium text-red-300 hover:bg-red-500/20"
+                class="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 font-semibold text-red-400 hover:bg-red-500/20"
               >
                 🗑️ Supprimer les indésirables
               </button>
@@ -539,7 +588,7 @@
               <button
                 type="button"
                 onclick={() => requestDeleteFolder(activeMailbox!)}
-                class="rounded-md border border-red-500/40 bg-red-500/10 px-2 py-1 font-medium text-red-300 hover:bg-red-500/20"
+                class="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 font-semibold text-red-400 hover:bg-red-500/20"
               >
                 🗑️ Supprimer le dossier
               </button>
@@ -547,49 +596,54 @@
           </div>
         {/if}
 
-        <div class="flex-1 divide-y divide-slate-800/60 overflow-y-auto">
+        <div class="env-divider flex-1 divide-y overflow-y-auto p-2">
           {#each emails as mail}
-            <button onclick={() => openEmail(mail)} oncontextmenu={(e) => { e.preventDefault(); ctxMenu = { x: e.clientX, y: e.clientY, type: 'mail', mail }; }} class="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-800/40 {selectedEmail?.id === mail.id ? 'bg-[#0D3A4D]/60' : ''}">
+            <button
+              type="button"
+              onclick={() => openEmail(mail)}
+              oncontextmenu={(e) => { e.preventDefault(); ctxMenu = { x: e.clientX, y: e.clientY, type: 'mail', mail }; }}
+              class="env-hover flex w-full items-center gap-3.5 rounded-2xl px-3.5 py-3 text-left transition-colors {selectedEmail?.id === mail.id ? 'env-active' : ''}"
+            >
               <SenderAvatar name={mail.from[0]?.name} email={mail.from[0]?.email} />
               <div class="min-w-0 flex-1">
                 <div class="flex items-center justify-between gap-2">
-                  <span class="truncate text-sm {mail.isUnread ? 'font-bold text-white' : 'text-slate-300'}">{mail.from[0]?.name || mail.from[0]?.email || 'Inconnu'}</span>
-                  <span class="shrink-0 text-[11px] text-slate-500">{new Date(mail.receivedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
+                  <span class="truncate text-sm {mail.isUnread ? 'env-text font-bold' : 'env-muted font-medium'}">{mail.from[0]?.name || mail.from[0]?.email || 'Inconnu'}</span>
+                  <span class="env-faint shrink-0 text-xs">{new Date(mail.receivedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
                 </div>
-                <p class="truncate text-xs {mail.isUnread ? 'text-slate-200' : 'text-slate-400'}">{mail.subject || '(Sans objet)'}</p>
-                <p class="truncate text-xs text-slate-500">{mail.preview}</p>
+                <p class="truncate text-sm {mail.isUnread ? 'env-text font-medium' : 'env-muted'}">{mail.subject || '(Sans objet)'}</p>
+                <p class="env-faint truncate text-xs">{mail.preview}</p>
               </div>
             </button>
           {:else}
-            <div class="p-8 text-center text-xs text-slate-500">Aucun message dans ce dossier.</div>
+            <div class="env-faint p-10 text-center text-sm">Aucun message dans ce dossier.</div>
           {/each}
         </div>
       </section>
 
-      <main class="flex-1">
+      <main class="min-w-0 flex-1">
         {#if selectedEmail && activeBody && activeAccountId}
           <MailReader
             accountId={activeAccountId}
             jmapAccountId={activeBody.jmapAccountId}
             subject={selectedEmail.subject}
-            from={selectedEmail.from.map((f) => f.name ? `${f.name} <${f.email}>` : f.email).join(', ')}
+            from={selectedEmail.from.map((f) => f.name ? f.name + ' <' + f.email + '>' : f.email).join(', ')}
             html={activeBody.html}
             text={activeBody.text}
             attachments={activeBody.attachments}
             onArchive={() => handleArchive(selectedEmail!)}
           />
         {:else}
-          <div class="flex h-full items-center justify-center text-sm text-slate-600">Sélectionne un message</div>
+          <div class="env-card env-faint flex h-full items-center justify-center rounded-3xl border text-sm shadow-sm">Sélectionne un message</div>
         {/if}
       </main>
     {:else if activeTab === 'contacts' && activeAccountId}
-      <main class="flex-1 bg-[#0B1622]"><ContactsView accountId={activeAccountId} /></main>
+      <main class="env-panel min-w-0 flex-1 overflow-hidden rounded-3xl border shadow-sm"><ContactsView accountId={activeAccountId} /></main>
     {:else if activeTab === 'calendar' && activeAccountId}
-      <main class="flex-1 bg-[#0B1622]"><CalendarView accountId={activeAccountId} /></main>
+      <main class="env-panel min-w-0 flex-1 overflow-hidden rounded-3xl border shadow-sm"><CalendarView accountId={activeAccountId} /></main>
     {:else if activeTab === 'sieve' && activeAccountId}
-      <main class="flex-1 bg-[#0B1622]"><SieveView accountId={activeAccountId} {mailboxes} prefill={sievePrefill} onPrefillConsumed={() => (sievePrefill = null)} /></main>
+      <main class="env-panel min-w-0 flex-1 overflow-hidden rounded-3xl border shadow-sm"><SieveView accountId={activeAccountId} {mailboxes} prefill={sievePrefill} onPrefillConsumed={() => (sievePrefill = null)} /></main>
     {:else if activeTab === 'security' && activeAccount}
-      <main class="flex-1 bg-[#0B1622]"><SecurityView account={activeAccount} onLogout={handleLogout} /></main>
+      <main class="env-panel min-w-0 flex-1 overflow-hidden rounded-3xl border shadow-sm"><SecurityView account={activeAccount} onLogout={handleLogout} /></main>
     {/if}
   </div>
 {/if}
@@ -599,30 +653,40 @@
 {/if}
 
 {#if showComposer}
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-    <form onsubmit={handleSend} class="w-full max-w-lg space-y-3 rounded-2xl border border-slate-800 bg-[#0D1B2A] p-6">
-      <h3 class="text-base font-semibold text-white">Nouveau message</h3>
-      <input bind:value={composeTo} type="email" placeholder="Destinataire" required class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white" />
-      <input bind:value={composeSubject} placeholder="Objet" required class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white" />
-      <textarea bind:value={composeText} rows="7" placeholder="Message..." required class="w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-sm text-white"></textarea>
-      <div class="flex items-center justify-between">
-        <label class="cursor-pointer rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-[#48B17F]">
-          {uploading ? 'Upload...' : '📎 Joindre un fichier'}
-          <input type="file" multiple onchange={handleFileUpload} class="hidden" />
-        </label>
-        <div class="flex gap-2">
-          <button type="button" onclick={() => (showComposer = false)} class="px-4 py-2 text-sm text-slate-400">Annuler</button>
-          <button disabled={uploading} class="rounded-lg bg-[#48B17F] px-4 py-2 text-sm font-semibold text-[#0B1622]">Envoyer</button>
+  <div
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="composer-title"
+    tabindex="-1"
+    onclick={() => !uploading && (showComposer = false)}
+    onkeydown={(e) => e.key === 'Escape' && !uploading && (showComposer = false)}
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
+  >
+    <div role="presentation" onclick={(e) => e.stopPropagation()} class="w-full max-w-lg">
+      <form onsubmit={handleSend} class="env-card space-y-3.5 rounded-3xl border p-7 shadow-2xl">
+        <h3 id="composer-title" class="env-text text-lg font-semibold">Nouveau message</h3>
+        <input bind:value={composeTo} type="email" aria-label="Destinataire" placeholder="Destinataire" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+        <input bind:value={composeSubject} aria-label="Objet" placeholder="Objet" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+        <textarea bind:value={composeText} rows="7" aria-label="Message" placeholder="Message..." required class="env-input w-full rounded-2xl border p-3.5 text-sm"></textarea>
+        <div class="flex items-center justify-between gap-2 pt-1">
+          <label class="env-input env-hover env-muted cursor-pointer rounded-xl border px-3.5 py-2 text-xs font-medium">
+            {uploading ? 'Upload...' : '📎 Joindre un fichier'}
+            <input type="file" multiple onchange={handleFileUpload} class="hidden" />
+          </label>
+          <div class="flex gap-2">
+            <button type="button" onclick={() => (showComposer = false)} class="env-muted env-hover rounded-xl px-4 py-2 text-sm">Annuler</button>
+            <button disabled={uploading} class="env-accent-bg rounded-xl px-5 py-2 text-sm font-semibold hover:opacity-95 disabled:opacity-50">Envoyer</button>
+          </div>
         </div>
-      </div>
-      {#if composeFiles.length}
-        <div class="flex flex-wrap gap-1.5 pt-1">
-          {#each composeFiles as f}
-            <span class="rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-300">{f.name}</span>
-          {/each}
-        </div>
-      {/if}
-    </form>
+        {#if composeFiles.length}
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            {#each composeFiles as f}
+              <span class="env-subtle env-muted rounded-xl border px-2.5 py-1 text-xs">{f.name}</span>
+            {/each}
+          </div>
+        {/if}
+      </form>
+    </div>
   </div>
 {/if}
 

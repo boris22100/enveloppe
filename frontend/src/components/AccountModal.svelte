@@ -20,7 +20,7 @@
     const timer = setTimeout(async () => {
       checkingOidc = true;
       try {
-        const res = await fetch(`/api/auth/oidc/discover?host=${encodeURIComponent(clean)}`);
+        const res = await fetch('/api/auth/oidc/discover?host=' + encodeURIComponent(clean));
         if (res.ok) {
           const data = await res.json();
           oidcSupported = Boolean(data.supported);
@@ -42,7 +42,7 @@
       label: label.trim(),
       color
     });
-    window.location.href = `/api/auth/oidc/start?${params.toString()}`;
+    window.location.href = '/api/auth/oidc/start?' + params.toString();
   }
 
   async function submit(e: Event) {
@@ -66,47 +66,59 @@
   }
 </script>
 
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-  <form onsubmit={submit} class="w-full max-w-md space-y-4 rounded-2xl border border-slate-800 bg-[#0D1B2A] p-6 shadow-2xl">
-    <h3 class="text-lg font-semibold text-white">Connecter un serveur JMAP (Stalwart)</h3>
-    {#if error}
-      <p class="rounded-lg bg-red-500/15 p-3 text-xs text-red-300">{error}</p>
-    {/if}
-    <div class="grid grid-cols-4 gap-3">
-      <input bind:value={label} placeholder="Nom (ex: Perso)" class="col-span-3 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white" />
-      <input type="color" bind:value={color} class="h-10 w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-900 p-1" />
-    </div>
-    <div>
-      <div class="mb-1 flex items-center justify-between">
-        <span class="text-xs text-slate-400">Serveur</span>
-        {#if checkingOidc}
-          <span class="text-[11px] text-slate-400">Vérification OIDC...</span>
-        {:else if oidcSupported}
-          <span class="rounded bg-[#48B17F]/15 px-1.5 py-0.5 text-[11px] font-medium text-[#48B17F]">OIDC détecté</span>
-        {/if}
-      </div>
-      <input bind:value={host} placeholder="https://mail.mondomaine.fr" required class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white" />
-    </div>
+<svelte:window onkeydown={(e) => e.key === 'Escape' && !loading && onClose()} />
 
-    {#if oidcSupported}
-      <button type="button" onclick={startOidc} class="flex w-full items-center justify-center gap-2 rounded-lg bg-[#48B17F] py-2.5 text-sm font-semibold text-[#0B1622] hover:opacity-90">
-        <span>🔐</span>
-        <span>Continuer avec OIDC (SSO)</span>
-      </button>
-      <div class="relative flex items-center py-1">
-        <div class="flex-grow border-t border-slate-800"></div>
-        <span class="mx-3 flex-shrink text-[11px] text-slate-500">ou mot de passe d'application</span>
-        <div class="flex-grow border-t border-slate-800"></div>
+<div
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="acc-modal-title"
+  tabindex="-1"
+  onclick={() => !loading && onClose()}
+  onkeydown={(e) => e.key === 'Escape' && !loading && onClose()}
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
+>
+  <div role="presentation" onclick={(e) => e.stopPropagation()} class="w-full max-w-md">
+    <form onsubmit={submit} class="env-card space-y-4 rounded-3xl border p-7 shadow-2xl">
+      <h3 id="acc-modal-title" class="env-text text-lg font-semibold">Connecter un serveur JMAP</h3>
+      {#if error}
+        <p role="alert" class="rounded-2xl bg-red-500/15 p-3 text-xs font-medium text-red-400">{error}</p>
+      {/if}
+      <div class="grid grid-cols-5 gap-2.5">
+        <input bind:value={label} aria-label="Nom du compte" placeholder="Nom (ex: Perso)" class="env-input col-span-4 rounded-xl border px-3.5 py-2.5 text-sm" />
+        <input type="color" bind:value={color} aria-label="Couleur du compte" class="env-input h-11 w-full cursor-pointer rounded-xl border p-1" />
       </div>
-    {/if}
+      <div>
+        <div class="mb-1.5 flex items-center justify-between">
+          <label for="acc-host" class="env-muted text-xs font-semibold">Serveur</label>
+          {#if checkingOidc}
+            <span class="env-faint text-xs">Vérification OIDC...</span>
+          {:else if oidcSupported}
+            <span class="env-accent-soft rounded-full px-2 py-0.5 text-xs font-semibold">OIDC détecté</span>
+          {/if}
+        </div>
+        <input id="acc-host" bind:value={host} placeholder="https://mail.mondomaine.fr" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+      </div>
 
-    <input bind:value={username} placeholder="Identifiant / Email" required class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white" />
-    <input type="password" bind:value={password} placeholder="Mot de passe d'application" required class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white" />
-    <div class="flex justify-end gap-2 pt-2">
-      <button type="button" onclick={onClose} class="rounded-lg px-4 py-2 text-sm text-slate-400 hover:text-white">Annuler</button>
-      <button disabled={loading} class="rounded-lg {oidcSupported ? 'border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700' : 'bg-[#48B17F] font-medium text-[#0B1622] hover:opacity-90'} px-4 py-2 text-sm disabled:opacity-50">
-        {loading ? 'Découverte JMAP...' : 'Connecter'}
-      </button>
-    </div>
-  </form>
+      {#if oidcSupported}
+        <button type="button" onclick={startOidc} class="env-accent-bg flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold hover:opacity-95">
+          <span>🔐</span>
+          <span>Continuer avec OIDC (SSO)</span>
+        </button>
+        <div class="relative flex items-center py-1">
+          <div class="env-border flex-grow border-t"></div>
+          <span class="env-faint mx-3 flex-shrink text-xs">ou mot de passe d'application</span>
+          <div class="env-border flex-grow border-t"></div>
+        </div>
+      {/if}
+
+      <input bind:value={username} aria-label="Identifiant ou adresse mail" placeholder="Identifiant / Email" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+      <input type="password" bind:value={password} aria-label="Mot de passe d'application" placeholder="Mot de passe d'application" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick={onClose} class="env-muted env-hover rounded-xl px-4 py-2 text-sm">Annuler</button>
+        <button disabled={loading} class="rounded-xl {oidcSupported ? 'env-input env-hover border font-medium' : 'env-accent-bg font-semibold'} px-4 py-2 text-sm disabled:opacity-50">
+          {loading ? 'Découverte JMAP...' : 'Connecter'}
+        </button>
+      </div>
+    </form>
+  </div>
 </div>

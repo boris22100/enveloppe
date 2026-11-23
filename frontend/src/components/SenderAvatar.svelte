@@ -11,7 +11,7 @@
 
   let domain = $derived(email.includes('@') ? email.split('@')[1].toLowerCase().trim() : '');
   let showLogo = $derived(!imgError && !!domain && !GENERIC_DOMAINS.has(domain));
-  let logoUrl = $derived(`https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`);
+  let logoUrl = $derived('https://icons.duckduckgo.com/ip3/' + encodeURIComponent(domain) + '.ico');
 
   let initials = $derived.by(() => {
     const src = (name || email || '?').trim();
@@ -30,13 +30,14 @@
 </script>
 
 <div
-  class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white shadow-sm"
+  aria-hidden="true"
+  class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-xs font-bold text-white shadow-sm"
   style="background-color: {showLogo ? '#ffffff' : bgColor};"
 >
   {#if showLogo}
     <img
       src={logoUrl}
-      alt={domain}
+      alt=""
       loading="lazy"
       onerror={() => (imgError = true)}
       class="h-6 w-6 object-contain"

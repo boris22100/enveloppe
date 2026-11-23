@@ -76,20 +76,21 @@
   }
 </script>
 
-<div class="flex h-full flex-col overflow-hidden bg-[#0B1622]">
-  <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-6 py-3">
-    <div class="flex items-center gap-3">
-      <h2 class="text-base font-bold text-white">Contacts ({contacts.length})</h2>
+<div class="flex h-full flex-col overflow-hidden">
+  <header class="env-border flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
+    <div class="flex flex-wrap items-center gap-3">
+      <h2 class="env-text text-lg font-bold">Contacts ({contacts.length})</h2>
       <input
         bind:value={search}
+        aria-label="Rechercher un contact"
         placeholder="Filtrer par nom, mail, tél..."
-        class="w-56 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-[#48B17F] focus:outline-none"
+        class="env-input w-64 rounded-xl border px-3.5 py-2 text-sm"
       />
     </div>
     <div class="flex flex-wrap gap-2">
-      <button onclick={() => (showAdd = !showAdd)} class="rounded-lg bg-[#48B17F] px-3 py-1.5 text-xs font-semibold text-[#08101A]">+ Contact</button>
-      <button onclick={() => downloadFile(contactsToVcf(contacts), 'contacts.vcf', 'text/vcard')} class="rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 hover:border-[#48B17F]">Export .vcf</button>
-      <label class="cursor-pointer rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 hover:border-[#48B17F]">
+      <button type="button" onclick={() => (showAdd = !showAdd)} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">+ Contact</button>
+      <button type="button" onclick={() => downloadFile(contactsToVcf(contacts), 'contacts.vcf', 'text/vcard')} class="env-input env-hover rounded-xl border px-3.5 py-2 text-xs font-medium">Export .vcf</button>
+      <label class="env-input env-hover cursor-pointer rounded-xl border px-3.5 py-2 text-xs font-medium">
         Importer
         <input type="file" accept=".vcf,.json" onchange={handleImport} class="hidden" />
       </label>
@@ -97,47 +98,48 @@
   </header>
 
   {#if showAdd}
-    <form onsubmit={add} class="grid grid-cols-1 gap-2 border-b border-slate-800 bg-[#0D1B2A] px-6 py-3 md:grid-cols-4">
-      <input bind:value={fullName} placeholder="Nom complet" required class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-white" />
-      <input bind:value={email} type="email" placeholder="Email" required class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-white" />
-      <input bind:value={phone} placeholder="Téléphone" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-white" />
+    <form onsubmit={add} class="env-subtle env-border grid grid-cols-1 gap-2.5 border-b px-6 py-3.5 md:grid-cols-4">
+      <input bind:value={fullName} aria-label="Nom complet" placeholder="Nom complet" required class="env-input rounded-xl border px-3.5 py-2 text-sm" />
+      <input bind:value={email} type="email" aria-label="Adresse email" placeholder="Email" required class="env-input rounded-xl border px-3.5 py-2 text-sm" />
+      <input bind:value={phone} aria-label="Téléphone" placeholder="Téléphone" class="env-input rounded-xl border px-3.5 py-2 text-sm" />
       <div class="flex gap-2">
-        <button class="flex-1 rounded-lg bg-[#48B17F] px-3 py-1.5 text-xs font-semibold text-[#08101A]">Ajouter</button>
-        <button type="button" onclick={() => (showAdd = false)} class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-400">Annuler</button>
+        <button class="env-accent-bg flex-1 rounded-xl px-3.5 py-2 text-xs font-semibold">Ajouter</button>
+        <button type="button" onclick={() => (showAdd = false)} class="env-input env-hover env-muted rounded-xl border px-3.5 py-2 text-xs">Annuler</button>
       </div>
     </form>
   {/if}
 
-  <div class="flex-1 overflow-y-auto px-6 py-4">
-    <div class="mx-auto max-w-4xl space-y-5">
+  <div class="flex-1 overflow-y-auto px-6 py-5">
+    <div class="mx-auto max-w-4xl space-y-6">
       {#each groupedContacts as [letter, list]}
-        <div>
-          <div class="sticky top-0 z-10 border-b border-slate-800 bg-[#0B1622]/95 py-1 text-xs font-bold text-[#48B17F] backdrop-blur">
+        <div class="env-card rounded-3xl border p-4 shadow-xs">
+          <div class="env-border env-accent-text mb-2 border-b pb-1.5 text-xs font-bold uppercase tracking-wider">
             {letter}
           </div>
-          <div class="divide-y divide-slate-800/60">
+          <div class="env-divider divide-y">
             {#each list as c}
               {@const displayName = c.name?.full || Object.values(c.emails ?? {})[0]?.address || 'Sans nom'}
-              <div class="group flex flex-wrap items-center justify-between gap-2 rounded-lg px-2 py-2.5 hover:bg-slate-800/20">
+              <div class="env-hover group flex flex-wrap items-center justify-between gap-3 rounded-2xl px-3 py-2.5">
                 <div class="flex min-w-0 items-center gap-3">
-                  <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0D3A4D] text-xs font-bold text-[#48B17F]">
+                  <div class="env-accent-soft flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-bold">
                     {displayName.slice(0, 2).toUpperCase()}
                   </div>
-                  <span class="truncate text-sm font-medium text-white">{displayName}</span>
+                  <span class="env-text truncate text-sm font-medium">{displayName}</span>
                 </div>
                 <div class="flex flex-wrap items-center gap-4 text-xs">
                   {#each Object.values(c.emails ?? {}) as em}
-                    <span class="text-[#48B17F]">{em.address}</span>
+                    <span class="env-accent-text font-medium">{em.address}</span>
                   {/each}
                   {#each Object.values(c.phones ?? {}) as ph}
-                    <span class="text-slate-400">{ph.number}</span>
+                    <span class="env-muted">{ph.number}</span>
                   {/each}
                   {#if c.id}
                     <button
                       type="button"
                       title="Supprimer ce contact"
+                      aria-label="Supprimer {displayName}"
                       onclick={() => (contactToDelete = { id: c.id!, name: displayName })}
-                      class="rounded-md px-2 py-1 text-slate-500 opacity-70 transition-opacity hover:bg-red-500/15 hover:text-red-400 group-hover:opacity-100"
+                      class="env-muted rounded-xl px-2.5 py-1.5 text-sm opacity-75 transition-opacity hover:bg-red-500/15 hover:text-red-400 group-hover:opacity-100"
                     >
                       🗑️
                     </button>
@@ -148,7 +150,7 @@
           </div>
         </div>
       {:else}
-        <p class="py-12 text-center text-sm text-slate-500">Aucun contact trouvé.</p>
+        <p class="env-faint py-12 text-center text-sm">Aucun contact trouvé.</p>
       {/each}
     </div>
   </div>
@@ -157,7 +159,7 @@
 {#if contactToDelete}
   <ConfirmModal
     title="Supprimer le contact"
-    message={`Voulez-vous vraiment supprimer « ${contactToDelete.name} » de votre carnet d'adresses ? Cette action est définitive.`}
+    message={"Voulez-vous vraiment supprimer « " + contactToDelete.name + " » de votre carnet d'adresses ? Cette action est définitive."}
     confirmLabel="Supprimer le contact"
     onConfirm={confirmDeleteContact}
     onCancel={() => (contactToDelete = null)}

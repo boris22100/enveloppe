@@ -32,23 +32,27 @@
 <div
   role="dialog"
   aria-modal="true"
+  aria-labelledby="confirm-modal-title"
+  tabindex="-1"
   onclick={() => !busy && onCancel()}
-  class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+  onkeydown={(e) => e.key === 'Escape' && !busy && onCancel()}
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
 >
   <div
+    role="presentation"
     onclick={(e) => e.stopPropagation()}
-    class="w-full max-w-md space-y-4 rounded-2xl border border-slate-800 bg-[#0D1B2A] p-6 shadow-2xl"
+    class="env-card w-full max-w-md space-y-4 rounded-3xl border p-7 shadow-2xl"
   >
     <div class="space-y-1.5">
-      <h3 class="text-base font-semibold text-white">{title}</h3>
-      <p class="text-xs leading-relaxed text-slate-300">{message}</p>
+      <h3 id="confirm-modal-title" class="env-text text-lg font-semibold">{title}</h3>
+      <p class="env-muted text-sm leading-relaxed">{message}</p>
     </div>
-    <div class="flex justify-end gap-2 pt-2">
+    <div class="flex justify-end gap-2.5 pt-2">
       <button
         type="button"
         disabled={busy}
         onclick={onCancel}
-        class="rounded-lg border border-slate-700 px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-50"
+        class="env-input env-hover rounded-xl border px-4 py-2 text-sm font-medium disabled:opacity-50"
       >
         Annuler
       </button>
@@ -56,7 +60,7 @@
         type="button"
         disabled={busy}
         onclick={handleConfirm}
-        class="rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50 {danger ? 'bg-red-600 text-white hover:bg-red-500' : 'bg-[#48B17F] text-[#08101A] hover:opacity-90'}"
+        class="rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-50 {danger ? 'bg-red-600 text-white hover:bg-red-500' : 'env-accent-bg hover:opacity-90'}"
       >
         {busy ? 'Traitement...' : confirmLabel}
       </button>

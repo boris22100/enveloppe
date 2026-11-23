@@ -313,33 +313,31 @@
   }
 </script>
 
-<div class="flex h-full overflow-hidden bg-[#0B1622]">
-  <aside class="flex w-64 shrink-0 flex-col border-r border-slate-800/80 bg-[#0A131E] p-3">
-    <div class="mb-3 flex items-center justify-between">
-      <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Scripts Sieve</span>
+<div class="flex h-full overflow-hidden">
+  <aside aria-label="Scripts Sieve" class="env-subtle env-border flex w-72 shrink-0 flex-col border-r p-4">
+    <div class="mb-3.5 flex items-center justify-between">
+      <span class="env-muted text-xs font-semibold uppercase tracking-wider">Scripts Sieve</span>
       <button
         type="button"
         onclick={() => (showNewModal = true)}
-        class="rounded-lg bg-[#48B17F] px-2.5 py-1 text-xs font-semibold text-[#08101A] hover:opacity-90"
+        class="env-accent-bg rounded-xl px-3 py-1.5 text-xs font-semibold hover:opacity-95"
       >
         + Script
       </button>
     </div>
 
-    <div class="flex-1 space-y-1.5 overflow-y-auto">
+    <div class="flex-1 space-y-2 overflow-y-auto">
       {#each scripts as sc}
         <div
-          class="group flex items-center justify-between rounded-xl border px-3 py-2 text-xs transition-colors {selectedScriptId === sc.id && !isNewDraft ? 'border-[#48B17F]/50 bg-[#0D3A4D]/70 text-white' : 'border-slate-800/80 bg-slate-900/40 text-slate-300 hover:bg-slate-800/50'}"
+          class="group flex items-center justify-between rounded-2xl border px-3.5 py-2.5 text-xs transition-colors {selectedScriptId === sc.id && !isNewDraft ? 'env-active border-[#48B17F]/50' : 'env-card env-hover'}"
         >
           <button type="button" onclick={() => selectScript(sc)} class="min-w-0 flex-1 text-left">
-            <div class="flex items-center gap-1.5">
-              <span class="truncate font-semibold">{sc.name}</span>
-            </div>
-            <div class="mt-0.5 flex items-center gap-1.5">
+            <div class="env-text truncate text-sm font-semibold">{sc.name}</div>
+            <div class="mt-1 flex items-center gap-1.5">
               {#if sc.isActive}
-                <span class="rounded-full bg-[#48B17F]/20 px-1.5 py-0.2 text-[10px] font-semibold text-[#48B17F]">● Actif</span>
+                <span class="env-accent-soft rounded-full px-2 py-0.5 text-[11px] font-semibold">● Actif</span>
               {:else}
-                <span class="text-[10px] text-slate-500">Inactif</span>
+                <span class="env-faint text-[11px]">Inactif</span>
               {/if}
             </div>
           </button>
@@ -348,16 +346,18 @@
             <button
               type="button"
               title={sc.isActive ? 'Désactiver ce script' : 'Activer ce script'}
+              aria-label={sc.isActive ? 'Désactiver ' + sc.name : 'Activer ' + sc.name}
               onclick={() => handleToggleActive(sc)}
-              class="rounded px-1.5 py-1 text-[11px] {sc.isActive ? 'text-[#48B17F] hover:bg-slate-800' : 'text-slate-400 hover:bg-slate-800 hover:text-[#48B17F]'}"
+              class="env-hover rounded-xl px-2 py-1.5 text-xs {sc.isActive ? 'env-accent-text' : 'env-muted'}"
             >
               {sc.isActive ? '⏸' : '▶'}
             </button>
             <button
               type="button"
               title="Supprimer ce script"
+              aria-label="Supprimer {sc.name}"
               onclick={() => (scriptToDelete = sc)}
-              class="rounded px-1.5 py-1 text-[11px] text-slate-500 hover:bg-red-500/15 hover:text-red-400"
+              class="env-muted rounded-xl px-2 py-1.5 text-xs hover:bg-red-500/15 hover:text-red-400"
             >
               🗑️
             </button>
@@ -366,45 +366,45 @@
       {/each}
 
       {#if isNewDraft}
-        <div class="rounded-xl border border-dashed border-[#48B17F]/60 bg-[#0D3A4D]/40 px-3 py-2 text-xs text-white">
-          <div class="font-semibold">{scriptName}</div>
-          <div class="text-[10px] text-[#48B17F]">Non enregistré sur le serveur</div>
+        <div class="env-accent-soft rounded-2xl border border-dashed border-[#48B17F]/60 px-3.5 py-2.5 text-xs">
+          <div class="env-text text-sm font-semibold">{scriptName}</div>
+          <div class="env-accent-text mt-0.5 text-[11px]">Non enregistré sur le serveur</div>
         </div>
       {/if}
     </div>
 
-    <div class="mt-3 rounded-xl border border-slate-800 bg-slate-900/50 p-3 text-[11px] leading-relaxed text-slate-400">
-      Un seul script Sieve peut être <span class="font-semibold text-[#48B17F]">actif</span> à la fois sur Stalwart. Les règles sont exécutées côté serveur dès réception d'un message.
+    <div class="env-card env-muted mt-3 rounded-2xl border p-3.5 text-xs leading-relaxed">
+      Un seul script Sieve peut être <span class="env-accent-text font-semibold">actif</span> à la fois sur Stalwart. Les règles sont exécutées côté serveur dès réception d'un message.
     </div>
   </aside>
 
   <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
-    <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-6 py-3">
+    <header class="env-border flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
       <div class="flex flex-wrap items-center gap-3">
         <div>
-          <h2 class="text-base font-bold text-white">Filtres serveur (Sieve)</h2>
-          <p class="text-[11px] text-slate-400">Éditeur visuel & code Sieve synchronisé avec Stalwart</p>
+          <h2 class="env-text text-lg font-bold">Filtres serveur (Sieve)</h2>
+          <p class="env-muted text-xs">Éditeur visuel & code Sieve synchronisé avec Stalwart</p>
         </div>
 
         <input
           bind:value={scriptName}
           aria-label="Nom du script Sieve"
           placeholder="Nom du script"
-          class="w-40 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-medium text-white focus:border-[#48B17F] focus:outline-none"
+          class="env-input w-44 rounded-xl border px-3 py-2 text-xs font-medium"
         />
 
-        <div class="flex rounded-lg border border-slate-700 bg-slate-900 p-0.5 text-xs">
+        <div class="env-subtle env-border flex rounded-xl border p-0.5 text-xs">
           <button
             type="button"
             onclick={() => switchMode('visual')}
-            class="rounded-md px-3 py-1 {mode === 'visual' ? 'bg-[#0D3A4D] font-semibold text-[#48B17F]' : 'text-slate-400 hover:text-white'}"
+            class="rounded-lg px-3 py-1.5 {mode === 'visual' ? 'env-accent-soft font-semibold' : 'env-muted'}"
           >
             🧩 Règles visuelles
           </button>
           <button
             type="button"
             onclick={() => switchMode('code')}
-            class="rounded-md px-3 py-1 {mode === 'code' ? 'bg-[#0D3A4D] font-semibold text-[#48B17F]' : 'text-slate-400 hover:text-white'}"
+            class="rounded-lg px-3 py-1.5 {mode === 'code' ? 'env-accent-soft font-semibold' : 'env-muted'}"
           >
             &lt;/&gt; Code Sieve
           </button>
@@ -416,7 +416,7 @@
           type="button"
           disabled={validating || loading}
           onclick={handleValidate}
-          class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-200 hover:border-[#48B17F] hover:text-white disabled:opacity-50"
+          class="env-input env-hover rounded-xl border px-3.5 py-2 text-xs font-medium disabled:opacity-50"
         >
           {validating ? 'Vérification...' : '✓ Valider la syntaxe'}
         </button>
@@ -426,7 +426,7 @@
             type="button"
             disabled={saving}
             onclick={() => handleSave(true)}
-            class="rounded-lg border border-[#48B17F]/50 bg-[#0D3A4D] px-3 py-1.5 text-xs font-semibold text-[#48B17F] hover:bg-[#114a62]"
+            class="env-accent-soft rounded-xl border border-[#48B17F]/40 px-3.5 py-2 text-xs font-semibold hover:opacity-90"
           >
             💾 Enregistrer & Activer
           </button>
@@ -436,7 +436,7 @@
           type="button"
           disabled={saving || loading}
           onclick={() => handleSave(false)}
-          class="rounded-lg bg-[#48B17F] px-3.5 py-1.5 text-xs font-semibold text-[#08101A] hover:opacity-90 disabled:opacity-50"
+          class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95 disabled:opacity-50"
         >
           {saving ? 'Envoi...' : '💾 Enregistrer sur Stalwart'}
         </button>
@@ -444,24 +444,24 @@
     </header>
 
     {#if banner}
-      <div class="border-b px-6 py-2 text-xs {banner.type === 'ok' ? 'border-[#48B17F]/30 bg-[#48B17F]/15 text-[#48B17F]' : 'border-red-500/30 bg-red-500/15 text-red-300'}">
+      <div role="status" class="border-b px-6 py-2.5 text-xs font-medium {banner.type === 'ok' ? 'env-accent-soft env-border' : 'border-red-500/30 bg-red-500/15 text-red-400'}">
         {banner.type === 'ok' ? '✅ ' : '⚠️ '}{banner.text}
       </div>
     {/if}
 
     {#if loading}
-      <div class="flex flex-1 items-center justify-center text-xs text-slate-400">Chargement des scripts Sieve...</div>
+      <div class="env-muted flex flex-1 items-center justify-center text-sm">Chargement des scripts Sieve...</div>
 
     {:else if mode === 'visual'}
       <div class="flex-1 space-y-5 overflow-y-auto p-6">
         <div class="mx-auto max-w-4xl space-y-5">
           {#if hasAdvancedCode}
-            <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-200">
+            <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-300">
               <span>Ce script contient des instructions Sieve avancées (<code>elsif</code>, <code>envelope</code>, <code>regex</code>...) non affichables en blocs. Utilise l'onglet <strong>Code Sieve</strong> pour éviter de les écraser.</span>
               <button
                 type="button"
                 onclick={() => switchMode('code')}
-                class="rounded-lg bg-amber-400/20 px-3 py-1.5 font-semibold text-amber-200 hover:bg-amber-400/30"
+                class="rounded-xl bg-amber-400/20 px-3.5 py-2 font-semibold text-amber-200 hover:bg-amber-400/30"
               >
                 Ouvrir le code Sieve
               </button>
@@ -469,20 +469,20 @@
           {/if}
 
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-white">Règles de filtrage ({rules.length})</h3>
+            <h3 class="env-text text-sm font-semibold">Règles de filtrage ({rules.length})</h3>
             <button
               type="button"
               onclick={addRule}
-              class="rounded-lg bg-[#0D3A4D] px-3 py-1.5 text-xs font-semibold text-[#48B17F] ring-1 ring-[#48B17F]/40 hover:bg-[#114a62]"
+              class="env-accent-soft rounded-xl border border-[#48B17F]/40 px-3.5 py-2 text-xs font-semibold hover:opacity-90"
             >
               + Ajouter une règle
             </button>
           </div>
 
           {#each rules as rule}
-            <div class="space-y-4 rounded-2xl border border-slate-800 bg-[#0D1B2A] p-5 shadow-lg">
-              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
-                <div class="flex items-center gap-2.5">
+            <div class="env-card space-y-4 rounded-3xl border p-5 shadow-xs">
+              <div class="env-border flex flex-wrap items-center justify-between gap-2 border-b pb-3.5">
+                <div class="flex flex-wrap items-center gap-2.5">
                   <input
                     type="checkbox"
                     bind:checked={rule.enabled}
@@ -495,13 +495,13 @@
                     oninput={syncVisualToCode}
                     aria-label="Nom de la règle"
                     placeholder="Nom de la règle"
-                    class="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white focus:border-[#48B17F] focus:outline-none"
+                    class="env-input rounded-xl border px-3 py-1.5 text-xs font-semibold"
                   />
                   <select
                     bind:value={rule.matchType}
                     onchange={syncVisualToCode}
                     aria-label="Logique des conditions"
-                    class="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs text-slate-300"
+                    class="env-input rounded-xl border px-3 py-1.5 text-xs"
                   >
                     <option value="allof">Si TOUTES les conditions sont vraies</option>
                     <option value="anyof">Si AU MOINS UNE condition est vraie</option>
@@ -511,7 +511,7 @@
                 <button
                   type="button"
                   onclick={() => removeRule(rule.id)}
-                  class="rounded-lg px-2 py-1 text-xs text-slate-400 hover:bg-red-500/15 hover:text-red-400"
+                  class="env-muted rounded-xl px-2.5 py-1.5 text-xs hover:bg-red-500/15 hover:text-red-400"
                 >
                   🗑️ Supprimer
                 </button>
@@ -519,8 +519,8 @@
 
               <div class="space-y-2">
                 <div class="flex items-center justify-between">
-                  <span class="text-[11px] font-semibold uppercase tracking-wider text-sky-400">Conditions</span>
-                  <button type="button" onclick={() => addCondition(rule)} class="text-[11px] text-slate-400 hover:text-[#48B17F]">+ Condition</button>
+                  <span class="text-xs font-semibold uppercase tracking-wider text-sky-400">Conditions</span>
+                  <button type="button" onclick={() => addCondition(rule)} class="env-muted env-accent-text text-xs font-medium">+ Condition</button>
                 </div>
 
                 {#each rule.conditions as cond}
@@ -529,7 +529,7 @@
                       bind:value={cond.field}
                       onchange={syncVisualToCode}
                       aria-label="Champ du message"
-                      class="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-white"
+                      class="env-input rounded-xl border px-3 py-2 text-xs"
                     >
                       <option value="from">De (From)</option>
                       <option value="to">À / Cc (To, Cc)</option>
@@ -543,7 +543,7 @@
                         bind:value={cond.headerName}
                         oninput={syncVisualToCode}
                         placeholder="Ex: List-Id"
-                        class="w-32 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-white"
+                        class="env-input w-36 rounded-xl border px-3 py-2 text-xs"
                       />
                     {/if}
 
@@ -552,7 +552,7 @@
                         bind:value={cond.operator}
                         onchange={syncVisualToCode}
                         aria-label="Comparateur de taille"
-                        class="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-300"
+                        class="env-input rounded-xl border px-3 py-2 text-xs"
                       >
                         <option value="over">dépasse</option>
                         <option value="under">est inférieur à</option>
@@ -561,14 +561,14 @@
                         bind:value={cond.value}
                         oninput={syncVisualToCode}
                         placeholder="Ex: 5M ou 500K"
-                        class="min-w-44 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white"
+                        class="env-input min-w-44 flex-1 rounded-xl border px-3.5 py-2 text-xs"
                       />
                     {:else}
                       <select
                         bind:value={cond.operator}
                         onchange={syncVisualToCode}
                         aria-label="Opérateur"
-                        class="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-300"
+                        class="env-input rounded-xl border px-3 py-2 text-xs"
                       >
                         <option value="contains">contient</option>
                         <option value="is">est exactement</option>
@@ -578,7 +578,7 @@
                         bind:value={cond.value}
                         oninput={syncVisualToCode}
                         placeholder={cond.field === 'from' ? 'ex: newsletter@domaine.fr' : 'Texte à rechercher...'}
-                        class="min-w-48 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white"
+                        class="env-input min-w-48 flex-1 rounded-xl border px-3.5 py-2 text-xs"
                       />
                     {/if}
 
@@ -586,7 +586,8 @@
                       <button
                         type="button"
                         onclick={() => removeCondition(rule, cond.id)}
-                        class="rounded px-2 py-1 text-xs text-slate-500 hover:text-red-400"
+                        aria-label="Supprimer la condition"
+                        class="env-faint rounded-xl px-2 py-1.5 text-xs hover:text-red-400"
                       >
                         ✕
                       </button>
@@ -597,8 +598,8 @@
 
               <div class="space-y-2 pt-1">
                 <div class="flex items-center justify-between">
-                  <span class="text-[11px] font-semibold uppercase tracking-wider text-[#48B17F]">Actions</span>
-                  <button type="button" onclick={() => addAction(rule)} class="text-[11px] text-slate-400 hover:text-[#48B17F]">+ Action</button>
+                  <span class="env-accent-text text-xs font-semibold uppercase tracking-wider">Actions</span>
+                  <button type="button" onclick={() => addAction(rule)} class="env-muted env-accent-text text-xs font-medium">+ Action</button>
                 </div>
 
                 {#each rule.actions as act}
@@ -607,7 +608,7 @@
                       bind:value={act.type}
                       onchange={() => onActionTypeChange(act)}
                       aria-label="Type d'action"
-                      class="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-white"
+                      class="env-input rounded-xl border px-3 py-2 text-xs"
                     >
                       <option value="fileinto">📁 Déplacer vers le dossier</option>
                       <option value="markRead">📭 Marquer comme lu</option>
@@ -622,7 +623,7 @@
                         bind:value={act.value}
                         onchange={syncVisualToCode}
                         aria-label="Dossier de destination"
-                        class="min-w-48 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-white"
+                        class="env-input min-w-48 flex-1 rounded-xl border px-3 py-2 text-xs"
                       >
                         {#each mailboxes as box}
                           <option value={box.name}>
@@ -639,14 +640,14 @@
                         bind:value={act.value}
                         oninput={syncVisualToCode}
                         placeholder="destinataire@domaine.fr"
-                        class="min-w-48 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white"
+                        class="env-input min-w-48 flex-1 rounded-xl border px-3.5 py-2 text-xs"
                       />
                     {:else if act.type === 'reject'}
                       <input
                         bind:value={act.value}
                         oninput={syncVisualToCode}
                         placeholder="Motif du rejet..."
-                        class="min-w-48 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white"
+                        class="env-input min-w-48 flex-1 rounded-xl border px-3.5 py-2 text-xs"
                       />
                     {/if}
 
@@ -654,7 +655,8 @@
                       <button
                         type="button"
                         onclick={() => removeAction(rule, act.id)}
-                        class="rounded px-2 py-1 text-xs text-slate-500 hover:text-red-400"
+                        aria-label="Supprimer l'action"
+                        class="env-faint rounded-xl px-2 py-1.5 text-xs hover:text-red-400"
                       >
                         ✕
                       </button>
@@ -664,12 +666,12 @@
               </div>
             </div>
           {:else}
-            <div class="rounded-2xl border border-dashed border-slate-800 p-8 text-center text-xs text-slate-400">
+            <div class="env-card env-muted rounded-3xl border border-dashed p-8 text-center text-xs">
               Aucune règle visuelle configurée. Clique sur <strong>+ Ajouter une règle</strong> ou utilise un modèle dans l'onglet <strong>Code Sieve</strong>.
             </div>
           {/each}
 
-          <div class="space-y-3 rounded-2xl border border-slate-800 bg-[#0D1B2A] p-5">
+          <div class="env-card space-y-3 rounded-3xl border p-5 shadow-xs">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2.5">
                 <input
@@ -679,17 +681,17 @@
                   onchange={syncVisualToCode}
                   class="h-4 w-4 accent-[#48B17F]"
                 />
-                <label for="vac-toggle" class="cursor-pointer text-sm font-semibold text-white">
+                <label for="vac-toggle" class="env-text cursor-pointer text-sm font-semibold">
                   🏖️ Répondeur automatique (Absence / Vacances)
                 </label>
               </div>
-              <span class="text-[11px] text-slate-400">Extension RFC 5230 <code>vacation</code></span>
+              <span class="env-faint text-xs">Extension RFC 5230 <code>vacation</code></span>
             </div>
 
             {#if vacation.enabled}
               <div class="grid grid-cols-1 gap-3 pt-2 md:grid-cols-4">
                 <div>
-                  <label for="vac-days" class="mb-1 block text-[11px] text-slate-400">Fréquence (jours)</label>
+                  <label for="vac-days" class="env-muted mb-1 block text-xs">Fréquence (jours)</label>
                   <input
                     id="vac-days"
                     type="number"
@@ -697,28 +699,28 @@
                     max="60"
                     bind:value={vacation.days}
                     oninput={syncVisualToCode}
-                    class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white"
+                    class="env-input w-full rounded-xl border px-3 py-2 text-xs"
                   />
                 </div>
                 <div class="md:col-span-3">
-                  <label for="vac-subj" class="mb-1 block text-[11px] text-slate-400">Objet de la réponse</label>
+                  <label for="vac-subj" class="env-muted mb-1 block text-xs">Objet de la réponse</label>
                   <input
                     id="vac-subj"
                     bind:value={vacation.subject}
                     oninput={syncVisualToCode}
                     placeholder="Absence du bureau"
-                    class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white"
+                    class="env-input w-full rounded-xl border px-3 py-2 text-xs"
                   />
                 </div>
                 <div class="md:col-span-4">
-                  <label for="vac-body" class="mb-1 block text-[11px] text-slate-400">Message envoyé automatiquement</label>
+                  <label for="vac-body" class="env-muted mb-1 block text-xs">Message envoyé automatiquement</label>
                   <textarea
                     id="vac-body"
                     rows="3"
                     bind:value={vacation.reason}
                     oninput={syncVisualToCode}
                     placeholder="Bonjour, je suis actuellement absent..."
-                    class="w-full rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-xs text-white"
+                    class="env-input w-full rounded-2xl border p-3 text-xs"
                   ></textarea>
                 </div>
               </div>
@@ -730,7 +732,7 @@
     {:else}
       <div class="flex flex-1 flex-col overflow-hidden p-5">
         <div class="mb-3 flex flex-wrap items-center gap-2">
-          <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Modèles :</span>
+          <span class="env-muted text-xs font-semibold uppercase tracking-wider">Modèles :</span>
           {#each SIEVE_TEMPLATES as tpl}
             <button
               type="button"
@@ -739,17 +741,17 @@
                 rawCode = rawCode.trim() ? rawCode.trim() + '\n\n' + tpl.code : tpl.code;
                 applyCodeToVisual(rawCode);
               }}
-              class="rounded-lg border border-slate-700/80 bg-slate-900/70 px-2.5 py-1 text-xs text-slate-300 hover:border-[#48B17F] hover:text-[#48B17F]"
+              class="env-input env-hover rounded-xl border px-3 py-1.5 text-xs font-medium"
             >
               {tpl.label}
             </button>
           {/each}
         </div>
 
-        <div class="relative flex flex-1 overflow-hidden rounded-2xl border border-slate-800 bg-[#08101A] font-mono text-xs shadow-inner">
+        <div class="env-subtle env-border relative flex flex-1 overflow-hidden rounded-3xl border font-mono text-xs shadow-inner">
           <div
             aria-hidden="true"
-            class="select-none border-r border-slate-800/80 bg-[#0A131E] px-3 py-4 text-right leading-6 text-slate-600"
+            class="env-border env-faint select-none border-r px-3.5 py-4 text-right leading-6"
           >
             {#each Array.from({ length: lineCount }, (_, i) => i + 1) as n}
               <div>{n}</div>
@@ -760,7 +762,7 @@
             <pre
               bind:this={preEl}
               aria-hidden="true"
-              class="pointer-events-none absolute inset-0 m-0 overflow-hidden whitespace-pre-wrap break-words p-4 font-mono text-xs leading-6 text-slate-200"
+              class="env-text pointer-events-none absolute inset-0 m-0 overflow-hidden whitespace-pre-wrap break-words p-4 font-mono text-xs leading-6"
             >{@html highlightedHtml}</pre>
 
             <textarea
@@ -784,10 +786,11 @@
   <div
     role="dialog"
     aria-modal="true"
+    aria-labelledby="new-sieve-title"
     tabindex="-1"
     onclick={() => (showNewModal = false)}
     onkeydown={(e) => e.key === 'Escape' && (showNewModal = false)}
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
   >
     <div
       role="presentation"
@@ -797,18 +800,19 @@
     >
       <form
         onsubmit={handleCreateNewScript}
-        class="space-y-4 rounded-2xl border border-slate-800 bg-[#0D1B2A] p-6 shadow-2xl"
+        class="env-card space-y-4 rounded-3xl border p-7 shadow-2xl"
       >
-        <h3 class="text-base font-semibold text-white">Nouveau script Sieve</h3>
+        <h3 id="new-sieve-title" class="env-text text-lg font-semibold">Nouveau script Sieve</h3>
         <input
           bind:value={newScriptTitle}
+          aria-label="Nom du nouveau script"
           placeholder="Ex : vacances, tri-pro, enveloppe"
           required
-          class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+          class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
         />
         <div class="flex justify-end gap-2">
-          <button type="button" onclick={() => (showNewModal = false)} class="rounded-lg px-4 py-2 text-xs text-slate-400">Annuler</button>
-          <button class="rounded-lg bg-[#48B17F] px-4 py-2 text-xs font-semibold text-[#08101A]">Créer</button>
+          <button type="button" onclick={() => (showNewModal = false)} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">Annuler</button>
+          <button class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold">Créer</button>
         </div>
       </form>
     </div>
