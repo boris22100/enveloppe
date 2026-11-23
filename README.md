@@ -2,14 +2,12 @@
 
 Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContact, Calendrier JSCalendar*), conçu pour **Stalwart Mail Server** et compatible multi-serveurs.
 
-![Version](https://img.shields.io/badge/version-v0.1.3-48B17F?style=flat-square)
+![Version](https://img.shields.io/badge/version-v0.1.4-48B17F?style=flat-square)
 ![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)
 ![Image Size](https://img.shields.io/badge/image-9.84%20Mo-48B17F?style=flat-square)
 ![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)
 ![OWASP ZAP](https://img.shields.io/badge/OWASP%20ZAP-0%20FAIL%20%7C%2063%20PASS-48B17F?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)
-
-
 
 | Messagerie | Contacts | Agenda |
 | :---: | :---: | :---: |
@@ -19,6 +17,7 @@ Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContac
 
 ## ✨ Fonctionnalités
 
+* **Connexion OIDC / SSO automatique (PKCE)** : saisie de l'URL du serveur JMAP, détection automatique de `/.well-known/openid-configuration` et authentification via **Authorization Code + PKCE (`S256`)** avec rafraîchissement transparent des jetons (connexion classique par identifiant/mot de passe d'application également disponible).
 * **Messagerie JMAP complète** : gestion des dossiers et sous-dossiers, menus contextuels au clic droit sur les emails (*Archiver, Supprimer, Lu/Non lu, Favori, Spam, Déplacer vers, Exporter en `.eml`, Imprimer*) et sur les dossiers (*Nouveau sous-dossier, Renommer, Supprimer*).
 * **Calendrier (JSCalendar)** : vues *Mois*, *Semaine* et *Jour*, création directe au clic sur une date ou une tranche horaire (**Événement** avec invitation de participants, **Tâche**, **Anniversaire** à récurrence annuelle), import/export `.ics` et `.json`.
 * **Contacts (JSContact)** : consultation et gestion synchronisée avec le serveur.
@@ -29,7 +28,7 @@ Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContac
 
 ## 🌱 Sobriété & Green-IT
 
-* **Taille de l'image Docker** : `9,84 Mo` (binaire Go statique sur `distroless/static-debian12:nonroot`).
+* **Taille de l'image Docker** : `9,84 Mo` (binaire Go statique sur `distroless/static-debian12:nonroot`, multi-arch `linux/amd64` & `linux/arm64`).
 * **Empreinte mémoire** : `~5,9 Mio` de RAM (`0,00 %` CPU au repos).
 * **Réseau optimisé** : compression **Gzip** native, cache immuable (`max-age=31536000, immutable`) sur les assets statiques et requêtes JMAP groupées.
 
@@ -62,15 +61,25 @@ cp .env.example .env
 sed -i "s/remplace_moi_par_une_chaine_aleatoire_longue/$(openssl rand -hex 32)/" .env
 ```
 
-Éditez `.env` pour adapter votre URL publique :
+Éditez `.env` pour adapter votre configuration :
 
-| Variable | Description | Exemple |
+| Variable | Description | Exemple / Défaut |
 | :--- | :--- | :--- |
 | `PUBLIC_APP_URL` | URL HTTPS publique de votre instance | `https://webmail.mondomaine.fr` |
 | `SESSION_SECRET` | Clé secrète (64 caractères hex) utilisée pour chiffrer les cookies de session en AES-GCM | *(générée via `openssl rand -hex 32`)* |
 | `ALLOWED_JMAP_SERVERS` | Domaines JMAP autorisés (`*` pour tous, ou liste séparée par des virgules pour restreindre) | `mail.mondomaine.fr` |
+| `OIDC_CLIENT_ID` | *(Optionnel)* Identifiant du client OAuth2 déclaré dans Stalwart | `enveloppe` *(défaut)* |
+| `OIDC_CLIENT_SECRET` | *(Optionnel)* Secret client OAuth2 uniquement si vous utilisez un client confidentiel plutôt que PKCE public | *(vide par défaut)* |
 
-### 3. Lancer le conteneur
+### 3. Activer la connexion OIDC dans Stalwart (Optionnel)
+
+Dans l'interface d'administration de Stalwart (**Settings → OAuth2 → Create OAuth client**) :
+1. **Client ID** : `enveloppe` (laissez **Client Secret** vide pour un client public PKCE) et renseignez `Enveloppe` dans **Description**.
+2. **Redirect URIs** : ajoutez `https://<votre-domaine-enveloppe>/api/auth/oidc/callback` (en cliquant sur `+`).
+3. **Allowed Scopes** : cochez **Mail**, **Contacts** et **Calendars**.
+4. **Allowed Grant Types** : laissez cochés **Authorization code** et **Refresh token**.
+
+### 4. Lancer le conteneur
 
 ```bash
 docker compose up -d
@@ -91,7 +100,7 @@ docker compose pull && docker compose up -d
 ## 🛡️ Sécurité & Audit
 
 ### Mesures intégrées
-* **Sessions chiffrées** : identifiants stockés uniquement dans un cookie chiffré en **AES-GCM** côté client avec les drapeaux `HttpOnly`, `Secure` et `SameSite`.
+* **Sessions chiffrées** : identifiants ou jetons OAuth2 (`access_token` / `refresh_token`) stockés uniquement dans un cookie chiffré en **AES-GCM** côté client avec les drapeaux `HttpOnly`, `Secure` et `SameSite=Lax`.
 * **Isolation du conteneur** : image Distroless sans shell, utilisateur non-root, système de fichiers `read_only: true`, `no-new-privileges:true`.
 * **Durcissement HTTP** : en-têtes `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` et `Permissions-Policy`.
 * **Proxy sécurisé** : timeouts HTTP serveur (`ReadHeaderTimeout`, `IdleTimeout`), non-propagation du header `Authorization` sur redirection cross-domain, sanitisation des logs.
