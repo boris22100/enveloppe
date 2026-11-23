@@ -13,7 +13,6 @@ export default defineConfig({
       filename: 'sw.ts',
       registerType: "autoUpdate",
       useCredentials: true,
-      useCredentials: true,
       manifest: {
         id: '/',
         name: 'Enveloppe',

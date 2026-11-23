@@ -38,17 +38,147 @@ const sessionCache = new Map<string, any>();
 
 export async function getSession(accountId: string) {
   if (sessionCache.has(accountId)) return sessionCache.get(accountId);
-  const res = await fetch(`/api/jmap/${accountId}/session`); if (!res.ok) throw new Error('Session JMAP inaccessible'); const data = await res.json(); sessionCache.set(accountId, data); return data; }  export async function getPrimaryAccountId(accountId: string, capability = 'urn:ietf:params:jmap:mail'): Promise<string> { const s = await getSession(accountId); return s.primaryAccounts?.[capability] ?? Object.values(s.primaryAccounts)[0]; }  export async function jmapCall(accountId: string, methodCalls: any[], extraCapabilities: string[] = []) { const using = Array.from(new Set([ 'urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission', ...extraCapabilities ])); const res = await fetch(`/api/jmap/${accountId}/api`, {
+  const res = await fetch(`/api/jmap/${accountId}/session`);
+  if (!res.ok) throw new Error('Session JMAP inaccessible');
+  const data = await res.json();
+  sessionCache.set(accountId, data);
+  return data;
+}
+
+export async function getPrimaryAccountId(accountId: string, capability = 'urn:ietf:params:jmap:mail'): Promise<string> {
+  const s = await getSession(accountId);
+  return s.primaryAccounts?.[capability] ?? Object.values(s.primaryAccounts)[0];
+}
+
+export async function jmapCall(accountId: string, methodCalls: any[], extraCapabilities: string[] = []) {
+  const using = Array.from(new Set([
+    'urn:ietf:params:jmap:core',
+    'urn:ietf:params:jmap:mail',
+    'urn:ietf:params:jmap:submission',
+    ...extraCapabilities
+  ]));
+  const res = await fetch(`/api/jmap/${accountId}/api`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ using, methodCalls })
   });
-  if (!res.ok) throw new Error(`Erreur JMAP ${res.status}`); return res.json(); }  const ROLE_ORDER: Record<string, number> = { inbox: 1, drafts: 2, sent: 3, archive: 4, junk: 5, trash: 6 };  export const ROLE_META: Record<string, { label: string; icon: string }> = { inbox: { label: 'Boîte de réception', icon: '📥' }, drafts: { label: 'Brouillons', icon: '📝' }, sent: { label: 'Envoyés', icon: '📤' }, archive: { label: 'Archives', icon: '🗄️' }, junk: { label: 'Indésirables', icon: '🚫' }, trash: { label: 'Corbeille', icon: '🗑️' } };  export function buildMailboxTree(list: Mailbox[]): Mailbox[] { const byParent = new Map<string \vert{} null, Mailbox[]>(); for (const box of list) { const key = box.parentId ?? null; if (!byParent.has(key)) byParent.set(key, []); byParent.get(key)!.push(box); } const result: Mailbox[] = []; function walk(parentId: string \vert{} null, depth: number) { const children = (byParent.get(parentId) ?? []).sort((a, b) => { const ra = a.role ? (ROLE_ORDER[a.role] ?? 50) : 99; const rb = b.role ? (ROLE_ORDER[b.role] ?? 50) : 99; if (ra !== rb) return ra - rb; return a.name.localeCompare(b.name, 'fr'); }); for (const c of children) { result.push({ ...c, depth }); walk(c.id, depth + 1); } } walk(null, 0); return result; }  export function getMailboxSubtreeIds(mailboxes: Mailbox[], rootId: string): string[] { const ids = [rootId]; const queue = [rootId]; while (queue.length > 0) { const current = queue.shift()!; for (const box of mailboxes) { if (box.parentId === current && !ids.includes(box.id)) { ids.push(box.id); queue.push(box.id); } } } return ids; }  export async function fetchMailboxes(accountId: string): Promise<Mailbox[]> { const accId = await getPrimaryAccountId(accountId); const res = await jmapCall(accountId, [[ 'Mailbox/get', { accountId: accId, properties: ['id', 'name', 'role', 'parentId', 'unreadEmails', 'sortOrder'] }, 'm0' ]]); return buildMailboxTree(res.methodResponses[0][1].list ?? []); }  export async function fetchMailboxEmails(accountId: string, mailboxId: string): Promise<EmailSummary[]> { const accId = await getPrimaryAccountId(accountId); const mailRes = await jmapCall(accountId, [ ['Email/query', { accountId: accId, filter: { inMailbox: mailboxId }, sort: [{ property: 'receivedAt', isAscending: false }], limit: 50 }, 'q0'], ['Email/get', { accountId: accId, '#ids': { resultOf: 'q0', name: 'Email/query', path: '/ids' }, properties: ['id', 'blobId', 'subject', 'from', 'receivedAt', 'preview', 'keywords', 'mailboxIds'] }, 'g0'] ]); return (mailRes.methodResponses[1][1].list ?? []) as EmailSummary[]; }  export async function fetchEmailBody(accountId: string, emailId: string) { const accId = await getPrimaryAccountId(accountId); const res = await jmapCall(accountId, [ ['Email/get', { accountId: accId, ids: [emailId], properties: ['id', 'htmlBody', 'textBody', 'bodyValues', 'attachments'], fetchHTMLBodyValues: true, fetchTextBodyValues: true }, 'b0'], ['Email/set', { accountId: accId, update: { [emailId]: { 'keywords/$seen': true } } }, 'b1'] ]); const msg = res.methodResponses[0][1].list[0]; const htmlPartId = msg.htmlBody?.[0]?.partId; const textPartId = msg.textBody?.[0]?.partId; return { jmapAccountId: accId, html: htmlPartId ? msg.bodyValues[htmlPartId]?.value : null, text: textPartId ? msg.bodyValues[textPartId]?.value : '', attachments: (msg.attachments ?? []) as Attachment[] }; }  export async function uploadAttachment(accountId: string, file: File): Promise<Attachment> { const accId = await getPrimaryAccountId(accountId); const res = await fetch(`/api/jmap/${accountId}/upload/${encodeURIComponent(accId)}`, { method: 'POST', headers: { 'Content-Type': file.type \vert{}\vert{} 'application/octet-stream' }, body: file }); if (!res.ok) throw new Error('Échec upload pièce jointe'); const data = await res.json(); return { blobId: data.blobId, name: file.name, type: file.type \vert{}\vert{} 'application/octet-stream', size: data.size }; }  export function getDownloadUrl(accountId: string, jmapAccountId: string, att: Attachment) { return `/api/jmap/${accountId}/download/${encodeURIComponent(jmapAccountId)}/${encodeURIComponent(att.blobId)}/${encodeURIComponent(att.name \vert{}\vert{} 'fichier')}?type=${encodeURIComponent(att.type)}`;
+  if (!res.ok) throw new Error(`Erreur JMAP ${res.status}`);
+  return res.json();
+}
+
+const ROLE_ORDER: Record<string, number> = {
+  inbox: 1,
+  drafts: 2,
+  sent: 3,
+  archive: 4,
+  junk: 5,
+  trash: 6
+};
+
+export const ROLE_META: Record<string, { label: string; icon: string }> = {
+  inbox: { label: 'Boîte de réception', icon: '📥' },
+  drafts: { label: 'Brouillons', icon: '📝' },
+  sent: { label: 'Envoyés', icon: '📤' },
+  archive: { label: 'Archives', icon: '🗄️' },
+  junk: { label: 'Indésirables', icon: '🚫' },
+  trash: { label: 'Corbeille', icon: '🗑️' }
+};
+
+export function buildMailboxTree(list: Mailbox[]): Mailbox[] {
+  const byParent = new Map<string | null, Mailbox[]>();
+  for (const box of list) {
+    const key = box.parentId ?? null;
+    if (!byParent.has(key)) byParent.set(key, []);
+    byParent.get(key)!.push(box);
+  }
+  const result: Mailbox[] = [];
+  function walk(parentId: string | null, depth: number) {
+    const children = (byParent.get(parentId) ?? []).sort((a, b) => {
+      const ra = a.role ? (ROLE_ORDER[a.role] ?? 50) : 99;
+      const rb = b.role ? (ROLE_ORDER[b.role] ?? 50) : 99;
+      if (ra !== rb) return ra - rb;
+      return a.name.localeCompare(b.name, 'fr');
+    });
+    for (const c of children) {
+      result.push({ ...c, depth });
+      walk(c.id, depth + 1);
+    }
+  }
+  walk(null, 0);
+  return result;
+}
+
+export function getMailboxSubtreeIds(mailboxes: Mailbox[], rootId: string): string[] {
+  const ids = [rootId];
+  const queue = [rootId];
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    for (const box of mailboxes) {
+      if (box.parentId === current && !ids.includes(box.id)) {
+        ids.push(box.id);
+        queue.push(box.id);
+      }
+    }
+  }
+  return ids;
+}
+
+export async function fetchMailboxes(accountId: string): Promise<Mailbox[]> {
+  const accId = await getPrimaryAccountId(accountId);
+  const res = await jmapCall(accountId, [[
+    'Mailbox/get',
+    { accountId: accId, properties: ['id', 'name', 'role', 'parentId', 'unreadEmails', 'sortOrder'] },
+    'm0'
+  ]]);
+  return buildMailboxTree(res.methodResponses[0][1].list ?? []);
+}
+
+export async function fetchMailboxEmails(accountId: string, mailboxId: string): Promise<EmailSummary[]> {
+  const accId = await getPrimaryAccountId(accountId);
+  const mailRes = await jmapCall(accountId, [
+    ['Email/query', { accountId: accId, filter: { inMailbox: mailboxId }, sort: [{ property: 'receivedAt', isAscending: false }], limit: 50 }, 'q0'],
+    ['Email/get', { accountId: accId, '#ids': { resultOf: 'q0', name: 'Email/query', path: '/ids' }, properties: ['id', 'blobId', 'subject', 'from', 'receivedAt', 'preview', 'keywords', 'mailboxIds'] }, 'g0']
+  ]);
+  return (mailRes.methodResponses[1][1].list ?? []) as EmailSummary[];
+}
+
+export async function fetchEmailBody(accountId: string, emailId: string) {
+  const accId = await getPrimaryAccountId(accountId);
+  const res = await jmapCall(accountId, [
+    ['Email/get', { accountId: accId, ids: [emailId], properties: ['id', 'htmlBody', 'textBody', 'bodyValues', 'attachments'], fetchHTMLBodyValues: true, fetchTextBodyValues: true }, 'b0'],
+    ['Email/set', { accountId: accId, update: { [emailId]: { 'keywords/$seen': true } } }, 'b1']
+  ]);
+  const msg = res.methodResponses[0][1].list[0];
+  const htmlPartId = msg.htmlBody?.[0]?.partId;
+  const textPartId = msg.textBody?.[0]?.partId;
+  return {
+    jmapAccountId: accId,
+    html: htmlPartId ? msg.bodyValues[htmlPartId]?.value : null,
+    text: textPartId ? msg.bodyValues[textPartId]?.value : '',
+    attachments: (msg.attachments ?? []) as Attachment[]
+  };
+}
+
+export async function uploadAttachment(accountId: string, file: File): Promise<Attachment> {
+  const accId = await getPrimaryAccountId(accountId);
+  const res = await fetch(`/api/jmap/${accountId}/upload/${encodeURIComponent(accId)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': file.type || 'application/octet-stream' },
+    body: file
+  });
+  if (!res.ok) throw new Error('Échec upload pièce jointe');
+  const data = await res.json();
+  return { blobId: data.blobId, name: file.name, type: file.type || 'application/octet-stream', size: data.size };
+}
+
+export function getDownloadUrl(accountId: string, jmapAccountId: string, att: Attachment) {
+  return `/api/jmap/${accountId}/download/${encodeURIComponent(jmapAccountId)}/${encodeURIComponent(att.blobId)}/${encodeURIComponent(att.name || 'fichier')}?type=${encodeURIComponent(att.type)}`;
 }
 
 export async function archiveEmail(accountId: string, emailId: string, currentMailboxId: string, archiveId?: string) {
   const accId = await getPrimaryAccountId(accountId);
-  const update: Record<string, any> = { [`mailboxIds/${currentMailboxId}`]: null }; if (archiveId) update[`mailboxIds/${archiveId}`] = true;
+  const update: Record<string, any> = { [`mailboxIds/${currentMailboxId}`]: null };
+  if (archiveId) update[`mailboxIds/${archiveId}`] = true;
   await jmapCall(accountId, [['Email/set', { accountId: accId, update: { [emailId]: update } }, 'a0']]);
 }
 
@@ -145,7 +275,81 @@ export async function setEmailKeyword(accountId: string, emailId: string, keywor
   const accId = await getPrimaryAccountId(accountId);
   await jmapCall(accountId, [[
     'Email/set',
-    { accountId: accId, update: { [emailId]: { [`keywords/${keyword}`]: value ? true : null } } }, 'kw0' ]]); }  export async function markMailboxesAsRead(accountId: string, mailboxIds: string[]): Promise<number> { const accId = await getPrimaryAccountId(accountId); let total = 0; for (const mbId of mailboxIds) { while (true) { const qRes = await jmapCall(accountId, [[ 'Email/query', { accountId: accId, filter: { inMailbox: mbId, notKeyword: '$seen' }, limit: 200 }, 'qr0' ]]); const ids: string[] = qRes.methodResponses?.[0]?.[1]?.ids ?? []; if (ids.length === 0) break;  const update: Record<string, any> = {}; for (const id of ids) update[id] = { 'keywords/$seen': true };  const sRes = await jmapCall(accountId, [['Email/set', { accountId: accId, update }, 'sr0']]); const updatedCount = Object.keys(sRes.methodResponses?.[0]?.[1]?.updated ?? {}).length; total += updatedCount; if (updatedCount === 0 \vert{}\vert{} ids.length < 200) break; } } return total; }  export async function emptyMailboxes(accountId: string, mailboxIds: string[]): Promise<number> { const accId = await getPrimaryAccountId(accountId); let total = 0; for (const mbId of mailboxIds) { while (true) { const qRes = await jmapCall(accountId, [[ 'Email/query', { accountId: accId, filter: { inMailbox: mbId }, limit: 200 }, 'qe0' ]]); const ids: string[] = qRes.methodResponses?.[0]?.[1]?.ids ?? []; if (ids.length === 0) break;  const sRes = await jmapCall(accountId, [['Email/set', { accountId: accId, destroy: ids }, 'se0']]); const destroyed: string[] = sRes.methodResponses?.[0]?.[1]?.destroyed ?? []; total += destroyed.length; if (destroyed.length === 0 \vert{}\vert{} ids.length < 200) break; } } return total; }  export async function createMailbox(accountId: string, name: string, parentId: string \vert{} null = null) { const accId = await getPrimaryAccountId(accountId); await jmapCall(accountId, [[ 'Mailbox/set', { accountId: accId, create: { mb1: { name, parentId } } }, 'mbc0' ]]); }  export async function renameMailbox(accountId: string, mailboxId: string, name: string) { const accId = await getPrimaryAccountId(accountId); await jmapCall(accountId, [[ 'Mailbox/set', { accountId: accId, update: { [mailboxId]: { name } } }, 'mbr0' ]]); }  export async function deleteMailbox(accountId: string, mailboxId: string) { const accId = await getPrimaryAccountId(accountId); await jmapCall(accountId, [[ 'Mailbox/set', { accountId: accId, destroy: [mailboxId], onDestroyRemoveEmails: false }, 'mbd0' ]]); } EOF  echo ">>> [3/8] Mise à jour de frontend/src/lib/jmap/contacts.ts et calendar.ts" cat << 'EOF' > frontend/src/lib/jmap/contacts.ts import { getPrimaryAccountId, jmapCall } from './client';  const CAP = 'urn:ietf:params:jmap:contacts';  export interface JSContact { id?: string; name?: { full?: string }; emails?: Record<string, { address: string }>; phones?: Record<string, { number: string }>; }  export async function fetchContacts(accountId: string): Promise<JSContact[]> { const accId = await getPrimaryAccountId(accountId, CAP); const res = await jmapCall(accountId, [['ContactCard/get', { accountId: accId }, 'c0']], [CAP]); return res.methodResponses[0][1].list ?? []; }  export async function createContact(accountId: string, fullName: string, email: string, phone = '') { const accId = await getPrimaryAccountId(accountId, CAP); const card: any = { '@type': 'Card', version: '1.0', name: { full: fullName }, emails: { e1: { '@type': 'EmailAddress', address: email } } }; if (phone) card.phones = { p1: { '@type': 'Phone', number: phone } }; await jmapCall(accountId, [['ContactCard/set', { accountId: accId, create: { c1: card } }, 'c0']], [CAP]); }  export async function deleteContact(accountId: string, contactId: string) { const accId = await getPrimaryAccountId(accountId, CAP); const res = await jmapCall(accountId, [['ContactCard/set', { accountId: accId, destroy: [contactId] }, 'cd0']], [CAP]); const result = res.methodResponses?.[0]?.[1]; if (result?.notDestroyed?.[contactId]) { throw new Error(result.notDestroyed[contactId].description \vert{}\vert{} 'Suppression du contact refusée'); } }  export async function importContactsJSON(accountId: string, jsonText: string) { const accId = await getPrimaryAccountId(accountId, CAP); const items = JSON.parse(jsonText) as any[]; const create: Record<string, any> = {}; items.forEach((item, idx) => { const { id, uid, ...clean } = item; create[`imp_${idx}`] = { '@type': 'Card', version: '1.0', ...clean };
-  });
-  await jmapCall(accountId, [['ContactCard/set', { accountId: accId, create }, 'imp0']], [CAP]);
+    { accountId: accId, update: { [emailId]: { [`keywords/${keyword}`]: value ? true : null } } },
+    'kw0'
+  ]]);
+}
+
+export async function markMailboxesAsRead(accountId: string, mailboxIds: string[]): Promise<number> {
+  const accId = await getPrimaryAccountId(accountId);
+  let total = 0;
+  for (const mbId of mailboxIds) {
+    while (true) {
+      const qRes = await jmapCall(accountId, [[
+        'Email/query',
+        { accountId: accId, filter: { inMailbox: mbId, notKeyword: '$seen' }, limit: 200 },
+        'qr0'
+      ]]);
+      const ids: string[] = qRes.methodResponses?.[0]?.[1]?.ids ?? [];
+      if (ids.length === 0) break;
+
+      const update: Record<string, any> = {};
+      for (const id of ids) update[id] = { 'keywords/$seen': true };
+
+      const sRes = await jmapCall(accountId, [['Email/set', { accountId: accId, update }, 'sr0']]);
+      const updatedCount = Object.keys(sRes.methodResponses?.[0]?.[1]?.updated ?? {}).length;
+      total += updatedCount;
+      if (updatedCount === 0 || ids.length < 200) break;
+    }
+  }
+  return total;
+}
+
+export async function emptyMailboxes(accountId: string, mailboxIds: string[]): Promise<number> {
+  const accId = await getPrimaryAccountId(accountId);
+  let total = 0;
+  for (const mbId of mailboxIds) {
+    while (true) {
+      const qRes = await jmapCall(accountId, [[
+        'Email/query',
+        { accountId: accId, filter: { inMailbox: mbId }, limit: 200 },
+        'qe0'
+      ]]);
+      const ids: string[] = qRes.methodResponses?.[0]?.[1]?.ids ?? [];
+      if (ids.length === 0) break;
+
+      const sRes = await jmapCall(accountId, [['Email/set', { accountId: accId, destroy: ids }, 'se0']]);
+      const destroyed: string[] = sRes.methodResponses?.[0]?.[1]?.destroyed ?? [];
+      total += destroyed.length;
+      if (destroyed.length === 0 || ids.length < 200) break;
+    }
+  }
+  return total;
+}
+
+export async function createMailbox(accountId: string, name: string, parentId: string | null = null) {
+  const accId = await getPrimaryAccountId(accountId);
+  await jmapCall(accountId, [[
+    'Mailbox/set',
+    { accountId: accId, create: { mb1: { name, parentId } } },
+    'mbc0'
+  ]]);
+}
+
+export async function renameMailbox(accountId: string, mailboxId: string, name: string) {
+  const accId = await getPrimaryAccountId(accountId);
+  await jmapCall(accountId, [[
+    'Mailbox/set',
+    { accountId: accId, update: { [mailboxId]: { name } } },
+    'mbr0'
+  ]]);
+}
+
+export async function deleteMailbox(accountId: string, mailboxId: string) {
+  const accId = await getPrimaryAccountId(accountId);
+  await jmapCall(accountId, [[
+    'Mailbox/set',
+    { accountId: accId, destroy: [mailboxId], onDestroyRemoveEmails: false },
+    'mbd0'
+  ]]);
 }
