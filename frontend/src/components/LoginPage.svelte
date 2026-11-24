@@ -170,8 +170,10 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-xs"
     >
       <div
-        role="document"
+        role="button"
+        tabindex="0"
         onclick={(e) => e.stopPropagation()}
+        onkeydown={(e) => e.key === 'Escape' && (legalModal = null)}
         class="env-card max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl border p-6 shadow-2xl"
       >
         <div class="env-border mb-4 flex items-center justify-between border-b pb-3">

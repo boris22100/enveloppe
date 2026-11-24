@@ -28,8 +28,9 @@
 
   let showMoveSub = $state(false);
   let showMoreSub = $state(false);
-  let pos = $state<{ left: number; top: number }>({ left: x, top: y });
-  let subPos = $state<{ left: number; top: number }>({ left: x + 220, top: y });
+  let overridePos = $state<{ left: number; top: number } | null>(null);
+  let pos = $derived(overridePos ?? { left: x, top: y });
+  let subPos = $state<{ left: number; top: number }>({ left: 0, top: 0 });
 
   const ROLE_LABELS: Record<string, { label: string; icon: string }> = {
     inbox: { label: 'Boîte de réception', icon: '📥' },
@@ -60,7 +61,7 @@
     if (top + rect.height > window.innerHeight - pad) {
       top = Math.max(pad, window.innerHeight - rect.height - pad);
     }
-    pos = { left, top };
+    overridePos = { left, top };
   }
 
   async function positionMoveSubmenu() {
@@ -121,7 +122,7 @@
     bind:this={menuEl}
     role="menu"
     tabindex="-1"
-    onclick={(e) => e.stopPropagation()}
+    onkeydown={(e) => e.key === 'Escape' && onClose()}
     style="left: {pos.left}px; top: {pos.top}px;"
     class="env-card fixed z-50 w-56 rounded-xl border py-1.5 text-sm shadow-2xl"
   >
@@ -140,7 +141,7 @@
 
       <div class="env-border my-1 border-t"></div>
 
-      <div class="relative" onmouseenter={openMoveSubOnHover}>
+      <div role="none" class="relative" onmouseenter={openMoveSubOnHover}>
         <button
           bind:this={moveBtnEl}
           type="button"
@@ -162,7 +163,7 @@
 
       <div class="env-border my-1 border-t"></div>
 
-      <div class="relative" onmouseenter={() => { showMoveSub = false; showMoreSub = true; }}>
+      <div role="none" class="relative" onmouseenter={() => { showMoveSub = false; showMoreSub = true; }}>
         <button type="button" onclick={() => { showMoveSub = false; showMoreSub = !showMoreSub; }} class="env-hover flex w-full items-center justify-between px-3.5 py-2 text-left">
           <span>⋯ Plus d'actions</span>
           <span class="env-faint text-xs">›</span>
@@ -208,6 +209,7 @@
     <div
       bind:this={subMenuEl}
       role="menu"
+      tabindex="-1"
       onclick={(e) => e.stopPropagation()}
       style="left: {subPos.left}px; top: {subPos.top}px;"
       class="env-card fixed z-50 max-h-80 w-56 overflow-y-auto rounded-xl border py-1.5 shadow-2xl"
