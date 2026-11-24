@@ -257,20 +257,20 @@
     <form onsubmit={saveEditedContact} class="env-card w-full max-w-md space-y-3 rounded-xl border p-5 shadow-2xl">
       <h3 class="env-text text-base font-bold">Modifier le contact</h3>
       <div>
-        <label class="env-muted mb-1 block text-xs">Nom</label>
+        <label for="edit-contact-name" class="env-muted mb-1 block text-xs">Nom</label>
         <input id="edit-contact-name" aria-label="Nom du contact" placeholder="Nom complet" bind:value={editName} type="text" required class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
       </div>
       <div>
-        <label class="env-muted mb-1 block text-xs">Adresse e-mail</label>
+        <label for="edit-contact-email" class="env-muted mb-1 block text-xs">Adresse e-mail</label>
         <input id="edit-contact-email" aria-label="Adresse e-mail du contact" placeholder="prenom.nom@domaine.fr" bind:value={editEmail} type="email" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
       </div>
       <div>
-        <label class="env-muted mb-1 block text-xs">Téléphone</label>
+        <label for="edit-contact-phone" class="env-muted mb-1 block text-xs">Téléphone</label>
         <input id="edit-contact-phone" aria-label="Téléphone du contact" placeholder="+33 6 00 00 00 00" bind:value={editPhone} type="tel" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
       </div>
       <div>
-        <label class="env-muted mb-1 block text-xs">Notes</label>
-        <textarea bind:value={editNotes} rows="2" class="env-input w-full rounded-lg border px-3 py-2 text-sm"></textarea>
+        <label for="edit-contact-notes" class="env-muted mb-1 block text-xs">Notes</label>
+        <textarea id="edit-contact-notes" bind:value={editNotes} rows="2" class="env-input w-full rounded-lg border px-3 py-2 text-sm"></textarea>
       </div>
       {#if editError}
         <p class="text-xs text-red-400">{editError}</p>

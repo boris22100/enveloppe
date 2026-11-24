@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SieveRuleCard from './sieve/SieveRuleCard.svelte';
   import SieveCodeEditor from './sieve/SieveCodeEditor.svelte';
   import SieveVacationCard from './sieve/SieveVacationCard.svelte';
   import SieveNewScriptModal from './sieve/SieveNewScriptModal.svelte';
@@ -472,192 +473,18 @@
             </button>
           </div>
 
-          {#each rules as rule}
-            <div class="env-card space-y-4 rounded-xl border p-5 shadow-xs">
-              <div class="env-border flex flex-wrap items-center justify-between gap-2 border-b pb-3.5">
-                <div class="flex flex-wrap items-center gap-2.5">
-                  <input
-                    type="checkbox"
-                    bind:checked={rule.enabled}
-                    onchange={syncVisualToCode}
-                    aria-label="Activer la règle"
-                    class="h-4 w-4 accent-[#48B17F]"
-                  />
-                  <input
-                    bind:value={rule.name}
-                    oninput={syncVisualToCode}
-                    aria-label="Nom de la règle"
-                    placeholder="Nom de la règle"
-                    class="env-input rounded-xl border px-3 py-1.5 text-xs font-semibold"
-                  />
-                  <select
-                    bind:value={rule.matchType}
-                    onchange={syncVisualToCode}
-                    aria-label="Logique des conditions"
-                    class="env-input rounded-xl border px-3 py-1.5 text-xs"
-                  >
-                    <option value="allof">Si TOUTES les conditions sont vraies</option>
-                    <option value="anyof">Si AU MOINS UNE condition est vraie</option>
-                  </select>
-                </div>
-
-                <button
-                  type="button"
-                  onclick={() => removeRule(rule.id)}
-                  class="env-muted rounded-xl px-2.5 py-1.5 text-xs hover:bg-red-500/15 hover:text-red-400"
-                >
-                  🗑️ Supprimer
-                </button>
-              </div>
-
-              <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-semibold uppercase tracking-wider text-sky-400">Conditions</span>
-                  <button type="button" onclick={() => addCondition(rule)} class="env-muted env-accent-text text-xs font-medium">+ Condition</button>
-                </div>
-
-                {#each rule.conditions as cond}
-                  <div class="flex flex-wrap items-center gap-2">
-                    <select
-                      bind:value={cond.field}
-                      onchange={syncVisualToCode}
-                      aria-label="Champ du message"
-                      class="env-input rounded-xl border px-3 py-2 text-xs"
-                    >
-                      <option value="from">De (From)</option>
-                      <option value="to">À / Cc (To, Cc)</option>
-                      <option value="subject">Objet (Subject)</option>
-                      <option value="header">En-tête personnalisé</option>
-                      <option value="size">Taille du message</option>
-                    </select>
-
-                    {#if cond.field === 'header'}
-                      <input
-                        bind:value={cond.headerName}
-                        oninput={syncVisualToCode}
-                        placeholder="Ex: List-Id"
-                        class="env-input w-36 rounded-xl border px-3 py-2 text-xs"
-                      />
-                    {/if}
-
-                    {#if cond.field === 'size'}
-                      <select
-                        bind:value={cond.operator}
-                        onchange={syncVisualToCode}
-                        aria-label="Comparateur de taille"
-                        class="env-input rounded-xl border px-3 py-2 text-xs"
-                      >
-                        <option value="over">dépasse</option>
-                        <option value="under">est inférieur à</option>
-                      </select>
-                      <input
-                        bind:value={cond.value}
-                        oninput={syncVisualToCode}
-                        placeholder="Ex: 5M ou 500K"
-                        class="env-input min-w-44 flex-1 rounded-xl border px-3.5 py-2 text-xs"
-                      />
-                    {:else}
-                      <select
-                        bind:value={cond.operator}
-                        onchange={syncVisualToCode}
-                        aria-label="Opérateur"
-                        class="env-input rounded-xl border px-3 py-2 text-xs"
-                      >
-                        <option value="contains">contient</option>
-                        <option value="is">est exactement</option>
-                        <option value="matches">correspond à (* ?)</option>
-                      </select>
-                      <input
-                        bind:value={cond.value}
-                        oninput={syncVisualToCode}
-                        placeholder={cond.field === 'from' ? 'ex: newsletter@domaine.fr' : 'Texte à rechercher...'}
-                        class="env-input min-w-48 flex-1 rounded-xl border px-3.5 py-2 text-xs"
-                      />
-                    {/if}
-
-                    {#if rule.conditions.length > 1}
-                      <button
-                        type="button"
-                        onclick={() => removeCondition(rule, cond.id)}
-                        aria-label="Supprimer la condition"
-                        class="env-faint rounded-xl px-2 py-1.5 text-xs hover:text-red-400"
-                      >
-                        ✕
-                      </button>
-                    {/if}
-                  </div>
-                {/each}
-              </div>
-
-              <div class="space-y-2 pt-1">
-                <div class="flex items-center justify-between">
-                  <span class="env-accent-text text-xs font-semibold uppercase tracking-wider">Actions</span>
-                  <button type="button" onclick={() => addAction(rule)} class="env-muted env-accent-text text-xs font-medium">+ Action</button>
-                </div>
-
-                {#each rule.actions as act}
-                  <div class="flex flex-wrap items-center gap-2">
-                    <select
-                      bind:value={act.type}
-                      onchange={() => onActionTypeChange(act)}
-                      aria-label="Type d'action"
-                      class="env-input rounded-xl border px-3 py-2 text-xs"
-                    >
-                      <option value="fileinto">📁 Déplacer vers le dossier</option>
-                      <option value="markRead">📭 Marquer comme lu</option>
-                      <option value="star">★ Ajouter aux favoris</option>
-                      <option value="redirect">↪️ Transférer à l'adresse</option>
-                      <option value="reject">🚫 Rejeter avec message</option>
-                      <option value="stop">🛑 Arrêter les règles suivantes</option>
-                    </select>
-
-                    {#if act.type === 'fileinto'}
-                      <select
-                        bind:value={act.value}
-                        onchange={syncVisualToCode}
-                        aria-label="Dossier de destination"
-                        class="env-input min-w-48 flex-1 rounded-xl border px-3 py-2 text-xs"
-                      >
-                        {#each mailboxes as box}
-                          <option value={box.name}>
-                            {'— '.repeat(box.depth ?? 0)}{(box.role && ROLE_META[box.role]?.label) || box.name}
-                          </option>
-                        {/each}
-                        {#if act.value && !mailboxes.some((b) => b.name === act.value)}
-                          <option value={act.value}>{act.value}</option>
-                        {/if}
-                      </select>
-                    {:else if act.type === 'redirect'}
-                      <input
-                        type="email"
-                        bind:value={act.value}
-                        oninput={syncVisualToCode}
-                        placeholder="destinataire@domaine.fr"
-                        class="env-input min-w-48 flex-1 rounded-xl border px-3.5 py-2 text-xs"
-                      />
-                    {:else if act.type === 'reject'}
-                      <input
-                        bind:value={act.value}
-                        oninput={syncVisualToCode}
-                        placeholder="Motif du rejet..."
-                        class="env-input min-w-48 flex-1 rounded-xl border px-3.5 py-2 text-xs"
-                      />
-                    {/if}
-
-                    {#if rule.actions.length > 1}
-                      <button
-                        type="button"
-                        onclick={() => removeAction(rule, act.id)}
-                        aria-label="Supprimer l'action"
-                        class="env-faint rounded-xl px-2 py-1.5 text-xs hover:text-red-400"
-                      >
-                        ✕
-                      </button>
-                    {/if}
-                  </div>
-                {/each}
-              </div>
-            </div>
+          {#each rules as _rule, idx (rules[idx].id)}
+            <SieveRuleCard
+              bind:rule={rules[idx]}
+              {mailboxes}
+              onSync={syncVisualToCode}
+              onRemoveRule={removeRule}
+              onAddCondition={addCondition}
+              onRemoveCondition={removeCondition}
+              onAddAction={addAction}
+              onRemoveAction={removeAction}
+              {onActionTypeChange}
+            />
           {:else}
             <div class="env-card env-muted rounded-xl border border-dashed p-8 text-center text-xs">
               Aucune règle visuelle configurée. Clique sur <strong>+ Ajouter une règle</strong> ou utilise un modèle dans l'onglet <strong>Code Sieve</strong>.
