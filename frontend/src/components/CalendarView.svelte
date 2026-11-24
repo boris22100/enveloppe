@@ -1,4 +1,160 @@
 <script lang="ts">
+  interface CalContactItem { name: string; email: string; }
+  let calContacts = $state<CalContactItem[]>([]);
+  let showParticipantDropdown = $state(false);
+  let inviteFeedback = $state('');
+
+  function getActiveParticipantQuery(val: string): string {
+    const parts = (val || '').split(',');
+    return (parts[parts.length - 1] || '').trim().toLowerCase();
+  }
+
+  let filteredParticipantSuggestions = $derived.by(() => {
+    const q = getActiveParticipantQuery(typeof participantsInput === 'string' ? participantsInput : '');
+    if (!q) return [];
+    const selected = new Set(
+      (typeof participantsInput === 'string' ? participantsInput : '')
+        .split(',')
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean)
+    );
+    return calContacts
+      .filter((c) => !selected.has(c.email.toLowerCase()))
+      .filter((c) => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q))
+      .slice(0, 6);
+  });
+
+  function selectParticipantSuggestion(email: string) {
+    const current = typeof participantsInput === 'string' ? participantsInput : '';
+    const parts = current.split(',').map((s) => s.trim()).filter(Boolean);
+    if (parts.length > 0 && !parts[parts.length - 1].includes('@')) {
+      parts.pop();
+    }
+    parts.push(email);
+    participantsInput = parts.join(', ') + ', ';
+    showParticipantDropdown = false;
+  }
+
+  async function loadCalContacts() {
+    try {
+      let raw: any = null;
+      
+      if (!raw) {
+        const res = await fetch(`/api/jmap/${encodeURIComponent(accountId)}/contacts`);
+        if (res.ok) raw = await res.json();
+      }
+      const list = Array.isArray(raw) ? raw : (raw?.contacts || raw?.items || raw?.cards || []);
+      const out: CalContactItem[] = [];
+      for (const c of list) {
+        const name = typeof c?.name === 'string' ? c.name : (c?.name?.full || c?.fullName || c?.displayName || '');
+        const ems = c?.emails && typeof c.emails === 'object'
+          ? Object.values(c.emails).map((x: any) => (typeof x === 'string' ? x : x?.address || x?.value || x?.email || ''))
+          : [c?.email || ''];
+        for (const em of ems) {
+          const clean = (em || '').trim();
+          if (clean.includes('@')) out.push({ name: name || clean, email: clean });
+        }
+      }
+      calContacts = out;
+    } catch {}
+  }
+
+  $effect(() => {
+    if (accountId) loadCalContacts();
+  });
+
+  async function sendCalendarInviteRobust(evTitle: string, evStart: string, evEnd: string, evLocation: string, evNotes: string) {
+    const raw = typeof participantsInput === 'string' ? participantsInput : '';
+    const recipients = raw
+      .split(/[,;\s]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.includes('@'));
+    if (recipients.length === 0) return;
+
+    let sender = typeof organizerEmail === 'string' && organizerEmail.includes('@') ? organizerEmail : '';
+    if (!sender) {
+      try {
+        const accRes = await fetch('/api/accounts');
+        if (accRes.ok) {
+          const accs = await accRes.json();
+          const cur = accs.find((a: any) => a.id === accountId) || accs[0];
+          sender = cur?.username || cur?.email || '';
+        }
+      } catch {}
+    }
+    if (!sender) sender = 'noreply@localhost';
+
+    const icsStr = buildIcsInvitation({
+      title: evTitle || 'Événement',
+      start: evStart || new Date().toISOString(),
+      end: evEnd || undefined,
+      location: evLocation || undefined,
+      description: evNotes || undefined,
+      organizerEmail: sender,
+      attendees: recipients
+    });
+    const icsFile = createIcsFile(icsStr, 'invitation.ics');
+
+    let uploaded: any = null;
+    if (typeof uploadAttachment === 'function') { try { uploaded = await uploadAttachment(accountId, icsFile); } catch {} }
+    if (!uploaded) {
+      const fd = new FormData();
+      fd.append('file', icsFile);
+      for (const upUrl of [
+        `/api/jmap/${encodeURIComponent(accountId)}/upload`,
+        `/api/jmap/${encodeURIComponent(accountId)}/blob/upload`
+      ]) {
+        try {
+          const r = await fetch(upUrl, { method: 'POST', body: fd });
+          if (r.ok) { uploaded = await r.json(); break; }
+        } catch {}
+      }
+    }
+
+    const whenTxt = evStart ? new Date(evStart).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' }) : '';
+    const mailBody = [
+      'Bonjour,',
+      '',
+      `Vous êtes invité(e) à l\'événement : ${evTitle || 'Événement'}`,
+      whenTxt ? `Date : ${whenTxt}` : '',
+      evLocation ? `Lieu : ${evLocation}` : '',
+      evNotes ? `\nNotes :\n${evNotes}` : '',
+      '',
+      'Le fichier invitation.ics est joint à ce message.'
+    ].filter((l, idx, arr) => !(l === '' && arr[idx - 1] === '')).join('\n');
+
+    const attachments = uploaded ? [uploaded] : [];
+    let sentOk = false;
+    if (typeof sendEmail === 'function') { try { await sendEmail(accountId, recipients.join(', '), `Invitation : ${evTitle || 'Événement'}`, mailBody, attachments); sentOk = true; } catch {} }
+    if (!sentOk) {
+      for (const sendUrl of [
+        `/api/jmap/${encodeURIComponent(accountId)}/send`,
+        `/api/jmap/${encodeURIComponent(accountId)}/email/send`,
+        `/api/jmap/${encodeURIComponent(accountId)}/emails/send`
+      ]) {
+        try {
+          const r = await fetch(sendUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: recipients.join(', '),
+              subject: `Invitation : ${evTitle || 'Événement'}`,
+              text: mailBody,
+              attachments
+            })
+          });
+          if (r.ok) { sentOk = true; break; }
+        } catch {}
+      }
+    }
+
+    inviteFeedback = sentOk
+      ? `Invitation (.ics) envoyée à ${recipients.join(', ')}.`
+      : `Échec de l\'envoi de l\'invitation à ${recipients.join(', ')} (vérifiez la route d\'envoi JMAP).`;
+    if (sentOk) participantsInput = '';
+    setTimeout(() => (inviteFeedback = ''), 6000);
+  }
+
   interface ContactEntry { name: string; email: string; }
   let contactList = $state<ContactEntry[]>([]);
   let showSuggestions = $state(false);
@@ -73,7 +229,7 @@
     }
   });
 
-  import { sendEmail, uploadAttachment } from '../lib/jmap/client';
+  import { jmapCall, sendEmail, uploadAttachment } from '../lib/jmap/client';
   import { buildIcsInvitation, createIcsFile } from '../lib/ics';
 
   import {
@@ -200,6 +356,18 @@
 
   async function handleSave(e: Event) {
     try {
+      await sendCalendarInviteRobust(
+        typeof title !== 'undefined' ? title : '',
+        typeof start !== 'undefined' ? start : (typeof startAt !== 'undefined' ? startAt : ''),
+        typeof end !== 'undefined' ? end : (typeof endAt !== 'undefined' ? endAt : ''),
+        typeof location !== 'undefined' ? location : '',
+        typeof description !== 'undefined' ? description : (typeof notes !== 'undefined' ? notes : '')
+      );
+    } catch (e) {
+      console.error('sendCalendarInviteRobust:', e);
+    }
+
+    try {
       await sendCalendarInvite(
         typeof title !== 'undefined' ? title : '',
         typeof start !== 'undefined' ? start : (typeof startAt !== 'undefined' ? startAt : ''),
@@ -219,6 +387,9 @@
         ? inviteesText.split(/[,;\s]+/).map((s) => s.trim()).filter((s) => s.includes('@'))
         : [];
       await createEvent(accountId, defaultCalId, title, start, description, kind, invitees);
+      if (kind === 'event' && invitees.length > 0) {
+        await dispatchEventInvitationIcs(title, start, description, invitees);
+      }
       showModal = false;
       await load();
     } finally {
@@ -291,6 +462,135 @@
     inviteNotice = `Invitation (.ics) envoyée à ${attendees.join(', ')}.`;
     participantsInput = '';
     setTimeout(() => (inviteNotice = ''), 5000);
+  }
+
+
+  interface CalContact { name: string; email: string; }
+  let calContactPool = $state<CalContact[]>([]);
+  let showInviteeDropdown = $state(false);
+  let inviteSendStatus = $state('');
+
+  let activeInviteeQuery = $derived.by(() => {
+    const parts = (inviteesText || '').split(',');
+    return (parts[parts.length - 1] || '').trim().toLowerCase();
+  });
+
+  let inviteeSuggestions = $derived.by(() => {
+    const q = activeInviteeQuery;
+    if (!q) return [];
+    const already = new Set(
+      (inviteesText || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+    );
+    return calContactPool
+      .filter((c) => !already.has(c.email.toLowerCase()))
+      .filter((c) => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q))
+      .slice(0, 6);
+  });
+
+  function applyInviteeSuggestion(email: string) {
+    const parts = (inviteesText || '').split(',').map((s) => s.trim()).filter(Boolean);
+    if (parts.length > 0 && !parts[parts.length - 1].includes('@')) {
+      parts.pop();
+    }
+    parts.push(email);
+    inviteesText = parts.join(', ') + ', ';
+    showInviteeDropdown = false;
+  }
+
+  async function refreshCalendarContacts() {
+    if (!accountId) return;
+    try {
+      const accRes = await fetch('/api/accounts');
+      if (accRes.ok) {
+        const accs = await accRes.json();
+        const cur = accs.find((a: any) => a.id === accountId);
+        if (cur?.username && cur.username.includes('@')) {
+          calContactPool = [{ name: cur.label || cur.username, email: cur.username }];
+        }
+      }
+      // Tente JMAP Contacts (ContactCard ou Card) si supporté par le serveur
+      for (const pkg of ['urn:ietf:params:jmap:contacts', 'urn:ietf:params:jmap:addressbook']) {
+        try {
+          const res = await jmapCall(accountId, [
+            ['ContactCard/query', { filter: {} }, 'q1'],
+            ['ContactCard/get', { '#ids': { resultOf: 'q1', name: 'ContactCard/query', path: '/ids' } }, 'g1']
+          ], [pkg]);
+          const list = res?.methodResponses?.[1]?.[1]?.list;
+          if (Array.isArray(list) && list.length > 0) {
+            const items: CalContact[] = [];
+            for (const c of list) {
+              const name = c?.name?.full || c?.fullName || '';
+              const emailsObj = c?.emails || {};
+              for (const v of Object.values(emailsObj) as any[]) {
+                const addr = typeof v === 'string' ? v : (v?.address || v?.value || '');
+                if (addr && addr.includes('@')) {
+                  items.push({ name: name || addr, email: addr.trim() });
+                }
+              }
+            }
+            if (items.length > 0) {
+              calContactPool = items;
+              return;
+            }
+          }
+        } catch {}
+      }
+    } catch {}
+  }
+
+  $effect(() => {
+    if (accountId) {
+      refreshCalendarContacts();
+    }
+  });
+
+  async function dispatchEventInvitationIcs(evTitle: string, evStart: string, evDescription: string, recipients: string[]) {
+    if (recipients.length === 0) return;
+
+    let sender = organizerEmail && organizerEmail.includes('@') ? organizerEmail : '';
+    if (!sender) {
+      try {
+        const accRes = await fetch('/api/accounts');
+        if (accRes.ok) {
+          const accs = await accRes.json();
+          const cur = accs.find((a: any) => a.id === accountId) || accs[0];
+          sender = cur?.username || '';
+        }
+      } catch {}
+    }
+
+    const icsContent = buildIcsInvitation({
+      title: evTitle || 'Événement',
+      start: evStart || new Date().toISOString(),
+      description: evDescription || undefined,
+      organizerEmail: sender || 'noreply@localhost',
+      attendees: recipients
+    });
+    const icsFile = createIcsFile(icsContent, 'invitation.ics');
+    const uploadedAtt = await uploadAttachment(accountId, icsFile);
+
+    const formattedDate = evStart
+      ? new Date(evStart).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })
+      : '';
+    const textBody = [
+      'Bonjour,',
+      '',
+      `Vous êtes invité(e) à l\'événement : ${evTitle || 'Événement'}`,
+      formattedDate ? `Date : ${formattedDate}` : '',
+      evDescription ? `\nNotes :\n${evDescription}` : '',
+      '',
+      'Le fichier invitation.ics est joint à cet e-mail.'
+    ].filter((line, idx, arr) => !(line === '' && arr[idx - 1] === '')).join('\n');
+
+    await sendEmail(
+      accountId,
+      recipients.join(', '),
+      `Invitation : ${evTitle || 'Événement'}`,
+      textBody,
+      [uploadedAtt]
+    );
+    inviteSendStatus = `Invitation (.ics) envoyée à ${recipients.join(', ')}.`;
+    setTimeout(() => (inviteSendStatus = ''), 5000);
   }
 
 </script>
@@ -583,12 +883,32 @@
           {#if kind === 'event'}
             <div>
               <label for="cal-invitees" class="env-muted mb-1.5 block text-xs">Inviter des participants (emails séparés par des virgules)</label>
-              <input
-                id="cal-invitees"
-                bind:value={inviteesText}
-                placeholder="alice@domaine.fr, bob@domaine.fr"
-                class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
-              />
+              <div class="relative">
+                <input
+                  id="cal-invitees"
+                  bind:value={inviteesText}
+                  onfocus={() => (showInviteeDropdown = true)}
+                  oninput={() => (showInviteeDropdown = true)}
+                  onblur={() => setTimeout(() => (showInviteeDropdown = false), 160)}
+                  placeholder="alice@domaine.fr, bob@domaine.fr"
+                  autocomplete="off"
+                  class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
+                />
+                {#if showInviteeDropdown && inviteeSuggestions.length > 0}
+                  <div role="listbox" class="env-card absolute left-0 right-0 top-full z-40 mt-1 overflow-hidden rounded-xl border shadow-2xl">
+                    {#each inviteeSuggestions as s}
+                      <button
+                        type="button"
+                        onmousedown={(e) => { e.preventDefault(); applyInviteeSuggestion(s.email); }}
+                        class="env-hover flex w-full items-center justify-between px-3.5 py-2 text-left text-xs"
+                      >
+                        <span class="env-text font-medium">{s.name}</span>
+                        <span class="env-accent-text">{s.email}</span>
+                      </button>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
             </div>
           {/if}
           <textarea
@@ -607,6 +927,12 @@
           </button>
         </div>
       </form>
+  {#if inviteSendStatus}
+    <p role="status" class="env-accent-soft mt-3 rounded-xl px-4 py-2.5 text-xs font-medium">{inviteSendStatus}</p>
+  {/if}
+  {#if inviteFeedback}
+    <p role="status" class="env-accent-soft mt-3 rounded-lg px-3.5 py-2 text-xs font-medium">{inviteFeedback}</p>
+  {/if}
   {#if inviteNotice}
     <p role="status" class="env-accent-soft mt-3 rounded-lg px-3.5 py-2 text-xs font-medium">{inviteNotice}</p>
   {/if}

@@ -239,6 +239,17 @@
     }
   }
 
+  
+  $effect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ email?: string; name?: string }>).detail;
+      if (detail?.email) openNewComposerTo(detail.email, detail.name);
+    };
+    window.addEventListener('enveloppe:compose', handler);
+    return () => window.removeEventListener('enveloppe:compose', handler);
+  });
+
   function openNewComposerTo(email: string, name?: string) {
     const sig = getAccountSignature(activeAccountId);
     composeTo = name ? `${name} <${email}>` : email;
