@@ -76,7 +76,8 @@
 </script>
 
 <div class="env-app flex min-h-screen flex-col items-center justify-between p-5">
-  <form onsubmit={submit} class="env-card w-full max-w-md space-y-5 rounded-xl border p-8 shadow-2xl">
+  <main class="flex w-full flex-1 items-center justify-center">
+    <form onsubmit={submit} class="env-card w-full max-w-md space-y-5 rounded-xl border p-8 shadow-2xl">
     <div class="space-y-1.5">
       <div aria-hidden="true" class="env-accent-soft inline-flex h-12 w-12 items-center justify-center rounded-lg text-xl font-bold">✉️</div>
       <h1 class="env-text text-2xl font-bold">Enveloppe</h1>
@@ -136,6 +137,7 @@
       {loading ? 'Connexion en cours...' : 'Se connecter'}
     </button>
   </form>
+  </main>
 
   <footer class="env-faint mt-6 flex flex-wrap items-center justify-center gap-3 pb-2 text-center text-xs">
     <span>Enveloppe par <strong class="env-muted font-medium">BoWiz</strong></span>
