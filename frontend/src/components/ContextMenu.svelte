@@ -211,6 +211,7 @@
       role="menu"
       tabindex="-1"
       onclick={(e) => e.stopPropagation()}
+      onkeydown={(e) => e.key === 'Escape' && (showMoveSub = false)}
       style="left: {subPos.left}px; top: {subPos.top}px;"
       class="env-card fixed z-50 max-h-80 w-56 overflow-y-auto rounded-xl border py-1.5 shadow-2xl"
     >

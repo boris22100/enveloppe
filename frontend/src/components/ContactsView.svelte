@@ -171,6 +171,7 @@
         <input type="file" accept=".vcf,.json" onchange={handleImport} class="hidden" />
       </label>
     </div>
+    </div>
   </header>
   {#if showAdd}
     <form onsubmit={add} class="env-subtle env-border grid grid-cols-1 gap-2.5 border-b px-6 py-3.5 md:grid-cols-4">
