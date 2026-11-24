@@ -163,7 +163,7 @@
       />
     </div>
     <div class="flex flex-wrap gap-2">
-      <div class="flex items-center justify-between gap-2"><button type="button" onclick={() => openEditContact(c)} title="Modifier" aria-label="Modifier" class="env-input env-hover env-muted rounded-md border px-2 py-1 text-xs">✏️</button>
+      <div class="flex items-center justify-between gap-2">
                       <button type="button" onclick={() => (showAdd = !showAdd)} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">+ Contact</button>
       <button type="button" onclick={() => downloadFile(contactsToVcf(contacts), 'contacts.vcf', 'text/vcard')} class="env-input env-hover rounded-xl border px-3.5 py-2 text-xs font-medium">Export .vcf</button>
       <label class="env-input env-hover cursor-pointer rounded-xl border px-3.5 py-2 text-xs font-medium">
