@@ -377,7 +377,7 @@
       <button type="button" onclick={() => downloadFile(eventsToIcs(events), 'calendrier.ics', 'text/calendar')} class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium">.ics</button>
       <label class="env-input env-hover cursor-pointer rounded-xl border px-3 py-2 text-xs font-medium">
         Importer
-        <input type="file" accept=".ics,.json" onchange={handleImport} class="hidden" />
+        <input type="file" accept=".ics,.json" onchange={handleImport} class="hidden" aria-label="Importer un calendrier (.ics ou .json)" />
       </label>
     </div>
   </header>

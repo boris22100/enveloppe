@@ -880,7 +880,7 @@
         <div class="flex items-center justify-between gap-2 pt-1">
           <label class="env-input env-hover env-muted cursor-pointer rounded-xl border px-3.5 py-2 text-xs font-medium">
             {uploading ? 'Upload...' : '📎 Joindre un fichier'}
-            <input type="file" multiple onchange={handleFileUpload} class="hidden" />
+            <input type="file" multiple onchange={handleFileUpload} class="hidden" aria-label="Joindre des fichiers" />
           </label>
           <div class="flex gap-2">
             <button type="button" onclick={() => (showComposer = false)} class="env-muted env-hover rounded-xl px-4 py-2 text-sm">Annuler</button>

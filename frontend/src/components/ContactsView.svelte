@@ -168,7 +168,7 @@
       <button type="button" onclick={() => downloadFile(contactsToVcf(contacts), 'contacts.vcf', 'text/vcard')} class="env-input env-hover rounded-xl border px-3.5 py-2 text-xs font-medium">Export .vcf</button>
       <label class="env-input env-hover cursor-pointer rounded-xl border px-3.5 py-2 text-xs font-medium">
         Importer
-        <input type="file" accept=".vcf,.json" onchange={handleImport} class="hidden" />
+        <input type="file" accept=".vcf,.json" onchange={handleImport} class="hidden" aria-label="Importer des contacts (.vcf ou .json)" />
       </label>
     </div>
     </div>
