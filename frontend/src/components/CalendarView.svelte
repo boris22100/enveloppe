@@ -20,7 +20,7 @@
         }
       } catch {}
     }
-    if (!sender) sender = 'noreply@localhost';
+    if (!sender) sender = (localStorage.getItem('enveloppe_calendar_organizer_v1')?.trim() || '');
 
     const icsStr = buildIcsInvitation({
       title: evTitle || 'Événement',
@@ -134,7 +134,7 @@
         if (found?.username) return found.username;
       }
     } catch {}
-    return 'noreply@localhost';
+    return (localStorage.getItem('enveloppe_calendar_organizer_v1')?.trim() || '');
   }
 
   async function loadContactsForAutocomplete() {
@@ -357,7 +357,7 @@
       end: evEnd || undefined,
       location: evLocation || undefined,
       description: evDescription || undefined,
-      organizerEmail: organizerEmail || 'noreply@localhost',
+      organizerEmail: organizerEmail || (localStorage.getItem('enveloppe_calendar_organizer_v1')?.trim() || ''),
       attendees
     });
     const icsFile = createIcsFile(icsText, 'invitation.ics');
@@ -407,7 +407,7 @@
       title: evTitle || 'Événement',
       start: evStart || new Date().toISOString(),
       description: evDescription || undefined,
-      organizerEmail: sender || 'noreply@localhost',
+      organizerEmail: sender || (localStorage.getItem('enveloppe_calendar_organizer_v1')?.trim() || ''),
       attendees: recipients
     });
     const icsFile = createIcsFile(icsContent, 'invitation.ics');
@@ -469,7 +469,7 @@
       start: evStart,
       description: ev.description ? `Annulé : ${ev.description}` : 'Événement annulé.',
       sequence: typeof ev?.sequence === 'number' ? ev.sequence + 1 : 1,
-      organizerEmail: sender || 'noreply@localhost',
+      organizerEmail: sender || (localStorage.getItem('enveloppe_calendar_organizer_v1')?.trim() || ''),
       attendees: recipients,
       method: 'CANCEL'
     });
