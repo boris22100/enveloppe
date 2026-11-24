@@ -1,12 +1,13 @@
 {
   "name": "jmap-pwa-frontend",
   "private": true,
-  "version": "0.7.6",
+  "version": "0.7.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check": "tsc --noEmit"
   },
   "dependencies": {
     "dexie": "^4.0.10",

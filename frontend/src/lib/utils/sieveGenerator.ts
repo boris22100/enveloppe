@@ -209,9 +209,10 @@ export function parseSieveToVisual(code: string): {
     vacation.reason = (vacMatch[3] || '').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
   }
 
-  const blockRegex = /(?:^|\n)(?:#\s*@rule:\s*([^\n]+)\n)?if\s+([\s\S]*?)\s*\{([\s\S]*?)\}/g;
+  const cleanedForRules = trimmed.replace(/\/\*\s*@metadata:start[\s\S]*?@metadata:end\s*\*\//g, '').trim();
+  const blockRegex = /(?:^|\n)(?:#\s*(?:@rule|Rule):\s*([^\n]+)\n)?if\s+([\s\S]*?)\s*\{([\s\S]*?)\}/gi;
   let m: RegExpExecArray | null;
-  while ((m = blockRegex.exec(trimmed)) !== null) {
+  while ((m = blockRegex.exec(cleanedForRules)) !== null) {
     const ruleName = (m[1] || 'Règle ' + (rules.length + 1)).trim();
     const condRaw = m[2].trim();
     const bodyRaw = m[3].trim();
@@ -246,7 +247,7 @@ export function parseSieveToVisual(code: string): {
     }
 
     const actions: SieveAction[] = [];
-    const fileMatch = bodyRaw.match(/fileinto\s+"((?:[^"\\]|\\.)*)"\s*;/);
+    const fileMatch = bodyRaw.match(/fileinto\s+(?::mailboxid\s+"(?:[^"\\]|\\.)*"\s+)?(?::create\s+)?"((?:[^"\\]|\\.)*)"\s*;/);
     if (fileMatch) actions.push({ id: uid(), type: 'fileinto', value: fileMatch[1].replace(/\\"/g, '"') });
     if (/addflag\s+"\\\\Seen"\s*;/.test(bodyRaw)) actions.push({ id: uid(), type: 'markRead', value: '' });
     if (/addflag\s+"\\\\Flagged"\s*;/.test(bodyRaw)) actions.push({ id: uid(), type: 'star', value: '' });
