@@ -152,17 +152,7 @@ Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
 * **Sobriété, sécurité & accessibilité vérifiées** : image Docker finale `distroless` de **9,52 Mo** (< 10 Mo), **~1,48 MiB** de RAM au repos en fonctionnement *stateless*, **412 Ko** d'assets `dist/`, **0** vulnérabilité `HIGH`/`CRITICAL` (Trivy), **0** secret (Gitleaks), **0** alerte `govulncheck` / `npm audit`, et **0** anomalie sur le contrôle statique A11y Svelte.
 
 ## Nouveautés v0.7.10
-* Modularisation de l'éditeur Sieve (`SieveRuleCard`, `SieveCodeEditor`, `SieveVacationCard`, `SieveTemplatesBar`, `SieveNewScriptModal`) et améliorations d'accessibilité (A11y).
-* Durcissement de la politique CSP (`script-src 'self'`) et couverture de tests unitaires (Go, Sieve, `.ics`).
-* Image `distroless` légère (< 10 Mo) et gestion manuelle des dépendances sans PR automatiques Dependabot.
-
-## Nouveautés v0.7.10
-* **Tests unitaires raccordés à la CI** : intégration de `vitest` (`npm test`) dans `frontend/package.json` et le workflow GitHub Actions, et ajout des tests Go `TestIsSafeExternalURL` sur la validation SSRF du proxy JMAP.
-* **Calendrier (RFC 5545)** : transmission dynamique de la propriété `SEQUENCE` incrémentée lors des annulations d'invitations `.ics` (`method: 'CANCEL'`).
-* **Hygiène du dépôt** : nettoyage des doublons dans `.gitignore` et maintien des empreintes Gitleaks.
-
-## Audit Sécurité, Green IT & Accessibilité (v0.7.10)
-* **Sécurité** : 0 fuite détectée par Gitleaks (80 commits), 0 vulnérabilité `govulncheck` et `npm audit` (`--omit=dev`), 0 vulnérabilité `CRITICAL`/`HIGH` Trivy (Debian 12.15 & binaire Go), exécution en utilisateur `65532` (`nonroot`) avec `ReadOnlyRootfs: true` et en-têtes HTTP (`CSP`, `HSTS`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) actifs.
-* **Green IT** : image finale de **9.97 MB** et consommation mesurée au repos à `0.00%` CPU et **6.63 MiB** de RAM (`0.02%`) avec `0B / 0B` d'I/O bloc.
-* **Accessibilité (A11y)** : aucun warning A11y ni fermeture implicite au build sur 17 composants `.svelte`, 0 image sans `alt`, 0 bouton sans libellé et `aria-label` explicites ajoutés sur les champs d'import/pièces jointes masqués (`App.svelte`, `ContactsView.svelte`, `CalendarView.svelte`).
-* **Tests & Typecheck** : `go vet ./...` et `go test ./...` (`TestIsSafeExternalURL`), `tsc --noEmit` (`npm run check`) et `vitest run` (`npm test`, 5/5 tests) validés.
+* **Sécurité & durcissement** : blocage des plages privées RFC1918 (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) et des adresses privées IPv6 (`IsPrivate()`) dans `IsSafeExternalURL`, CSP stricte (`script-src 'self'`), exécution en `65532` (`nonroot`) avec `ReadOnlyRootfs: true`, et 0 fuite/vulnérabilité (Gitleaks, `govulncheck`, `npm audit`, Trivy `CRITICAL`/`HIGH`).
+* **Tests & CI** : suite Vitest (`npm test`, `ics.spec.ts` et `sieveGenerator.spec.ts`), contrôle `tsc --noEmit` (`npm run check`), tests Go (`TestIsSafeExternalURL` et `backend/internal/crypto/vault_test.go` sur `SealJSON`/`OpenJSON`, cookies corrompus et secrets courts) intégrés au workflow GitHub Actions.
+* **Calendrier (.ics) & filtres Sieve** : suppression du code mort et du double envoi dans `CalendarView.svelte`, transmission dynamique de `SEQUENCE` sur `CANCEL`, retour d'erreur visible côté utilisateur lors d'un échec d'envoi d'annulation `.ics`, et restitution visuelle des scripts Sieve Stalwart (`# Rule:`, `fileinto :mailboxid`, `@metadata`).
+* **Ergonomie, Green IT & accessibilité** : badge discret `v0.7.10` en haut de la barre latérale (`__APP_VERSION__`), `aria-label` ajoutés sur les champs fichiers masqués, image finale `distroless` de **9,97 Mo** et consommation au repos d'environ **6,63 MiB** de RAM (`0,00 %` CPU).
