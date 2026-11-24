@@ -1,9 +1,15 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'));
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version || '0.7.10'),
+  },
   plugins: [
     svelte(),
     tailwindcss(),

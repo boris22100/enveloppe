@@ -554,9 +554,10 @@
           {#if railExpanded}
             <div class="flex items-center gap-2.5">
               <span class="env-accent-bg flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold">✉</span>
-              <div class="leading-tight">
+              <div class="flex items-baseline gap-1.5 leading-tight">
                 <span class="env-text text-sm font-bold tracking-tight">enveloppe</span>
-                <span class="env-faint ml-1 text-xs font-normal">jmap</span>
+                <span class="env-faint text-xs font-normal">jmap</span>
+                <span class="env-faint text-[11px] font-mono opacity-75">v{__APP_VERSION__}</span>
               </div>
             </div>
           {/if}
