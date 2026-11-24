@@ -150,3 +150,8 @@ Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
 * **Contacts** : clic direct sur une adresse e-mail pour ouvrir la fenêtre *Nouveau message* pré-remplie, et édition d'un contact existant via l'icône crayon (`✏️`) alignée sur chaque ligne.
 * **Calendrier (.ics)** : envoi automatique d'une invitation `invitation.ics` (`METHOD:REQUEST`) à la création d'un événement avec participants, et d'un mail d'annulation (`METHOD:CANCEL`) lors de la suppression d'un événement comportant des participants.
 * **Sobriété, sécurité & accessibilité vérifiées** : image Docker finale `distroless` de **9,52 Mo** (< 10 Mo), **~1,48 MiB** de RAM au repos en fonctionnement *stateless*, **412 Ko** d'assets `dist/`, **0** vulnérabilité `HIGH`/`CRITICAL` (Trivy), **0** secret (Gitleaks), **0** alerte `govulncheck` / `npm audit`, et **0** anomalie sur le contrôle statique A11y Svelte.
+
+## Nouveautés v0.7.2
+* Modularisation de l'éditeur Sieve (`SieveRuleCard`, `SieveCodeEditor`, `SieveVacationCard`, `SieveTemplatesBar`, `SieveNewScriptModal`) et améliorations d'accessibilité (A11y).
+* Durcissement de la politique CSP (`script-src 'self'`) et couverture de tests unitaires (Go, Sieve, `.ics`).
+* Image `distroless` légère (< 10 Mo) et gestion manuelle des dépendances sans PR automatiques Dependabot.
