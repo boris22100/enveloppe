@@ -3,7 +3,7 @@
   import { contactsToVcf, vcfToContacts } from '../lib/utils/formats';
   import ConfirmModal from './ConfirmModal.svelte';
 
-  let { accountId }: { accountId: string } = $props();
+  let { accountId, onComposeTo }: { accountId: string } = $props();
   let contacts = $state<JSContact[]>([]);
   let search = $state('');
   let showAdd = $state(false);

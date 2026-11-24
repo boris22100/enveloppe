@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { sendEmail, uploadAttachment } from '../lib/jmap/client';
+  import { buildIcsInvitation, createIcsFile } from '../lib/ics';
+
   import {
     createEvent,
     deleteEvent,
@@ -10,7 +13,7 @@
   import { eventsToIcs, icsToEvents } from '../lib/utils/formats';
   import ConfirmModal from './ConfirmModal.svelte';
 
-  let { accountId }: { accountId: string } = $props();
+  let { accountId, organizerEmail = '' }: { accountId: string } = $props();
 
   let defaultCalId = $state('');
   let events = $state<JSCalendarEvent[]>([]);
@@ -20,6 +23,8 @@
   let showModal = $state(false);
   let kind = $state<CalendarItemKind>('event');
   let title = $state('');
+  let participantsInput = $state('');
+  let inviteNotice = $state('');
   let start = $state('');
   let description = $state('');
   let inviteesText = $state('');
@@ -158,6 +163,50 @@
     await importEventsJSON(accountId, defaultCalId, json);
     await load();
   }
+
+  async function sendCalendarInvite(evTitle: string, evStart: string, evEnd: string, evLocation: string, evDescription: string) {
+    const attendees = participantsInput
+      .split(/[,;\s]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.includes('@'));
+    if (attendees.length === 0) return;
+
+    const icsText = buildIcsInvitation({
+      title: evTitle,
+      start: evStart,
+      end: evEnd || undefined,
+      location: evLocation || undefined,
+      description: evDescription || undefined,
+      organizerEmail: organizerEmail || 'noreply@localhost',
+      attendees
+    });
+    const icsFile = createIcsFile(icsText, 'invitation.ics');
+    const attachment = await uploadAttachment(accountId, icsFile);
+
+    const startLabel = evStart ? new Date(evStart).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' }) : '';
+    const bodyLines = [
+      `Bonjour,`,
+      ``,
+      `Vous êtes invité(e) à l'événement suivant : ${evTitle}`,
+      startLabel ? `Date et heure : ${startLabel}` : '',
+      evLocation ? `Lieu : ${evLocation}` : '',
+      evDescription ? `\nDétails :\n${evDescription}` : '',
+      ``,
+      `Le fichier invitation.ics est joint à ce message pour l'ajouter directement à votre calendrier.`
+    ].filter((l, i, arr) => !(l === '' && arr[i - 1] === ''));
+
+    await sendEmail(
+      accountId,
+      attendees.join(', '),
+      `Invitation : ${evTitle}`,
+      bodyLines.join('\n'),
+      [attachment]
+    );
+    inviteNotice = `Invitation (.ics) envoyée à ${attendees.join(', ')}.`;
+    participantsInput = '';
+    setTimeout(() => (inviteNotice = ''), 5000);
+  }
+
 </script>
 
 <div class="flex h-full flex-col overflow-hidden">
@@ -415,7 +464,14 @@
       <form onsubmit={handleSave} class="env-card space-y-4 rounded-xl border p-7 shadow-2xl">
         <div class="flex items-center justify-between">
           <h3 id="cal-create-title" class="env-text text-lg font-semibold">Nouvel élément</h3>
-          <button type="button" onclick={() => (showModal = false)} aria-label="Fermer" class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
+                <input
+        bind:value={participantsInput}
+        type="text"
+        aria-label="Participants"
+        placeholder="Participants (ex: alice@domaine.fr, bob@domaine.fr)"
+        class="env-input w-full rounded-lg border px-3.5 py-2 text-sm"
+      />
+      <button type="button" onclick={() => (showModal = false)} aria-label="Fermer" class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
         </div>
 
         <div class="env-subtle env-border grid grid-cols-3 gap-1.5 rounded-lg border p-1 text-xs">
@@ -472,6 +528,9 @@
           </button>
         </div>
       </form>
+  {#if inviteNotice}
+    <p role="status" class="env-accent-soft mt-3 rounded-lg px-3.5 py-2 text-xs font-medium">{inviteNotice}</p>
+  {/if}
     </div>
   </div>
 {/if}

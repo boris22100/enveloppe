@@ -43,7 +43,8 @@
     (savedTab === 'mail' || savedTab === 'contacts' || savedTab === 'calendar' || savedTab === 'sieve' || savedTab === 'security') ? savedTab : 'mail'
   );
   let sievePrefill = $state<{ from?: string; subject?: string } | null>(null);
-  let railExpanded = $state(false);
+  const savedRail = typeof localStorage !== 'undefined' ? localStorage.getItem('enveloppe_rail_expanded') : null;
+  let railExpanded = $state(savedRail === null ? true : savedRail === 'true');
 
   let mailboxes = $state<Mailbox[]>([]);
   let activeMailboxId = $state<string | null>(null);
@@ -162,6 +163,7 @@
 
   $effect(() => {
     localStorage.setItem('enveloppe_tab', activeTab);
+    localStorage.setItem('enveloppe_rail_expanded', String(railExpanded));
     if (activeAccountId) localStorage.setItem('enveloppe_account', activeAccountId);
     if (activeMailboxId) localStorage.setItem('enveloppe_mailbox', activeMailboxId);
   });
@@ -235,6 +237,16 @@
     if (wasUnread && activeAccountId) {
       mailboxes = await fetchMailboxes(activeAccountId);
     }
+  }
+
+  function openNewComposerTo(email: string, name?: string) {
+    const sig = getAccountSignature(activeAccountId);
+    composeTo = name ? `${name} <${email}>` : email;
+    composeSubject = '';
+    composeText = sig ? '\n\n' + sig : '';
+    composeFiles = [];
+    activeTab = 'mail';
+    showComposer = true;
   }
 
   function openNewComposer() {
@@ -822,9 +834,9 @@
           </main>
         </div>
       {:else if activeTab === 'contacts' && activeAccountId}
-        <main class="min-w-0 flex-1 overflow-hidden p-5"><div class="env-card h-full overflow-hidden rounded-xl border shadow-2xs"><ContactsView accountId={activeAccountId} /></div></main>
+        <main class="min-w-0 flex-1 overflow-hidden p-5"><div class="env-card h-full overflow-hidden rounded-xl border shadow-2xs"><ContactsView accountId={activeAccountId} onComposeTo={openNewComposerTo} /></div></main>
       {:else if activeTab === 'calendar' && activeAccountId}
-        <main class="min-w-0 flex-1 overflow-hidden p-5"><div class="env-card h-full overflow-hidden rounded-xl border shadow-2xs"><CalendarView accountId={activeAccountId} /></div></main>
+        <main class="min-w-0 flex-1 overflow-hidden p-5"><div class="env-card h-full overflow-hidden rounded-xl border shadow-2xs"><CalendarView accountId={activeAccountId} organizerEmail={activeAccount?.username || ''} /></div></main>
       {:else if activeTab === 'sieve' && activeAccountId}
         <main class="min-w-0 flex-1 overflow-hidden p-5"><div class="env-card h-full overflow-hidden rounded-xl border shadow-2xs"><SieveView accountId={activeAccountId} {mailboxes} prefill={sievePrefill} onPrefillConsumed={() => (sievePrefill = null)} /></div></main>
       {:else if activeTab === 'security' && activeAccount}
