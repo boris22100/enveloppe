@@ -143,3 +143,10 @@ ghcr.io/boris22100/enveloppe:latest
 ## 📄 Licence
 
 Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
+
+### Nouveautés & garanties v0.6.3
+
+* **Navigation & ergonomie** : barre latérale ouverte par défaut après connexion (avec mémorisation du choix utilisateur), thèmes **BoWiz**, **Sombre** et **Clair**, et page de connexion sobre avec mentions légales et politique de confidentialité.
+* **Contacts** : clic direct sur une adresse e-mail pour ouvrir la fenêtre *Nouveau message* pré-remplie, et édition d'un contact existant via l'icône crayon (`✏️`) alignée sur chaque ligne.
+* **Calendrier (.ics)** : envoi automatique d'une invitation `invitation.ics` (`METHOD:REQUEST`) à la création d'un événement avec participants, et d'un mail d'annulation (`METHOD:CANCEL`) lors de la suppression d'un événement comportant des participants.
+* **Sobriété, sécurité & accessibilité vérifiées** : image Docker finale `distroless` de **9,52 Mo** (< 10 Mo), **~1,48 MiB** de RAM au repos en fonctionnement *stateless*, **412 Ko** d'assets `dist/`, **0** vulnérabilité `HIGH`/`CRITICAL` (Trivy), **0** secret (Gitleaks), **0** alerte `govulncheck` / `npm audit`, et **0** anomalie sur le contrôle statique A11y Svelte.
