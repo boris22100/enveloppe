@@ -221,7 +221,13 @@
     if (!eventToDelete?.id) return;
     const targetEv = eventToDelete;
     await deleteEvent(accountId, targetEv.id!);
-    try { await dispatchEventCancellationIcs(targetEv); } catch (e) { console.error('Annulation .ics:', e); }
+    try {
+      await dispatchEventCancellationIcs(targetEv);
+    } catch (e: any) {
+      console.error('Annulation .ics:', e);
+      inviteSendStatus = e?.message || "Échec de l'envoi de l'annulation (.ics).";
+      setTimeout(() => (inviteSendStatus = ''), 6000);
+    }
     if (selectedEvent?.id === eventToDelete.id) selectedEvent = null;
     eventToDelete = null;
     await load();

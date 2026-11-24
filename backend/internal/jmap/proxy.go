@@ -93,7 +93,10 @@ func (p *Proxy) IsSafeExternalURL(rawURL string) bool {
 		return false
 	}
 	if ip := net.ParseIP(hostname); ip != nil {
-		if ip.IsLoopback() || ip.IsUnspecified() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+		if ip.IsLoopback() || ip.IsUnspecified() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsPrivate() {
+			return false
+		}
+		if ip4 := ip.To4(); ip4 != nil && ip4.IsPrivate() {
 			return false
 		}
 	}

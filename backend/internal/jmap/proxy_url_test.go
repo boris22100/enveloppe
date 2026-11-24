@@ -28,4 +28,17 @@ func TestIsSafeExternalURL(t *testing.T) {
 	if restricted.IsSafeExternalURL("https://untrusted.example.org/api") {
 		t.Fatalf("expected non-allowlisted server to be blocked")
 	}
+
+	privateURLs := []string{
+		"http://10.0.0.1:8080/internal",
+		"http://172.16.0.10/api",
+		"http://172.31.255.254/admin",
+		"http://192.168.1.1/router",
+		"http://192.168.1.6:53/dns",
+	}
+	for _, raw := range privateURLs {
+		if p.IsSafeExternalURL(raw) {
+			t.Fatalf("expected private RFC1918 URL %q to be blocked", raw)
+		}
+	}
 }

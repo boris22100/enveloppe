@@ -2,7 +2,7 @@
 
 Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContact, Calendrier JSCalendar*), conçu pour **Stalwart Mail Server** et compatible multi-serveurs.
 
-![Version](https://img.shields.io/badge/version-v0.7.9-48B17F?style=flat-square)
+![Version](https://img.shields.io/badge/version-v0.7.10-48B17F?style=flat-square)
 ![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)
 ![Image Size](https://img.shields.io/badge/image-9.95%20Mo-48B17F?style=flat-square)
 ![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)
@@ -144,24 +144,24 @@ ghcr.io/boris22100/enveloppe:latest
 
 Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
 
-### Nouveautés & garanties v0.7.9
+### Nouveautés & garanties v0.7.10
 
 * **Navigation & ergonomie** : barre latérale ouverte par défaut après connexion (avec mémorisation du choix utilisateur), thèmes **BoWiz**, **Sombre** et **Clair**, et page de connexion sobre avec mentions légales et politique de confidentialité.
 * **Contacts** : clic direct sur une adresse e-mail pour ouvrir la fenêtre *Nouveau message* pré-remplie, et édition d'un contact existant via l'icône crayon (`✏️`) alignée sur chaque ligne.
 * **Calendrier (.ics)** : envoi automatique d'une invitation `invitation.ics` (`METHOD:REQUEST`) à la création d'un événement avec participants, et d'un mail d'annulation (`METHOD:CANCEL`) lors de la suppression d'un événement comportant des participants.
 * **Sobriété, sécurité & accessibilité vérifiées** : image Docker finale `distroless` de **9,52 Mo** (< 10 Mo), **~1,48 MiB** de RAM au repos en fonctionnement *stateless*, **412 Ko** d'assets `dist/`, **0** vulnérabilité `HIGH`/`CRITICAL` (Trivy), **0** secret (Gitleaks), **0** alerte `govulncheck` / `npm audit`, et **0** anomalie sur le contrôle statique A11y Svelte.
 
-## Nouveautés v0.7.9
+## Nouveautés v0.7.10
 * Modularisation de l'éditeur Sieve (`SieveRuleCard`, `SieveCodeEditor`, `SieveVacationCard`, `SieveTemplatesBar`, `SieveNewScriptModal`) et améliorations d'accessibilité (A11y).
 * Durcissement de la politique CSP (`script-src 'self'`) et couverture de tests unitaires (Go, Sieve, `.ics`).
 * Image `distroless` légère (< 10 Mo) et gestion manuelle des dépendances sans PR automatiques Dependabot.
 
-## Nouveautés v0.7.9
+## Nouveautés v0.7.10
 * **Tests unitaires raccordés à la CI** : intégration de `vitest` (`npm test`) dans `frontend/package.json` et le workflow GitHub Actions, et ajout des tests Go `TestIsSafeExternalURL` sur la validation SSRF du proxy JMAP.
 * **Calendrier (RFC 5545)** : transmission dynamique de la propriété `SEQUENCE` incrémentée lors des annulations d'invitations `.ics` (`method: 'CANCEL'`).
 * **Hygiène du dépôt** : nettoyage des doublons dans `.gitignore` et maintien des empreintes Gitleaks.
 
-## Audit Sécurité, Green IT & Accessibilité (v0.7.9)
+## Audit Sécurité, Green IT & Accessibilité (v0.7.10)
 * **Sécurité** : 0 fuite détectée par Gitleaks (80 commits), 0 vulnérabilité `govulncheck` et `npm audit` (`--omit=dev`), 0 vulnérabilité `CRITICAL`/`HIGH` Trivy (Debian 12.15 & binaire Go), exécution en utilisateur `65532` (`nonroot`) avec `ReadOnlyRootfs: true` et en-têtes HTTP (`CSP`, `HSTS`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) actifs.
 * **Green IT** : image finale de **9.97 MB** et consommation mesurée au repos à `0.00%` CPU et **6.63 MiB** de RAM (`0.02%`) avec `0B / 0B` d'I/O bloc.
 * **Accessibilité (A11y)** : aucun warning A11y ni fermeture implicite au build sur 17 composants `.svelte`, 0 image sans `alt`, 0 bouton sans libellé et `aria-label` explicites ajoutés sur les champs d'import/pièces jointes masqués (`App.svelte`, `ContactsView.svelte`, `CalendarView.svelte`).
