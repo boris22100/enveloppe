@@ -399,7 +399,9 @@
 
   async function confirmDeleteEvent() {
     if (!eventToDelete?.id) return;
-    await deleteEvent(accountId, eventToDelete.id);
+    const targetEv = eventToDelete;
+    await deleteEvent(accountId, targetEv.id!);
+    try { await dispatchEventCancellationIcs(targetEv); } catch (e) { console.error('Annulation .ics:', e); }
     if (selectedEvent?.id === eventToDelete.id) selectedEvent = null;
     eventToDelete = null;
     await load();
@@ -481,10 +483,14 @@
     const already = new Set(
       (inviteesText || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
     );
+    const tokens = q.split(/\s+/).filter(Boolean);
     return calContactPool
       .filter((c) => !already.has(c.email.toLowerCase()))
-      .filter((c) => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q))
-      .slice(0, 6);
+      .filter((c) => {
+        const hay = `${c.name} ${c.email}`.toLowerCase();
+        return tokens.every((tk) => hay.includes(tk));
+      })
+      .slice(0, 12);
   });
 
   function applyInviteeSuggestion(email: string) {
@@ -590,6 +596,65 @@
       [uploadedAtt]
     );
     inviteSendStatus = `Invitation (.ics) envoyée à ${recipients.join(', ')}.`;
+    setTimeout(() => (inviteSendStatus = ''), 5000);
+  }
+
+
+  async function dispatchEventCancellationIcs(ev: any) {
+    if (!ev) return;
+    const rawParticipants = ev.participants && typeof ev.participants === 'object'
+      ? Object.values(ev.participants)
+      : [];
+    const recipients = rawParticipants
+      .map((p: any) => (typeof p === 'string' ? p : (p?.email || p?.address || p?.mail || '')))
+      .map((s: string) => s.trim())
+      .filter((s: string) => s.includes('@'));
+    if (recipients.length === 0) return;
+
+    let sender = organizerEmail && organizerEmail.includes('@') ? organizerEmail : '';
+    if (!sender) {
+      try {
+        const accRes = await fetch('/api/accounts');
+        if (accRes.ok) {
+          const accs = await accRes.json();
+          const cur = accs.find((a: any) => a.id === accountId) || accs[0];
+          sender = cur?.username || '';
+        }
+      } catch {}
+    }
+
+    const evTitle = ev.title || ev.summary || 'Événement';
+    const evStart = ev.start || ev.dtstart || new Date().toISOString();
+    const icsStr = buildIcsInvitation({
+      uid: ev.uid || ev.id || undefined,
+      title: evTitle,
+      start: evStart,
+      description: ev.description ? `Annulé : ${ev.description}` : 'Événement annulé.',
+      organizerEmail: sender || 'noreply@localhost',
+      attendees: recipients,
+      method: 'CANCEL'
+    });
+    const icsFile = createIcsFile(icsStr, 'invitation.ics');
+    const uploadedAtt = await uploadAttachment(accountId, icsFile);
+
+    const whenTxt = evStart ? new Date(evStart).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' }) : '';
+    const cancelBody = [
+      'Bonjour,',
+      '',
+      `L\'événement suivant a été annulé : ${evTitle}`,
+      whenTxt ? `Date prévue : ${whenTxt}` : '',
+      '',
+      'Le fichier invitation.ics (annulation) est joint à cet e-mail.'
+    ].filter((l, idx, arr) => !(l === '' && arr[idx - 1] === '')).join('\n');
+
+    await sendEmail(
+      accountId,
+      recipients.join(', '),
+      `Annulation : ${evTitle}`,
+      cancelBody,
+      [uploadedAtt]
+    );
+    inviteSendStatus = `Annulation (.ics) envoyée à ${recipients.join(', ')}.`;
     setTimeout(() => (inviteSendStatus = ''), 5000);
   }
 

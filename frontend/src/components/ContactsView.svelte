@@ -214,6 +214,15 @@
                   {#if c.id}
                     <button
                       type="button"
+                      title="Modifier ce contact"
+                      aria-label="Modifier c"
+                      onclick={() => openEditContact(c)}
+                      class="env-muted rounded-xl px-2.5 py-1.5 text-sm opacity-75 transition-opacity hover:bg-white/10 hover:text-[var(--env-text)] group-hover:opacity-100"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      type="button"
                       title="Supprimer ce contact"
                       aria-label="Supprimer {displayName}"
                       onclick={() => (contactToDelete = { id: c.id!, name: displayName })}

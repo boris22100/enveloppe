@@ -8,6 +8,7 @@ export interface CalendarInviteInput {
   organizerEmail: string;
   organizerName?: string;
   attendees: string[];
+  method?: 'REQUEST' | 'CANCEL';
 }
 
 function escapeIcsText(value: string): string {
@@ -36,12 +37,15 @@ export function buildIcsInvitation(input: CalendarInviteInput): string {
     : new Date(startMs + 3600_000).toISOString();
   const dtEnd = toIcsUtc(input.end || fallbackEnd);
 
+  const method = input.method || 'REQUEST';
+  const status = method === 'CANCEL' ? 'CANCELLED' : 'CONFIRMED';
+  const seq = method === 'CANCEL' ? '1' : '0';
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//Enveloppe by BoWiz//JMAP Calendar//FR',
     'CALSCALE:GREGORIAN',
-    'METHOD:REQUEST',
+    `METHOD:${method}`,
     'BEGIN:VEVENT',
     `UID:${uid}`,
     `DTSTAMP:${dtStamp}`,
@@ -68,7 +72,7 @@ export function buildIcsInvitation(input: CalendarInviteInput): string {
     }
   }
 
-  lines.push('STATUS:CONFIRMED', 'SEQUENCE:0', 'END:VEVENT', 'END:VCALENDAR');
+  lines.push(`STATUS:${status}`, `SEQUENCE:${seq}`, 'END:VEVENT', 'END:VCALENDAR');
   return lines.join('\r\n') + '\r\n';
 }
 
