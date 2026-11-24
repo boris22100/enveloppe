@@ -1,4 +1,6 @@
 <script lang="ts">
+  let legalModal = $state<'legal' | 'privacy' | null>(null);
+
   let { onLoggedIn }: { onLoggedIn: () => void } = $props();
   let label = $state('');
   let host = $state('https://');
@@ -134,4 +136,91 @@
       {loading ? 'Connexion en cours...' : 'Se connecter'}
     </button>
   </form>
+
+  <footer class="env-faint mt-6 flex flex-wrap items-center justify-center gap-4 text-xs">
+    <button
+      type="button"
+      onclick={() => (legalModal = 'legal')}
+      class="hover:env-text underline underline-offset-4 transition-colors"
+    >
+      Mentions légales
+    </button>
+    <span aria-hidden="true">·</span>
+    <button
+      type="button"
+      onclick={() => (legalModal = 'privacy')}
+      class="hover:env-text underline underline-offset-4 transition-colors"
+    >
+      Politique de confidentialité
+    </button>
+  </footer>
+
+  {#if legalModal}
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="legal-modal-title"
+      tabindex="-1"
+      onclick={() => (legalModal = null)}
+      onkeydown={(e) => e.key === 'Escape' && (legalModal = null)}
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-xs"
+    >
+      <div
+        role="document"
+        onclick={(e) => e.stopPropagation()}
+        class="env-card max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl border p-6 shadow-2xl"
+      >
+        <div class="env-border mb-4 flex items-center justify-between border-b pb-3">
+          <h2 id="legal-modal-title" class="env-text text-base font-bold">
+            {legalModal === 'legal' ? 'Mentions légales' : 'Politique de confidentialité'}
+          </h2>
+          <button
+            type="button"
+            onclick={() => (legalModal = null)}
+            aria-label="Fermer"
+            class="env-muted env-hover rounded-lg px-2.5 py-1 text-xs font-medium"
+          >
+            ✕ Fermer
+          </button>
+        </div>
+
+        {#if legalModal === 'legal'}
+          <div class="space-y-3.5 text-xs leading-relaxed env-muted">
+            <p>
+              <strong class="env-text">Éditeur du logiciel :</strong> Enveloppe est un client webmail JMAP open-source maintenu par <strong class="env-text">Boris Mallach</strong> (identifiant GitHub : <code class="env-text">boris22100</code>, dépôt : <code class="env-text">https://github.com/boris22100/enveloppe</code>).
+            </p>
+            <p>
+              <strong class="env-text">Hébergement et responsabilité d'instance :</strong> Enveloppe étant conçu pour être auto-hébergé, l'hébergement physique/cloud de cette instance, la disponibilité du service et la conformité réglementaire (notamment le RGPD) relèvent de l'opérateur qui déploie et administre ce service.
+            </p>
+            <p>
+              <strong class="env-text">Contact :</strong> Pour toute question relative au code source ou signalement de sécurité, consultez le dépôt officiel <code class="env-text">github.com/boris22100/enveloppe</code>. Pour une demande liée à votre compte ou à vos données d'hébergement, contactez l'administrateur de cette instance.
+            </p>
+            <p>
+              <strong class="env-text">Propriété intellectuelle :</strong> Le code source d'Enveloppe est distribué sous sa licence open-source associée ; les marques, noms de domaine et serveurs tiers (ex. serveurs JMAP ou fournisseurs OIDC) restent la propriété de leurs détenteurs respectifs.
+            </p>
+          </div>
+        {:else}
+          <div class="space-y-3.5 text-xs leading-relaxed env-muted">
+            <p>
+              <strong class="env-text">Principe de transparence et sobriété :</strong> Enveloppe n'intègre aucun traceur publicitaire, aucun outil d'analyse comportementale tiers et aucun cookie publicitaire.
+            </p>
+            <p>
+              <strong class="env-text">Données traitées lors de la connexion :</strong> L'adresse du serveur JMAP, l'identifiant de connexion, les informations d'authentification (JMAP ou flux OIDC/PKCE) et les requêtes de messagerie transitent uniquement entre votre navigateur, le backend Enveloppe de cette instance et le serveur JMAP / fournisseur d'identité configuré.
+            </p>
+            <p>
+              <strong class="env-text">Stockage local et session :</strong>
+            </p>
+            <ul class="list-disc space-y-1.5 pl-5">
+              <li><strong class="env-text">Sur votre navigateur :</strong> vos préférences d'interface (thème, onglet actif, options d'affichage, signatures configurées par compte) et, le cas échéant, le cache local sont stockés dans le stockage local de votre navigateur (<code class="env-text">localStorage</code> / <code class="env-text">IndexedDB</code>).</li>
+              <li><strong class="env-text">Session :</strong> les informations de session sont chiffrées et gérées via des cookies <code class="env-text">HttpOnly</code> nécessaires au fonctionnement de l'authentification.</li>
+            </ul>
+            <p>
+              <strong class="env-text">Conservation et droits :</strong> Vous pouvez effacer les données locales à tout moment en vous déconnectant ou en vidant les données du site dans votre navigateur. Pour toute demande d'accès, de rectification ou de suppression concernant des données conservées côté serveur/messagerie, adressez-vous directement à l'administrateur de l'instance ou de votre serveur mail.
+            </p>
+          </div>
+        {/if}
+      </div>
+    </div>
+  {/if}
+
 </div>
