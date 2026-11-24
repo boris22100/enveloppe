@@ -1,7 +1,8 @@
 <script lang="ts">
+  import SieveCodeEditor from './sieve/SieveCodeEditor.svelte';
+  import SieveVacationCard from './sieve/SieveVacationCard.svelte';
   import SieveNewScriptModal from './sieve/SieveNewScriptModal.svelte';
   import SieveTemplatesBar, { type SieveTemplateEntry } from './sieve/SieveTemplatesBar.svelte';
-  import SieveRuleEditor from './sieve/SieveRuleEditor.svelte';
 
   import { ROLE_META, type Mailbox } from '../lib/jmap/client';
   import {
@@ -16,7 +17,6 @@
   import {
     compileSieveScript,
     createEmptyRule,
-    highlightSieveCode,
     parseSieveToVisual,
     SIEVE_TEMPLATES,
     type SieveActionType,
@@ -57,11 +57,6 @@
   let showNewModal = $state(false);
   let newScriptTitle = $state('');
 
-  let preEl = $state<HTMLPreElement | null>(null);
-  let textareaEl = $state<HTMLTextAreaElement | null>(null);
-
-  let lineCount = $derived(Math.max(12, rawCode.split('\n').length));
-  let highlightedHtml = $derived(highlightSieveCode(rawCode) + '\n');
   let selectedScript = $derived(scripts.find((s) => s.id === selectedScriptId) ?? null);
 
   function notify(type: 'ok' | 'err', text: string) {
@@ -309,12 +304,6 @@
     }
   }
 
-  function syncScroll() {
-    if (preEl && textareaEl) {
-      preEl.scrollTop = textareaEl.scrollTop;
-      preEl.scrollLeft = textareaEl.scrollLeft;
-    }
-  }
 </script>
 
 <div class="flex h-full overflow-hidden">
@@ -675,61 +664,7 @@
             </div>
           {/each}
 
-          <div class="env-card space-y-3 rounded-xl border p-5 shadow-xs">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2.5">
-                <input
-                  id="vac-toggle"
-                  type="checkbox"
-                  bind:checked={vacation.enabled}
-                  onchange={syncVisualToCode}
-                  class="h-4 w-4 accent-[#48B17F]"
-                />
-                <label for="vac-toggle" class="env-text cursor-pointer text-sm font-semibold">
-                  🏖️ Répondeur automatique (Absence / Vacances)
-                </label>
-              </div>
-              <span class="env-faint text-xs">Extension RFC 5230 <code>vacation</code></span>
-            </div>
-
-            {#if vacation.enabled}
-              <div class="grid grid-cols-1 gap-3 pt-2 md:grid-cols-4">
-                <div>
-                  <label for="vac-days" class="env-muted mb-1 block text-xs">Fréquence (jours)</label>
-                  <input
-                    id="vac-days"
-                    type="number"
-                    min="1"
-                    max="60"
-                    bind:value={vacation.days}
-                    oninput={syncVisualToCode}
-                    class="env-input w-full rounded-xl border px-3 py-2 text-xs"
-                  />
-                </div>
-                <div class="md:col-span-3">
-                  <label for="vac-subj" class="env-muted mb-1 block text-xs">Objet de la réponse</label>
-                  <input
-                    id="vac-subj"
-                    bind:value={vacation.subject}
-                    oninput={syncVisualToCode}
-                    placeholder="Absence du bureau"
-                    class="env-input w-full rounded-xl border px-3 py-2 text-xs"
-                  />
-                </div>
-                <div class="md:col-span-4">
-                  <label for="vac-body" class="env-muted mb-1 block text-xs">Message envoyé automatiquement</label>
-                  <textarea
-                    id="vac-body"
-                    rows="3"
-                    bind:value={vacation.reason}
-                    oninput={syncVisualToCode}
-                    placeholder="Bonjour, je suis actuellement absent..."
-                    class="env-input w-full rounded-lg border p-3 text-xs"
-                  ></textarea>
-                </div>
-              </div>
-            {/if}
-          </div>
+          <SieveVacationCard bind:vacation onChange={syncVisualToCode} />
         </div>
       </div>
 
@@ -743,35 +678,7 @@
           }}
         />
 
-        <div class="env-subtle env-border relative flex flex-1 overflow-hidden rounded-xl border font-mono text-xs shadow-inner">
-          <div
-            aria-hidden="true"
-            class="env-border env-faint select-none border-r px-3.5 py-4 text-right leading-6"
-          >
-            {#each Array.from({ length: lineCount }, (_, i) => i + 1) as n}
-              <div>{n}</div>
-            {/each}
-          </div>
-
-          <div class="relative flex-1 overflow-hidden">
-            <pre
-              bind:this={preEl}
-              aria-hidden="true"
-              class="env-text pointer-events-none absolute inset-0 m-0 overflow-hidden whitespace-pre-wrap break-words p-4 font-mono text-xs leading-6"
-            >{@html highlightedHtml}</pre>
-
-            <textarea
-              bind:this={textareaEl}
-              bind:value={rawCode}
-              onscroll={syncScroll}
-              onkeydown={handleEditorKeydown}
-              spellcheck="false"
-              aria-label="Éditeur de code Sieve"
-              placeholder={'require ["fileinto"];\n\nif header :contains "From" "exemple@domaine.fr" {\n    fileinto "Archives";\n}'}
-              class="absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent p-4 font-mono text-xs leading-6 text-transparent caret-[#48B17F] selection:bg-[var(--env-accent)]/30 focus:outline-none"
-            ></textarea>
-          </div>
-        </div>
+        <SieveCodeEditor bind:rawCode onKeydown={handleEditorKeydown} />
       </div>
     {/if}
   </div>
