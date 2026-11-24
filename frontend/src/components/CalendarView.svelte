@@ -468,6 +468,7 @@
       title: evTitle,
       start: evStart,
       description: ev.description ? `Annulé : ${ev.description}` : 'Événement annulé.',
+      sequence: typeof ev?.sequence === 'number' ? ev.sequence + 1 : 1,
       organizerEmail: sender || 'noreply@localhost',
       attendees: recipients,
       method: 'CANCEL'
