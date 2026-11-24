@@ -1,98 +1,5 @@
 <script lang="ts">
 
-
-  async function sendCalendarInviteRobust(evTitle: string, evStart: string, evEnd: string, evLocation: string, evNotes: string) {
-    const raw = typeof participantsInput === 'string' ? participantsInput : '';
-    const recipients = raw
-      .split(/[,;\s]+/)
-      .map((s) => s.trim())
-      .filter((s) => s.includes('@'));
-    if (recipients.length === 0) return;
-
-    let sender = typeof organizerEmail === 'string' && organizerEmail.includes('@') ? organizerEmail : '';
-    if (!sender) {
-      try {
-        const accRes = await fetch('/api/accounts');
-        if (accRes.ok) {
-          const accs = await accRes.json();
-          const cur = accs.find((a: any) => a.id === accountId) || accs[0];
-          sender = cur?.username || cur?.email || '';
-        }
-      } catch {}
-    }
-    if (!sender) sender = (localStorage.getItem('enveloppe_calendar_organizer_v1')?.trim() || '');
-
-    const icsStr = buildIcsInvitation({
-      title: evTitle || 'Événement',
-      start: evStart || new Date().toISOString(),
-      end: evEnd || undefined,
-      location: evLocation || undefined,
-      description: evNotes || undefined,
-      organizerEmail: sender,
-      attendees: recipients
-    });
-    const icsFile = createIcsFile(icsStr, 'invitation.ics');
-
-    let uploaded: any = null;
-    if (typeof uploadAttachment === 'function') { try { uploaded = await uploadAttachment(accountId, icsFile); } catch {} }
-    if (!uploaded) {
-      const fd = new FormData();
-      fd.append('file', icsFile);
-      for (const upUrl of [
-        `/api/jmap/${encodeURIComponent(accountId)}/upload`,
-        `/api/jmap/${encodeURIComponent(accountId)}/blob/upload`
-      ]) {
-        try {
-          const r = await fetch(upUrl, { method: 'POST', body: fd });
-          if (r.ok) { uploaded = await r.json(); break; }
-        } catch {}
-      }
-    }
-
-    const whenTxt = evStart ? new Date(evStart).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' }) : '';
-    const mailBody = [
-      'Bonjour,',
-      '',
-      `Vous êtes invité(e) à l\'événement : ${evTitle || 'Événement'}`,
-      whenTxt ? `Date : ${whenTxt}` : '',
-      evLocation ? `Lieu : ${evLocation}` : '',
-      evNotes ? `\nNotes :\n${evNotes}` : '',
-      '',
-      'Le fichier invitation.ics est joint à ce message.'
-    ].filter((l, idx, arr) => !(l === '' && arr[idx - 1] === '')).join('\n');
-
-    const attachments = uploaded ? [uploaded] : [];
-    let sentOk = false;
-    if (typeof sendEmail === 'function') { try { await sendEmail(accountId, recipients.join(', '), `Invitation : ${evTitle || 'Événement'}`, mailBody, attachments); sentOk = true; } catch {} }
-    if (!sentOk) {
-      for (const sendUrl of [
-        `/api/jmap/${encodeURIComponent(accountId)}/send`,
-        `/api/jmap/${encodeURIComponent(accountId)}/email/send`,
-        `/api/jmap/${encodeURIComponent(accountId)}/emails/send`
-      ]) {
-        try {
-          const r = await fetch(sendUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: recipients.join(', '),
-              subject: `Invitation : ${evTitle || 'Événement'}`,
-              text: mailBody,
-              attachments
-            })
-          });
-          if (r.ok) { sentOk = true; break; }
-        } catch {}
-      }
-    }
-
-    inviteFeedback = sentOk
-      ? `Invitation (.ics) envoyée à ${recipients.join(', ')}.`
-      : `Échec de l\'envoi de l\'invitation à ${recipients.join(', ')} (vérifiez la route d\'envoi JMAP).`;
-    if (sentOk) participantsInput = '';
-    setTimeout(() => (inviteFeedback = ''), 6000);
-  }
-
   interface ContactEntry { name: string; email: string; }
   let contactList = $state<ContactEntry[]>([]);
   let showSuggestions = $state(false);
@@ -192,7 +99,6 @@
   let kind = $state<CalendarItemKind>('event');
   let title = $state('');
   let participantsInput = $state('');
-  let inviteNotice = $state('');
   let start = $state('');
   let description = $state('');
   let inviteesText = $state('');
@@ -293,13 +199,6 @@
   }
 
   async function handleSave(e: Event) {
-
-    try {
-      await sendCalendarInvite(title, start, '', '', description);
-    } catch (err) {
-      console.error('Envoi invitation .ics:', err);
-    }
-
     e.preventDefault();
     if (!defaultCalId) return;
     saving = true;
@@ -342,49 +241,6 @@
     const json = file.name.endsWith('.ics') ? JSON.stringify(icsToEvents(text)) : text;
     await importEventsJSON(accountId, defaultCalId, json);
     await load();
-  }
-
-  async function sendCalendarInvite(evTitle: string, evStart: string, evEnd: string, evLocation: string, evDescription: string) {
-    const attendees = participantsInput
-      .split(/[,;\s]+/)
-      .map((s) => s.trim())
-      .filter((s) => s.includes('@'));
-    if (attendees.length === 0) return;
-
-    const icsText = buildIcsInvitation({
-      title: evTitle,
-      start: evStart,
-      end: evEnd || undefined,
-      location: evLocation || undefined,
-      description: evDescription || undefined,
-      organizerEmail: organizerEmail || (localStorage.getItem('enveloppe_calendar_organizer_v1')?.trim() || ''),
-      attendees
-    });
-    const icsFile = createIcsFile(icsText, 'invitation.ics');
-    const attachment = await uploadAttachment(accountId, icsFile);
-
-    const startLabel = evStart ? new Date(evStart).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' }) : '';
-    const bodyLines = [
-      `Bonjour,`,
-      ``,
-      `Vous êtes invité(e) à l'événement suivant : ${evTitle}`,
-      startLabel ? `Date et heure : ${startLabel}` : '',
-      evLocation ? `Lieu : ${evLocation}` : '',
-      evDescription ? `\nDétails :\n${evDescription}` : '',
-      ``,
-      `Le fichier invitation.ics est joint à ce message pour l'ajouter directement à votre calendrier.`
-    ].filter((l, i, arr) => !(l === '' && arr[i - 1] === ''));
-
-    await sendEmail(
-      accountId,
-      attendees.join(', '),
-      `Invitation : ${evTitle}`,
-      bodyLines.join('\n'),
-      [attachment]
-    );
-    inviteNotice = `Invitation (.ics) envoyée à ${attendees.join(', ')}.`;
-    participantsInput = '';
-    setTimeout(() => (inviteNotice = ''), 5000);
   }
 
 
@@ -816,12 +672,6 @@
       </form>
   {#if inviteSendStatus}
     <p role="status" class="env-accent-soft mt-3 rounded-xl px-4 py-2.5 text-xs font-medium">{inviteSendStatus}</p>
-  {/if}
-  {#if inviteFeedback}
-    <p role="status" class="env-accent-soft mt-3 rounded-lg px-3.5 py-2 text-xs font-medium">{inviteFeedback}</p>
-  {/if}
-  {#if inviteNotice}
-    <p role="status" class="env-accent-soft mt-3 rounded-lg px-3.5 py-2 text-xs font-medium">{inviteNotice}</p>
   {/if}
     </div>
   </div>
