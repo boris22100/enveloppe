@@ -1,26 +1,28 @@
 <script lang="ts">
-  interface SieveTemplateItem {
+  export interface SieveTemplateEntry {
     label: string;
     description?: string;
+    code: string;
   }
 
   let {
     templates = [],
-    onSelect
+    onApply
   }: {
-    templates?: SieveTemplateItem[];
-    onSelect: (tpl: SieveTemplateItem) => void;
+    templates?: SieveTemplateEntry[];
+    onApply: (tpl: SieveTemplateEntry) => void;
   } = $props();
 </script>
 
 {#if templates.length > 0}
-  <div class="flex flex-wrap items-center gap-2">
-    <span class="env-muted text-xs font-medium">Modèles :</span>
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <span class="env-muted text-xs font-semibold uppercase tracking-wider">Modèles :</span>
     {#each templates as tpl}
       <button
         type="button"
-        onclick={() => onSelect(tpl)}
-        class="env-input env-hover rounded-lg border px-2.5 py-1 text-xs"
+        title={tpl.description}
+        onclick={() => onApply(tpl)}
+        class="env-input env-hover rounded-xl border px-3 py-1.5 text-xs font-medium"
       >
         {tpl.label}
       </button>

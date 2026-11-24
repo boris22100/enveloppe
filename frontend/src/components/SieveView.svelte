@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SieveTemplatesBar, { type SieveTemplateEntry } from './sieve/SieveTemplatesBar.svelte';
   import SieveRuleEditor from './sieve/SieveRuleEditor.svelte';
 
   import { ROLE_META, type Mailbox } from '../lib/jmap/client';
@@ -733,22 +734,13 @@
 
     {:else}
       <div class="flex flex-1 flex-col overflow-hidden p-5">
-        <div class="mb-3 flex flex-wrap items-center gap-2">
-          <span class="env-muted text-xs font-semibold uppercase tracking-wider">Modèles :</span>
-          {#each SIEVE_TEMPLATES as tpl}
-            <button
-              type="button"
-              title={tpl.description}
-              onclick={() => {
-                rawCode = rawCode.trim() ? rawCode.trim() + '\n\n' + tpl.code : tpl.code;
-                applyCodeToVisual(rawCode);
-              }}
-              class="env-input env-hover rounded-xl border px-3 py-1.5 text-xs font-medium"
-            >
-              {tpl.label}
-            </button>
-          {/each}
-        </div>
+        <SieveTemplatesBar
+          templates={SIEVE_TEMPLATES}
+          onApply={(tpl: SieveTemplateEntry) => {
+            rawCode = rawCode.trim() ? rawCode.trim() + '\n\n' + tpl.code : tpl.code;
+            applyCodeToVisual(rawCode);
+          }}
+        />
 
         <div class="env-subtle env-border relative flex flex-1 overflow-hidden rounded-xl border font-mono text-xs shadow-inner">
           <div
