@@ -1,4 +1,78 @@
 <script lang="ts">
+  interface ContactEntry { name: string; email: string; }
+  let contactList = $state<ContactEntry[]>([]);
+  let showSuggestions = $state(false);
+
+  function currentSearchToken(raw: string): string {
+    const parts = raw.split(',');
+    return (parts[parts.length - 1] || '').trim().toLowerCase();
+  }
+
+  let contactSuggestions = $derived.by(() => {
+    const token = currentSearchToken(participantsInput);
+    if (!token || token.length < 1) return [];
+    const existing = new Set(
+      participantsInput.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+    );
+    return contactList
+      .filter((c) => !existing.has(c.email.toLowerCase()))
+      .filter((c) => c.name.toLowerCase().includes(token) || c.email.toLowerCase().includes(token))
+      .slice(0, 6);
+  });
+
+  function pickContactSuggestion(email: string) {
+    const parts = participantsInput.split(',').map((s) => s.trim()).filter(Boolean);
+    if (parts.length > 0 && !parts[parts.length - 1].includes('@')) {
+      parts.pop();
+    }
+    parts.push(email);
+    participantsInput = parts.join(', ') + ', ';
+    showSuggestions = false;
+  }
+
+  async function resolveSenderEmail(): Promise<string> {
+    if (organizerEmail && organizerEmail.includes('@')) return organizerEmail;
+    try {
+      const res = await fetch('/api/accounts');
+      if (res.ok) {
+        const list = await res.json();
+        const found = list.find((a: any) => a.id === accountId) || list[0];
+        if (found?.username) return found.username;
+      }
+    } catch {}
+    return 'noreply@localhost';
+  }
+
+  async function loadContactsForAutocomplete() {
+    try {
+      const res = await fetch(`/api/jmap/${encodeURIComponent(accountId)}/contacts`);
+      if (res.ok) {
+        const data = await res.json();
+        const rawItems = Array.isArray(data) ? data : (data.contacts || data.items || []);
+        const parsed: ContactEntry[] = [];
+        for (const item of rawItems) {
+          const name = item.name || item.fullName || item.displayName || '';
+          const emails = Array.isArray(item.emails)
+            ? item.emails.map((e: any) => (typeof e === 'string' ? e : e?.value || e?.email || ''))
+            : [item.email || ''];
+          for (const em of emails) {
+            const clean = (em || '').trim();
+            if (clean.includes('@')) {
+              parsed.push({ name: name || clean, email: clean });
+            }
+          }
+        }
+        contactList = parsed;
+      }
+    } catch {}
+  }
+
+  $effect(() => {
+    if (accountId) {
+      loadContactsForAutocomplete();
+    }
+  });
+
   import { sendEmail, uploadAttachment } from '../lib/jmap/client';
   import { buildIcsInvitation, createIcsFile } from '../lib/ics';
 
@@ -125,6 +199,18 @@
   }
 
   async function handleSave(e: Event) {
+    try {
+      await sendCalendarInvite(
+        typeof title !== 'undefined' ? title : '',
+        typeof start !== 'undefined' ? start : (typeof startAt !== 'undefined' ? startAt : ''),
+        typeof end !== 'undefined' ? end : (typeof endAt !== 'undefined' ? endAt : ''),
+        typeof location !== 'undefined' ? location : '',
+        typeof description !== 'undefined' ? description : (typeof notes !== 'undefined' ? notes : '')
+      );
+    } catch (err) {
+      console.error('Envoi invitation .ics:', err);
+    }
+
     e.preventDefault();
     if (!defaultCalId) return;
     saving = true;
@@ -464,13 +550,6 @@
       <form onsubmit={handleSave} class="env-card space-y-4 rounded-xl border p-7 shadow-2xl">
         <div class="flex items-center justify-between">
           <h3 id="cal-create-title" class="env-text text-lg font-semibold">Nouvel élément</h3>
-                <input
-        bind:value={participantsInput}
-        type="text"
-        aria-label="Participants"
-        placeholder="Participants (ex: alice@domaine.fr, bob@domaine.fr)"
-        class="env-input w-full rounded-lg border px-3.5 py-2 text-sm"
-      />
       <button type="button" onclick={() => (showModal = false)} aria-label="Fermer" class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
         </div>
 
