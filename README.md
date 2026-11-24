@@ -160,3 +160,9 @@ Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
 * **Tests unitaires raccordés à la CI** : intégration de `vitest` (`npm test`) dans `frontend/package.json` et le workflow GitHub Actions, et ajout des tests Go `TestIsSafeExternalURL` sur la validation SSRF du proxy JMAP.
 * **Calendrier (RFC 5545)** : transmission dynamique de la propriété `SEQUENCE` incrémentée lors des annulations d'invitations `.ics` (`method: 'CANCEL'`).
 * **Hygiène du dépôt** : nettoyage des doublons dans `.gitignore` et maintien des empreintes Gitleaks.
+
+## Audit Sécurité, Green IT & Accessibilité (v0.7.9)
+* **Sécurité** : 0 fuite détectée par Gitleaks (80 commits), 0 vulnérabilité `govulncheck` et `npm audit` (`--omit=dev`), 0 vulnérabilité `CRITICAL`/`HIGH` Trivy (Debian 12.15 & binaire Go), exécution en utilisateur `65532` (`nonroot`) avec `ReadOnlyRootfs: true` et en-têtes HTTP (`CSP`, `HSTS`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) actifs.
+* **Green IT** : image finale de **9.97 MB** et consommation mesurée au repos à `0.00%` CPU et **6.63 MiB** de RAM (`0.02%`) avec `0B / 0B` d'I/O bloc.
+* **Accessibilité (A11y)** : aucun warning A11y ni fermeture implicite au build sur 17 composants `.svelte`, 0 image sans `alt`, 0 bouton sans libellé et `aria-label` explicites ajoutés sur les champs d'import/pièces jointes masqués (`App.svelte`, `ContactsView.svelte`, `CalendarView.svelte`).
+* **Tests & Typecheck** : `go vet ./...` et `go test ./...` (`TestIsSafeExternalURL`), `tsc --noEmit` (`npm run check`) et `vitest run` (`npm test`, 5/5 tests) validés.
