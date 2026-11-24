@@ -1,8 +1,91 @@
 <script lang="ts">
+  let editingContact = $state<any>(null);
+  let editName = $state('');
+  let editEmail = $state('');
+  let editPhone = $state('');
+  let editNotes = $state('');
+  let editSaving = $state(false);
+  let editError = $state('');
+  function openEditContact(item: any) {
+    editingContact = item;
+    editName = typeof item?.name === 'string' ? item.name : (item?.name?.full || item?.fullName || item?.displayName || '');
+    const emailVals = item?.emails ? Object.values(item.emails).map((v: any) => (typeof v === 'string' ? v : v?.address || v?.value || '')).filter(Boolean) : [];
+    const firstEmail = emailVals[0] || item?.email || '';
+    editEmail = firstEmail;
+    const firstPhone = Array.isArray(item?.phones)
+      ? (typeof item.phones[0] === 'string' ? item.phones[0] : item.phones[0]?.value || '')
+      : (item?.phone || '');
+    editPhone = firstPhone;
+    editNotes = item?.notes || item?.note || '';
+    editError = '';
+  }
+  async function saveEditedContact(e: Event) {
+    e.preventDefault();
+    if (!editingContact) return;
+    editSaving = true;
+    editError = '';
+    const id = editingContact.id || editingContact._id || editingContact.uid;
+    const payload = {
+      ...editingContact,
+      name: editName.trim(),
+      fullName: editName.trim(),
+      email: editEmail.trim(),
+      emails: editEmail.trim() ? [{ value: editEmail.trim() }] : [],
+      phone: editPhone.trim(),
+      phones: editPhone.trim() ? [{ value: editPhone.trim() }] : [],
+      notes: editNotes
+    };
+    try {
+      let ok = false;
+      if (id) {
+        for (const [method, url] of [
+          ['PUT', `/api/jmap/${encodeURIComponent(accountId)}/contacts/${encodeURIComponent(id)}`],
+          ['PATCH', `/api/jmap/${encodeURIComponent(accountId)}/contacts/${encodeURIComponent(id)}`],
+          ['PUT', `/api/jmap/${encodeURIComponent(accountId)}/contact/${encodeURIComponent(id)}`],
+          ['POST', `/api/jmap/${encodeURIComponent(accountId)}/contacts/${encodeURIComponent(id)}`]
+        ]) {
+          const r = await fetch(url as string, {
+            method: method as string,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (r.ok) { ok = true; break; }
+        }
+      }
+      if (!ok) {
+        const r = await fetch(`/api/jmap/${encodeURIComponent(accountId)}/contacts`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        ok = r.ok;
+      }
+      if (!ok) {
+        editError = "Impossible d'enregistrer la modification côté serveur.";
+        return;
+      }
+      if (typeof contacts !== 'undefined' && Array.isArray(contacts)) {
+        contacts = contacts.map((x: any) => ((x.id || x._id) === id ? { ...x, ...payload } : x));
+      }
+      editingContact = null;
+    } catch (err: any) {
+      editError = err?.message || 'Erreur réseau lors de la mise à jour.';
+    } finally {
+      editSaving = false;
+    }
+  }
+  function composeToEmail(addr: string, name?: string) {
+    const clean = (addr || '').trim();
+    if (!clean) return;
+    if (typeof onComposeTo === 'function') {
+      onComposeTo(clean, name);
+    } else if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('enveloppe:compose', { detail: { email: clean, name } }));
+    }
+  }
   import { createContact, deleteContact, fetchContacts, importContactsJSON, type JSContact } from '../lib/jmap/contacts';
   import { contactsToVcf, vcfToContacts } from '../lib/utils/formats';
   import ConfirmModal from './ConfirmModal.svelte';
-
   let { accountId, onComposeTo }: { accountId: string } = $props();
   let contacts = $state<JSContact[]>([]);
   let search = $state('');
@@ -11,12 +94,10 @@
   let email = $state('');
   let phone = $state('');
   let contactToDelete = $state<{ id: string; name: string } | null>(null);
-
   async function load() {
     contacts = await fetchContacts(accountId);
   }
   $effect(() => { if (accountId) load(); });
-
   let groupedContacts = $derived.by(() => {
     const q = search.trim().toLowerCase();
     const filtered = contacts
@@ -32,7 +113,6 @@
         const nb = (b.name?.full || Object.values(b.emails ?? {})[0]?.address || '').trim();
         return na.localeCompare(nb, 'fr', { sensitivity: 'base' });
       });
-
     const groups = new Map<string, JSContact[]>();
     for (const c of filtered) {
       const label = (c.name?.full || Object.values(c.emails ?? {})[0]?.address || '#').trim();
@@ -43,7 +123,6 @@
     }
     return Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0], 'fr'));
   });
-
   async function add(e: Event) {
     e.preventDefault();
     await createContact(accountId, fullName, email, phone);
@@ -51,21 +130,18 @@
     showAdd = false;
     await load();
   }
-
   async function confirmDeleteContact() {
     if (!contactToDelete) return;
     await deleteContact(accountId, contactToDelete.id);
     contactToDelete = null;
     await load();
   }
-
   function downloadFile(content: string, filename: string, mime: string) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([content], { type: mime }));
     a.download = filename;
     a.click();
   }
-
   async function handleImport(e: Event) {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
@@ -75,7 +151,6 @@
     await load();
   }
 </script>
-
 <div class="flex h-full flex-col overflow-hidden">
   <header class="env-border flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
     <div class="flex flex-wrap items-center gap-3">
@@ -88,7 +163,7 @@
       />
     </div>
     <div class="flex flex-wrap gap-2">
-      <button type="button" onclick={() => (showAdd = !showAdd)} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">+ Contact</button>
+      <div class="flex items-center justify-between gap-2"><button type="button" onclick={() => (showAdd = !showAdd)} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">+ Contact</button>
       <button type="button" onclick={() => downloadFile(contactsToVcf(contacts), 'contacts.vcf', 'text/vcard')} class="env-input env-hover rounded-xl border px-3.5 py-2 text-xs font-medium">Export .vcf</button>
       <label class="env-input env-hover cursor-pointer rounded-xl border px-3.5 py-2 text-xs font-medium">
         Importer
@@ -96,7 +171,6 @@
       </label>
     </div>
   </header>
-
   {#if showAdd}
     <form onsubmit={add} class="env-subtle env-border grid grid-cols-1 gap-2.5 border-b px-6 py-3.5 md:grid-cols-4">
       <input bind:value={fullName} aria-label="Nom complet" placeholder="Nom complet" required class="env-input rounded-xl border px-3.5 py-2 text-sm" />
@@ -108,7 +182,6 @@
       </div>
     </form>
   {/if}
-
   <div class="flex-1 overflow-y-auto px-6 py-5">
     <div class="mx-auto max-w-4xl space-y-6">
       {#each groupedContacts as [letter, list]}
@@ -128,7 +201,11 @@
                 </div>
                 <div class="flex flex-wrap items-center gap-4 text-xs">
                   {#each Object.values(c.emails ?? {}) as em}
-                    <span class="env-accent-text font-medium">{em.address}</span>
+                    <div class="flex items-center justify-between gap-2"><button type="button" onclick={() => composeToEmail(String(em.address))} class="env-accent-text text-left text-xs hover:underline">{em.address}
+      
+    </button>
+  
+</div>
                   {/each}
                   {#each Object.values(c.phones ?? {}) as ph}
                     <span class="env-muted">{ph.number}</span>
@@ -143,6 +220,7 @@
                     >
                       🗑️
                     </button>
+                    <button type="button" onclick={() => openEditContact(c)} class="env-input env-hover env-muted rounded-md border px-2 py-1 text-xs">Modifier</button>
                   {/if}
                 </div>
               </div>
@@ -155,7 +233,6 @@
     </div>
   </div>
 </div>
-
 {#if contactToDelete}
   <ConfirmModal
     title="Supprimer le contact"
@@ -164,4 +241,36 @@
     onConfirm={confirmDeleteContact}
     onCancel={() => (contactToDelete = null)}
   />
+{/if}
+{#if editingContact}
+  <div role="dialog" aria-modal="true" class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
+    <form onsubmit={saveEditedContact} class="env-card w-full max-w-md space-y-3 rounded-xl border p-5 shadow-2xl">
+      <h3 class="env-text text-base font-bold">Modifier le contact</h3>
+      <div>
+        <label class="env-muted mb-1 block text-xs">Nom</label>
+        <input bind:value={editName} type="text" required class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label class="env-muted mb-1 block text-xs">Adresse e-mail</label>
+        <input bind:value={editEmail} type="email" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label class="env-muted mb-1 block text-xs">Téléphone</label>
+        <input bind:value={editPhone} type="tel" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label class="env-muted mb-1 block text-xs">Notes</label>
+        <textarea bind:value={editNotes} rows="2" class="env-input w-full rounded-lg border px-3 py-2 text-sm"></textarea>
+      </div>
+      {#if editError}
+        <p class="text-xs text-red-400">{editError}</p>
+      {/if}
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick={() => (editingContact = null)} class="env-input env-muted rounded-lg border px-3.5 py-1.5 text-xs">Annuler</button>
+        <button type="submit" disabled={editSaving} class="env-accent-bg rounded-lg px-4 py-1.5 text-xs font-semibold disabled:opacity-50">
+          {editSaving ? 'Enregistrement...' : 'Enregistrer'}
+        </button>
+      </div>
+    </form>
+  </div>
 {/if}
