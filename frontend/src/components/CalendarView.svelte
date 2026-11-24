@@ -1,67 +1,5 @@
 <script lang="ts">
-  interface CalContactItem { name: string; email: string; }
-  let calContacts = $state<CalContactItem[]>([]);
-  let showParticipantDropdown = $state(false);
-  let inviteFeedback = $state('');
 
-  function getActiveParticipantQuery(val: string): string {
-    const parts = (val || '').split(',');
-    return (parts[parts.length - 1] || '').trim().toLowerCase();
-  }
-
-  let filteredParticipantSuggestions = $derived.by(() => {
-    const q = getActiveParticipantQuery(typeof participantsInput === 'string' ? participantsInput : '');
-    if (!q) return [];
-    const selected = new Set(
-      (typeof participantsInput === 'string' ? participantsInput : '')
-        .split(',')
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean)
-    );
-    return calContacts
-      .filter((c) => !selected.has(c.email.toLowerCase()))
-      .filter((c) => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q))
-      .slice(0, 6);
-  });
-
-  function selectParticipantSuggestion(email: string) {
-    const current = typeof participantsInput === 'string' ? participantsInput : '';
-    const parts = current.split(',').map((s) => s.trim()).filter(Boolean);
-    if (parts.length > 0 && !parts[parts.length - 1].includes('@')) {
-      parts.pop();
-    }
-    parts.push(email);
-    participantsInput = parts.join(', ') + ', ';
-    showParticipantDropdown = false;
-  }
-
-  async function loadCalContacts() {
-    try {
-      let raw: any = null;
-      
-      if (!raw) {
-        const res = await fetch(`/api/jmap/${encodeURIComponent(accountId)}/contacts`);
-        if (res.ok) raw = await res.json();
-      }
-      const list = Array.isArray(raw) ? raw : (raw?.contacts || raw?.items || raw?.cards || []);
-      const out: CalContactItem[] = [];
-      for (const c of list) {
-        const name = typeof c?.name === 'string' ? c.name : (c?.name?.full || c?.fullName || c?.displayName || '');
-        const ems = c?.emails && typeof c.emails === 'object'
-          ? Object.values(c.emails).map((x: any) => (typeof x === 'string' ? x : x?.address || x?.value || x?.email || ''))
-          : [c?.email || ''];
-        for (const em of ems) {
-          const clean = (em || '').trim();
-          if (clean.includes('@')) out.push({ name: name || clean, email: clean });
-        }
-      }
-      calContacts = out;
-    } catch {}
-  }
-
-  $effect(() => {
-    if (accountId) loadCalContacts();
-  });
 
   async function sendCalendarInviteRobust(evTitle: string, evStart: string, evEnd: string, evLocation: string, evNotes: string) {
     const raw = typeof participantsInput === 'string' ? participantsInput : '';
@@ -355,11 +293,6 @@
   }
 
   async function handleSave(e: Event) {
-    try {
-      await sendCalendarInviteRobust(title, start, '', '', description);
-    } catch (e) {
-      console.error('sendCalendarInviteRobust:', e);
-    }
 
     try {
       await sendCalendarInvite(title, start, '', '', description);
@@ -454,89 +387,6 @@
     setTimeout(() => (inviteNotice = ''), 5000);
   }
 
-
-  interface CalContact { name: string; email: string; }
-  let calContactPool = $state<CalContact[]>([]);
-  let showInviteeDropdown = $state(false);
-  let inviteSendStatus = $state('');
-
-  let activeInviteeQuery = $derived.by(() => {
-    const parts = (inviteesText || '').split(',');
-    return (parts[parts.length - 1] || '').trim().toLowerCase();
-  });
-
-  let inviteeSuggestions = $derived.by(() => {
-    const q = activeInviteeQuery;
-    if (!q) return [];
-    const already = new Set(
-      (inviteesText || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
-    );
-    const tokens = q.split(/\s+/).filter(Boolean);
-    return calContactPool
-      .filter((c) => !already.has(c.email.toLowerCase()))
-      .filter((c) => {
-        const hay = `${c.name} ${c.email}`.toLowerCase();
-        return tokens.every((tk) => hay.includes(tk));
-      })
-      .slice(0, 12);
-  });
-
-  function applyInviteeSuggestion(email: string) {
-    const parts = (inviteesText || '').split(',').map((s) => s.trim()).filter(Boolean);
-    if (parts.length > 0 && !parts[parts.length - 1].includes('@')) {
-      parts.pop();
-    }
-    parts.push(email);
-    inviteesText = parts.join(', ') + ', ';
-    showInviteeDropdown = false;
-  }
-
-  async function refreshCalendarContacts() {
-    if (!accountId) return;
-    try {
-      const accRes = await fetch('/api/accounts');
-      if (accRes.ok) {
-        const accs = await accRes.json();
-        const cur = accs.find((a: any) => a.id === accountId);
-        if (cur?.username && cur.username.includes('@')) {
-          calContactPool = [{ name: cur.label || cur.username, email: cur.username }];
-        }
-      }
-      // Tente JMAP Contacts (ContactCard ou Card) si supporté par le serveur
-      for (const pkg of ['urn:ietf:params:jmap:contacts', 'urn:ietf:params:jmap:addressbook']) {
-        try {
-          const res = await jmapCall(accountId, [
-            ['ContactCard/query', { filter: {} }, 'q1'],
-            ['ContactCard/get', { '#ids': { resultOf: 'q1', name: 'ContactCard/query', path: '/ids' } }, 'g1']
-          ], [pkg]);
-          const list = res?.methodResponses?.[1]?.[1]?.list;
-          if (Array.isArray(list) && list.length > 0) {
-            const items: CalContact[] = [];
-            for (const c of list) {
-              const name = c?.name?.full || c?.fullName || '';
-              const emailsObj = c?.emails || {};
-              for (const v of Object.values(emailsObj) as any[]) {
-                const addr = typeof v === 'string' ? v : (v?.address || v?.value || '');
-                if (addr && addr.includes('@')) {
-                  items.push({ name: name || addr, email: addr.trim() });
-                }
-              }
-            }
-            if (items.length > 0) {
-              calContactPool = items;
-              return;
-            }
-          }
-        } catch {}
-      }
-    } catch {}
-  }
-
-  $effect(() => {
-    if (accountId) {
-      refreshCalendarContacts();
-    }
-  });
 
   async function dispatchEventInvitationIcs(evTitle: string, evStart: string, evDescription: string, recipients: string[]) {
     if (recipients.length === 0) return;

@@ -215,7 +215,7 @@
                     <button
                       type="button"
                       title="Modifier ce contact"
-                      aria-label="Modifier c"
+                      aria-label="Modifier {displayName}"
                       onclick={() => openEditContact(c)}
                       class="env-muted rounded-xl px-2.5 py-1.5 text-sm opacity-75 transition-opacity hover:bg-white/10 hover:text-[var(--env-text)] group-hover:opacity-100"
                     >

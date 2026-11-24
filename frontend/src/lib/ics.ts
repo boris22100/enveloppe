@@ -9,6 +9,7 @@ export interface CalendarInviteInput {
   organizerName?: string;
   attendees: string[];
   method?: 'REQUEST' | 'CANCEL';
+  sequence?: number;
 }
 
 function escapeIcsText(value: string): string {
@@ -39,7 +40,7 @@ export function buildIcsInvitation(input: CalendarInviteInput): string {
 
   const method = input.method || 'REQUEST';
   const status = method === 'CANCEL' ? 'CANCELLED' : 'CONFIRMED';
-  const seq = method === 'CANCEL' ? '1' : '0';
+  const seq = String(typeof input.sequence === 'number' ? input.sequence : (method === 'CANCEL' ? 1 : 0));
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
