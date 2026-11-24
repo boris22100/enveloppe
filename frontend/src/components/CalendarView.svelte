@@ -243,7 +243,7 @@
   import { eventsToIcs, icsToEvents } from '../lib/utils/formats';
   import ConfirmModal from './ConfirmModal.svelte';
 
-  let { accountId, organizerEmail = '' }: { accountId: string } = $props();
+  let { accountId, organizerEmail = '' }: { accountId: string; organizerEmail?: string } = $props();
 
   let defaultCalId = $state('');
   let events = $state<JSCalendarEvent[]>([]);
@@ -356,25 +356,13 @@
 
   async function handleSave(e: Event) {
     try {
-      await sendCalendarInviteRobust(
-        typeof title !== 'undefined' ? title : '',
-        typeof start !== 'undefined' ? start : (typeof startAt !== 'undefined' ? startAt : ''),
-        typeof end !== 'undefined' ? end : (typeof endAt !== 'undefined' ? endAt : ''),
-        typeof location !== 'undefined' ? location : '',
-        typeof description !== 'undefined' ? description : (typeof notes !== 'undefined' ? notes : '')
-      );
+      await sendCalendarInviteRobust(title, start, '', '', description);
     } catch (e) {
       console.error('sendCalendarInviteRobust:', e);
     }
 
     try {
-      await sendCalendarInvite(
-        typeof title !== 'undefined' ? title : '',
-        typeof start !== 'undefined' ? start : (typeof startAt !== 'undefined' ? startAt : ''),
-        typeof end !== 'undefined' ? end : (typeof endAt !== 'undefined' ? endAt : ''),
-        typeof location !== 'undefined' ? location : '',
-        typeof description !== 'undefined' ? description : (typeof notes !== 'undefined' ? notes : '')
-      );
+      await sendCalendarInvite(title, start, '', '', description);
     } catch (err) {
       console.error('Envoi invitation .ics:', err);
     }

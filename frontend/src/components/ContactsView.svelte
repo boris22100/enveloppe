@@ -86,7 +86,7 @@
   import { createContact, deleteContact, fetchContacts, importContactsJSON, type JSContact } from '../lib/jmap/contacts';
   import { contactsToVcf, vcfToContacts } from '../lib/utils/formats';
   import ConfirmModal from './ConfirmModal.svelte';
-  let { accountId, onComposeTo }: { accountId: string } = $props();
+  let { accountId, onComposeTo }: { accountId: string; onComposeTo?: (email: string, name?: string) => void } = $props();
   let contacts = $state<JSContact[]>([]);
   let search = $state('');
   let showAdd = $state(false);
@@ -258,15 +258,15 @@
       <h3 class="env-text text-base font-bold">Modifier le contact</h3>
       <div>
         <label class="env-muted mb-1 block text-xs">Nom</label>
-        <input bind:value={editName} type="text" required class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
+        <input id="edit-contact-name" aria-label="Nom du contact" placeholder="Nom complet" bind:value={editName} type="text" required class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
       </div>
       <div>
         <label class="env-muted mb-1 block text-xs">Adresse e-mail</label>
-        <input bind:value={editEmail} type="email" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
+        <input id="edit-contact-email" aria-label="Adresse e-mail du contact" placeholder="prenom.nom@domaine.fr" bind:value={editEmail} type="email" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
       </div>
       <div>
         <label class="env-muted mb-1 block text-xs">Téléphone</label>
-        <input bind:value={editPhone} type="tel" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
+        <input id="edit-contact-phone" aria-label="Téléphone du contact" placeholder="+33 6 00 00 00 00" bind:value={editPhone} type="tel" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
       </div>
       <div>
         <label class="env-muted mb-1 block text-xs">Notes</label>
