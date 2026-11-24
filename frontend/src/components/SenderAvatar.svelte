@@ -31,7 +31,7 @@
 
 <div
   aria-hidden="true"
-  class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-xs font-bold text-white shadow-sm"
+  class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg text-xs font-bold text-white shadow-sm"
   style="background-color: {showLogo ? '#ffffff' : bgColor};"
 >
   {#if showLogo}

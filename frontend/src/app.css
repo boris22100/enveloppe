@@ -1,90 +1,90 @@
 @import "tailwindcss";
 
 :root,
-:root.theme-abysses {
-  --env-bg-app: #08101A;
-  --env-bg-panel: #0B1622;
-  --env-bg-card: #0D1B2A;
-  --env-bg-subtle: #0A131E;
-  --env-bg-hover: rgba(30, 41, 59, 0.55);
-  --env-bg-active: rgba(13, 58, 77, 0.75);
-  --env-bg-input: #0F172A;
-  --env-border: rgba(30, 41, 59, 0.85);
-  --env-border-strong: #334155;
+:root[data-theme="bowiz"] {
+  color-scheme: dark;
+  --env-bg: #08121E;
+  --env-sidebar: #0B1726;
+  --env-panel: #0D1B2D;
+  --env-card: #102035;
+  --env-subtle: #0A1524;
+  --env-input: #091422;
+  --env-hover: rgba(255, 255, 255, 0.045);
+  --env-active: rgba(72, 177, 127, 0.14);
+  --env-border: rgba(255, 255, 255, 0.09);
   --env-text: #F1F5F9;
-  --env-text-muted: #94A3B8;
-  --env-text-faint: #64748B;
+  --env-muted: #94A3B8;
+  --env-faint: #64748B;
   --env-accent: #48B17F;
+  --env-accent-contrast: #07131D;
   --env-accent-soft: rgba(72, 177, 127, 0.16);
-  --env-accent-ink: #08101A;
 }
 
-:root.theme-dark {
-  --env-bg-app: #0B0E14;
-  --env-bg-panel: #11161F;
-  --env-bg-card: #181E2A;
-  --env-bg-subtle: #0E121A;
-  --env-bg-hover: rgba(51, 65, 85, 0.45);
-  --env-bg-active: rgba(13, 58, 77, 0.65);
-  --env-bg-input: #0D1117;
-  --env-border: rgba(51, 65, 85, 0.65);
-  --env-border-strong: #475569;
-  --env-text: #F8FAFC;
-  --env-text-muted: #94A3B8;
-  --env-text-faint: #64748B;
-  --env-accent: #48B17F;
-  --env-accent-soft: rgba(72, 177, 127, 0.16);
-  --env-accent-ink: #08101A;
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --env-bg: #1E1E1E;
+  --env-sidebar: #252525;
+  --env-panel: #262626;
+  --env-card: #2A2A2A;
+  --env-subtle: #212121;
+  --env-input: #1C1C1C;
+  --env-hover: rgba(255, 255, 255, 0.05);
+  --env-active: rgba(102, 181, 116, 0.16);
+  --env-border: rgba(255, 255, 255, 0.09);
+  --env-text: #F3F4F6;
+  --env-muted: #A1A1AA;
+  --env-faint: #71717A;
+  --env-accent: #66B574;
+  --env-accent-contrast: #141A15;
+  --env-accent-soft: rgba(102, 181, 116, 0.16);
 }
 
-:root.theme-light {
-  --env-bg-app: #EEF2F6;
-  --env-bg-panel: #FFFFFF;
-  --env-bg-card: #FFFFFF;
-  --env-bg-subtle: #F8FAFC;
-  --env-bg-hover: #F1F5F9;
-  --env-bg-active: #E6F4EE;
-  --env-bg-input: #F8FAFC;
-  --env-border: #CBD5E1;
-  --env-border-strong: #94A3B8;
-  --env-text: #0F172A;
-  --env-text-muted: #475569;
-  --env-text-faint: #64748B;
-  --env-accent: #2E8B63;
-  --env-accent-soft: rgba(46, 139, 99, 0.14);
-  --env-accent-ink: #FFFFFF;
+:root[data-theme="light"] {
+  color-scheme: light;
+  --env-bg: #F7F8FA;
+  --env-sidebar: #F1F3F5;
+  --env-panel: #FFFFFF;
+  --env-card: #FFFFFF;
+  --env-subtle: #F3F4F6;
+  --env-input: #FFFFFF;
+  --env-hover: rgba(15, 23, 42, 0.04);
+  --env-active: rgba(78, 159, 98, 0.12);
+  --env-border: #E5E7EB;
+  --env-text: #1F2937;
+  --env-muted: #4B5563;
+  --env-faint: #6B7280;
+  --env-accent: #4E9F62;
+  --env-accent-contrast: #FFFFFF;
+  --env-accent-soft: rgba(78, 159, 98, 0.13);
 }
 
-@layer base {
-  html, body {
-    background-color: var(--env-bg-app);
-    color: var(--env-text);
-    font-size: 15px;
-    line-height: 1.5;
-  }
-
-  :where(button, a, input, select, textarea, [role="button"], [tabindex]):focus-visible {
-    outline: 2px solid var(--env-accent);
-    outline-offset: 2px;
-  }
-}
-
-.env-app { background-color: var(--env-bg-app); color: var(--env-text); }
-.env-panel { background-color: var(--env-bg-panel); border-color: var(--env-border); }
-.env-card { background-color: var(--env-bg-card); border-color: var(--env-border); }
-.env-subtle { background-color: var(--env-bg-subtle); border-color: var(--env-border); }
-.env-hover:hover { background-color: var(--env-bg-hover); }
-.env-active { background-color: var(--env-bg-active); }
-.env-input {
-  background-color: var(--env-bg-input);
+html, body {
+  background-color: var(--env-bg);
   color: var(--env-text);
-  border-color: var(--env-border-strong);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.16s ease, color 0.16s ease;
 }
+
+.env-app { background-color: var(--env-bg); color: var(--env-text); }
+.env-sidebar { background-color: var(--env-sidebar); border-color: var(--env-border); }
+.env-panel { background-color: var(--env-panel); border-color: var(--env-border); }
+.env-card { background-color: var(--env-card); border-color: var(--env-border); }
+.env-subtle { background-color: var(--env-subtle); border-color: var(--env-border); }
+.env-input { background-color: var(--env-input); border-color: var(--env-border); color: var(--env-text); }
+.env-input::placeholder { color: var(--env-faint); }
 .env-border { border-color: var(--env-border); }
 .env-divider > :not([hidden]) ~ :not([hidden]) { border-color: var(--env-border); }
 .env-text { color: var(--env-text); }
-.env-muted { color: var(--env-text-muted); }
-.env-faint { color: var(--env-text-faint); }
-.env-accent-bg { background-color: var(--env-accent); color: var(--env-accent-ink); }
-.env-accent-soft { background-color: var(--env-accent-soft); color: var(--env-accent); }
+.env-muted { color: var(--env-muted); }
+.env-faint { color: var(--env-faint); }
+.env-hover:hover { background-color: var(--env-hover); }
+.env-active { background-color: var(--env-active); }
 .env-accent-text { color: var(--env-accent); }
+.env-accent-bg { background-color: var(--env-accent); color: var(--env-accent-contrast); }
+.env-accent-soft { background-color: var(--env-accent-soft); color: var(--env-accent); }
+
+:is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--env-accent);
+  outline-offset: 2px;
+}

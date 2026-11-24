@@ -108,10 +108,10 @@
     </a>
   </div>
 
-  <section class="env-card max-w-xl space-y-4 rounded-3xl border p-6 shadow-xs">
+  <section class="env-card max-w-xl space-y-4 rounded-xl border p-6 shadow-xs">
     <h3 class="env-text text-base font-semibold">Changer le mot de passe du compte</h3>
-    {#if pwdMessage}<p role="status" class="env-accent-soft rounded-2xl p-3 text-xs font-medium">{pwdMessage}</p>{/if}
-    {#if pwdError}<p role="alert" class="rounded-2xl bg-red-500/15 p-3 text-xs font-medium text-red-400">{pwdError}</p>{/if}
+    {#if pwdMessage}<p role="status" class="env-accent-soft rounded-lg p-3 text-xs font-medium">{pwdMessage}</p>{/if}
+    {#if pwdError}<p role="alert" class="rounded-lg bg-red-500/15 p-3 text-xs font-medium text-red-400">{pwdError}</p>{/if}
     <form onsubmit={changePassword} class="space-y-3">
       <input type="password" bind:value={currentPassword} aria-label="Mot de passe actuel" placeholder="Mot de passe actuel" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
       <input type="password" bind:value={newPassword} aria-label="Nouveau mot de passe" placeholder="Nouveau mot de passe" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
@@ -120,15 +120,15 @@
     </form>
   </section>
 
-  <section class="env-card max-w-xl space-y-4 rounded-3xl border p-6 shadow-xs">
+  <section class="env-card max-w-xl space-y-4 rounded-xl border p-6 shadow-xs">
     <h3 class="env-text text-base font-semibold">Mots de passe d'application</h3>
 
     {#if appError}
-      <p role="alert" class="rounded-2xl bg-red-500/15 p-3 text-xs font-medium text-red-400">{appError}</p>
+      <p role="alert" class="rounded-lg bg-red-500/15 p-3 text-xs font-medium text-red-400">{appError}</p>
     {/if}
 
     {#if generatedSecret}
-      <div class="env-accent-soft rounded-2xl border border-[#48B17F] p-4 text-xs">
+      <div class="env-accent-soft rounded-lg border border-[#48B17F] p-4 text-xs">
         <p class="env-text mb-1.5 font-medium">Copie ce mot de passe maintenant (il ne sera plus affiché) :</p>
         <code class="env-card env-accent-text block select-all break-all rounded-xl border px-3 py-2 font-mono text-sm">{generatedSecret}</code>
       </div>
@@ -170,11 +170,11 @@
     </div>
   </section>
 
-  <section class="env-card max-w-xl space-y-4 rounded-3xl border p-6 shadow-xs">
+  <section class="env-card max-w-xl space-y-4 rounded-xl border p-6 shadow-xs">
     <h3 class="env-text text-base font-semibold">Signature de messagerie</h3>
     <p class="env-muted text-xs">Ajoutée automatiquement à la fin de vos nouveaux messages pour ce compte.</p>
     {#if sigSaved}
-      <p role="status" class="env-accent-soft rounded-2xl p-3 text-xs font-medium">Signature enregistrée pour ce compte.</p>
+      <p role="status" class="env-accent-soft rounded-lg p-3 text-xs font-medium">Signature enregistrée pour ce compte.</p>
     {/if}
     <form onsubmit={saveSignature} class="space-y-3">
       <textarea
@@ -182,7 +182,7 @@
         rows="4"
         aria-label="Signature de messagerie"
         placeholder={'-- \nPrénom Nom — Fonction\nhttps://exemple.fr'}
-        class="env-input w-full rounded-2xl border p-3.5 text-sm"
+        class="env-input w-full rounded-lg border p-3.5 text-sm"
       ></textarea>
       <button class="env-accent-bg rounded-xl px-4 py-2.5 text-sm font-semibold hover:opacity-95">
         Enregistrer la signature

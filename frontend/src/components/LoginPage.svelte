@@ -74,15 +74,15 @@
 </script>
 
 <div class="env-app flex min-h-screen items-center justify-center p-5">
-  <form onsubmit={submit} class="env-card w-full max-w-md space-y-5 rounded-3xl border p-8 shadow-2xl">
+  <form onsubmit={submit} class="env-card w-full max-w-md space-y-5 rounded-xl border p-8 shadow-2xl">
     <div class="space-y-1.5">
-      <div aria-hidden="true" class="env-accent-soft inline-flex h-12 w-12 items-center justify-center rounded-2xl text-xl font-bold">✉️</div>
+      <div aria-hidden="true" class="env-accent-soft inline-flex h-12 w-12 items-center justify-center rounded-lg text-xl font-bold">✉️</div>
       <h1 class="env-text text-2xl font-bold">Enveloppe</h1>
       <p class="env-muted text-sm">Renseignez l'adresse de votre serveur JMAP pour vous connecter.</p>
     </div>
 
     {#if error}
-      <p role="alert" class="rounded-2xl bg-red-500/15 p-3.5 text-xs font-medium text-red-400">{error}</p>
+      <p role="alert" class="rounded-lg bg-red-500/15 p-3.5 text-xs font-medium text-red-400">{error}</p>
     {/if}
 
     <div class="space-y-3.5">

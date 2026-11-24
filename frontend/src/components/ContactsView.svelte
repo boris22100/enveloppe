@@ -112,16 +112,16 @@
   <div class="flex-1 overflow-y-auto px-6 py-5">
     <div class="mx-auto max-w-4xl space-y-6">
       {#each groupedContacts as [letter, list]}
-        <div class="env-card rounded-3xl border p-4 shadow-xs">
+        <div class="env-card rounded-xl border p-4 shadow-xs">
           <div class="env-border env-accent-text mb-2 border-b pb-1.5 text-xs font-bold uppercase tracking-wider">
             {letter}
           </div>
           <div class="env-divider divide-y">
             {#each list as c}
               {@const displayName = c.name?.full || Object.values(c.emails ?? {})[0]?.address || 'Sans nom'}
-              <div class="env-hover group flex flex-wrap items-center justify-between gap-3 rounded-2xl px-3 py-2.5">
+              <div class="env-hover group flex flex-wrap items-center justify-between gap-3 rounded-lg px-3 py-2.5">
                 <div class="flex min-w-0 items-center gap-3">
-                  <div class="env-accent-soft flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-bold">
+                  <div class="env-accent-soft flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold">
                     {displayName.slice(0, 2).toUpperCase()}
                   </div>
                   <span class="env-text truncate text-sm font-medium">{displayName}</span>

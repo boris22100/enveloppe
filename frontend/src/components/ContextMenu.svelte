@@ -44,7 +44,7 @@
     tabindex="-1"
     oncontextmenu={(e) => e.preventDefault()}
     style="left: {posX}px; top: {posY}px;"
-    class="env-card fixed z-50 w-64 rounded-2xl border py-2 text-sm shadow-2xl backdrop-blur"
+    class="env-card fixed z-50 w-64 rounded-lg border py-2 text-sm shadow-2xl backdrop-blur"
   >
     {#if type === 'mail' && mail}
       <button type="button" onclick={() => trigger('archive')} class="env-text env-hover flex w-full items-center justify-between px-4 py-2.5">
@@ -64,7 +64,7 @@
           <span>📁 Déplacer vers</span><span class="env-faint">›</span>
         </button>
         {#if subMenu === 'move'}
-          <div role="menu" tabindex="-1" class="env-card fixed max-h-64 w-56 overflow-y-auto rounded-2xl border py-1.5 shadow-2xl" style="left: {Math.min(posX + 252, typeof window !== 'undefined' ? window.innerWidth - 236 : posX + 252)}px; top: {posY}px;">
+          <div role="menu" tabindex="-1" class="env-card fixed max-h-64 w-56 overflow-y-auto rounded-lg border py-1.5 shadow-2xl" style="left: {Math.min(posX + 252, typeof window !== 'undefined' ? window.innerWidth - 236 : posX + 252)}px; top: {posY}px;">
             {#each mailboxes as box}
               <button
                 type="button"
@@ -94,7 +94,7 @@
           <span>⋯ Plus d'actions</span><span class="env-faint">›</span>
         </button>
         {#if subMenu === 'more'}
-          <div role="menu" tabindex="-1" class="env-card fixed w-52 rounded-2xl border py-1.5 shadow-2xl" style="left: {Math.min(posX + 252, typeof window !== 'undefined' ? window.innerWidth - 216 : posX + 252)}px; top: {posY + 90}px;">
+          <div role="menu" tabindex="-1" class="env-card fixed w-52 rounded-lg border py-1.5 shadow-2xl" style="left: {Math.min(posX + 252, typeof window !== 'undefined' ? window.innerWidth - 216 : posX + 252)}px; top: {posY + 90}px;">
             <button type="button" onclick={() => trigger('downloadEml')} class="env-text env-hover flex w-full items-center gap-2 px-4 py-2 text-left text-xs">
               <span>⬇️ Exporter en .eml</span>
             </button>

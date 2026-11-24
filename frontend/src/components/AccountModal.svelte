@@ -78,10 +78,10 @@
   class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
 >
   <div role="presentation" onclick={(e) => e.stopPropagation()} class="w-full max-w-md">
-    <form onsubmit={submit} class="env-card space-y-4 rounded-3xl border p-7 shadow-2xl">
+    <form onsubmit={submit} class="env-card space-y-4 rounded-xl border p-7 shadow-2xl">
       <h3 id="acc-modal-title" class="env-text text-lg font-semibold">Connecter un serveur JMAP</h3>
       {#if error}
-        <p role="alert" class="rounded-2xl bg-red-500/15 p-3 text-xs font-medium text-red-400">{error}</p>
+        <p role="alert" class="rounded-lg bg-red-500/15 p-3 text-xs font-medium text-red-400">{error}</p>
       {/if}
       <div class="grid grid-cols-5 gap-2.5">
         <input bind:value={label} aria-label="Nom du compte" placeholder="Nom (ex: Perso)" class="env-input col-span-4 rounded-xl border px-3.5 py-2.5 text-sm" />

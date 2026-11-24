@@ -329,7 +329,7 @@
     <div class="flex-1 space-y-2 overflow-y-auto">
       {#each scripts as sc}
         <div
-          class="group flex items-center justify-between rounded-2xl border px-3.5 py-2.5 text-xs transition-colors {selectedScriptId === sc.id && !isNewDraft ? 'env-active border-[#48B17F]/50' : 'env-card env-hover'}"
+          class="group flex items-center justify-between rounded-lg border px-3.5 py-2.5 text-xs transition-colors {selectedScriptId === sc.id && !isNewDraft ? 'env-active border-[var(--env-accent)]/50' : 'env-card env-hover'}"
         >
           <button type="button" onclick={() => selectScript(sc)} class="min-w-0 flex-1 text-left">
             <div class="env-text truncate text-sm font-semibold">{sc.name}</div>
@@ -366,14 +366,14 @@
       {/each}
 
       {#if isNewDraft}
-        <div class="env-accent-soft rounded-2xl border border-dashed border-[#48B17F]/60 px-3.5 py-2.5 text-xs">
+        <div class="env-accent-soft rounded-lg border border-dashed border-[#48B17F]/60 px-3.5 py-2.5 text-xs">
           <div class="env-text text-sm font-semibold">{scriptName}</div>
           <div class="env-accent-text mt-0.5 text-[11px]">Non enregistré sur le serveur</div>
         </div>
       {/if}
     </div>
 
-    <div class="env-card env-muted mt-3 rounded-2xl border p-3.5 text-xs leading-relaxed">
+    <div class="env-card env-muted mt-3 rounded-lg border p-3.5 text-xs leading-relaxed">
       Un seul script Sieve peut être <span class="env-accent-text font-semibold">actif</span> à la fois sur Stalwart. Les règles sont exécutées côté serveur dès réception d'un message.
     </div>
   </aside>
@@ -456,7 +456,7 @@
       <div class="flex-1 space-y-5 overflow-y-auto p-6">
         <div class="mx-auto max-w-4xl space-y-5">
           {#if hasAdvancedCode}
-            <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-300">
+            <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-300">
               <span>Ce script contient des instructions Sieve avancées (<code>elsif</code>, <code>envelope</code>, <code>regex</code>...) non affichables en blocs. Utilise l'onglet <strong>Code Sieve</strong> pour éviter de les écraser.</span>
               <button
                 type="button"
@@ -480,7 +480,7 @@
           </div>
 
           {#each rules as rule}
-            <div class="env-card space-y-4 rounded-3xl border p-5 shadow-xs">
+            <div class="env-card space-y-4 rounded-xl border p-5 shadow-xs">
               <div class="env-border flex flex-wrap items-center justify-between gap-2 border-b pb-3.5">
                 <div class="flex flex-wrap items-center gap-2.5">
                   <input
@@ -666,12 +666,12 @@
               </div>
             </div>
           {:else}
-            <div class="env-card env-muted rounded-3xl border border-dashed p-8 text-center text-xs">
+            <div class="env-card env-muted rounded-xl border border-dashed p-8 text-center text-xs">
               Aucune règle visuelle configurée. Clique sur <strong>+ Ajouter une règle</strong> ou utilise un modèle dans l'onglet <strong>Code Sieve</strong>.
             </div>
           {/each}
 
-          <div class="env-card space-y-3 rounded-3xl border p-5 shadow-xs">
+          <div class="env-card space-y-3 rounded-xl border p-5 shadow-xs">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2.5">
                 <input
@@ -720,7 +720,7 @@
                     bind:value={vacation.reason}
                     oninput={syncVisualToCode}
                     placeholder="Bonjour, je suis actuellement absent..."
-                    class="env-input w-full rounded-2xl border p-3 text-xs"
+                    class="env-input w-full rounded-lg border p-3 text-xs"
                   ></textarea>
                 </div>
               </div>
@@ -748,7 +748,7 @@
           {/each}
         </div>
 
-        <div class="env-subtle env-border relative flex flex-1 overflow-hidden rounded-3xl border font-mono text-xs shadow-inner">
+        <div class="env-subtle env-border relative flex flex-1 overflow-hidden rounded-xl border font-mono text-xs shadow-inner">
           <div
             aria-hidden="true"
             class="env-border env-faint select-none border-r px-3.5 py-4 text-right leading-6"
@@ -773,7 +773,7 @@
               spellcheck="false"
               aria-label="Éditeur de code Sieve"
               placeholder={'require ["fileinto"];\n\nif header :contains "From" "exemple@domaine.fr" {\n    fileinto "Archives";\n}'}
-              class="absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent p-4 font-mono text-xs leading-6 text-transparent caret-[#48B17F] selection:bg-[#48B17F]/30 focus:outline-none"
+              class="absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent p-4 font-mono text-xs leading-6 text-transparent caret-[#48B17F] selection:bg-[var(--env-accent)]/30 focus:outline-none"
             ></textarea>
           </div>
         </div>
@@ -800,7 +800,7 @@
     >
       <form
         onsubmit={handleCreateNewScript}
-        class="env-card space-y-4 rounded-3xl border p-7 shadow-2xl"
+        class="env-card space-y-4 rounded-xl border p-7 shadow-2xl"
       >
         <h3 id="new-sieve-title" class="env-text text-lg font-semibold">Nouveau script Sieve</h3>
         <input

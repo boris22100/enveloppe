@@ -50,7 +50,7 @@
   let srcdoc = $derived(html ? buildSandboxedEmailDoc(html, allowImages) : '');
 </script>
 
-<div class="env-card flex h-full flex-col rounded-3xl border shadow-sm">
+<div class="env-card flex h-full flex-col rounded-xl border shadow-sm">
   <header class="env-border flex flex-wrap items-start justify-between gap-3 border-b px-6 py-4">
     <div class="min-w-0 flex-1">
       <div class="flex items-center gap-2">
@@ -120,7 +120,7 @@
         <button
           type="button"
           onclick={() => onSelectThreadMessage(item.id)}
-          class="flex max-w-64 shrink-0 flex-col rounded-2xl border px-3.5 py-2 text-left text-xs transition-colors {item.id === selectedMessageId ? 'env-active border-[#48B17F]/50' : 'env-card env-hover'}"
+          class="flex max-w-64 shrink-0 flex-col rounded-lg border px-3.5 py-2 text-left text-xs transition-colors {item.id === selectedMessageId ? 'env-active border-[var(--env-accent)]/50' : 'env-card env-hover'}"
         >
           <div class="flex items-center justify-between gap-2">
             <span class="env-text truncate font-semibold">#{idx + 1} · {item.fromLabel}</span>
@@ -153,7 +153,7 @@
         title="Contenu du message"
         sandbox="allow-popups allow-popups-to-escape-sandbox"
         {srcdoc}
-        class="h-full w-full rounded-2xl border-0"
+        class="h-full w-full rounded-lg border-0"
       ></iframe>
     {:else}
       <pre class="env-text whitespace-pre-wrap font-sans text-sm leading-relaxed">{text}</pre>

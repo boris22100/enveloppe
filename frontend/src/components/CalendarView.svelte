@@ -198,13 +198,13 @@
           tabindex="0"
           onclick={() => openCreateModal(cell.ymd)}
           onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && openCreateModal(cell.ymd)}
-          class="env-card env-hover flex cursor-pointer flex-col overflow-hidden rounded-2xl border p-2 text-left transition-colors {cell.inMonth ? '' : 'opacity-45'}"
+          class="env-card env-hover flex cursor-pointer flex-col overflow-hidden rounded-lg border p-2 text-left transition-colors {cell.inMonth ? '' : 'opacity-45'}"
         >
           <button
             type="button"
             title="Voir cette journée"
             onclick={(e) => { e.stopPropagation(); cursor = cell.date; view = 'day'; }}
-            class="mb-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs {cell.ymd === todayYMD ? 'env-accent-bg font-bold' : 'env-muted hover:ring-1 hover:ring-[#48B17F]'}"
+            class="mb-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs {cell.ymd === todayYMD ? 'env-accent-bg font-bold' : 'env-muted hover:ring-1 hover:ring-[var(--env-accent)]'}"
           >
             {cell.date.getDate()}
           </button>
@@ -241,7 +241,7 @@
   {:else if view === 'week'}
     <div class="env-divider grid flex-1 grid-cols-7 gap-2 overflow-y-auto p-3">
       {#each weekDays as day, idx}
-        <div class="env-card flex flex-col overflow-hidden rounded-2xl border">
+        <div class="env-card flex flex-col overflow-hidden rounded-lg border">
           <button
             type="button"
             onclick={() => { cursor = day.date; view = 'day'; }}
@@ -296,7 +296,7 @@
 
   {:else}
     <div class="flex-1 overflow-y-auto p-5">
-      <div class="env-card env-divider mx-auto max-w-3xl divide-y rounded-3xl border p-2">
+      <div class="env-card env-divider mx-auto max-w-3xl divide-y rounded-xl border p-2">
         {#each HOURS as h}
           {@const hourStr = String(h).padStart(2, '0')}
           {@const dayYmd = toYMD(cursor)}
@@ -306,7 +306,7 @@
             tabindex="0"
             onclick={() => openCreateModal(dayYmd, hourStr)}
             onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && openCreateModal(dayYmd, hourStr)}
-            class="env-hover flex min-h-14 cursor-pointer items-start gap-4 rounded-2xl px-4 py-2.5 transition-colors"
+            class="env-hover flex min-h-14 cursor-pointer items-start gap-4 rounded-lg px-4 py-2.5 transition-colors"
           >
             <span class="env-faint w-14 shrink-0 font-mono text-xs">{hourStr}:00</span>
             <div class="flex-1 space-y-1.5">
@@ -364,7 +364,7 @@
     <div
       role="presentation"
       onclick={(e) => e.stopPropagation()}
-      class="env-card w-full max-w-md space-y-4 rounded-3xl border p-7 shadow-2xl"
+      class="env-card w-full max-w-md space-y-4 rounded-xl border p-7 shadow-2xl"
     >
       <div class="flex items-start justify-between gap-3">
         <div>
@@ -376,7 +376,7 @@
         <button type="button" onclick={() => (selectedEvent = null)} aria-label="Fermer" class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
       </div>
       {#if selectedEvent.description}
-        <p class="env-subtle env-text whitespace-pre-wrap rounded-2xl border p-3.5 text-sm">{selectedEvent.description}</p>
+        <p class="env-subtle env-text whitespace-pre-wrap rounded-lg border p-3.5 text-sm">{selectedEvent.description}</p>
       {/if}
       {#if selectedEvent.participants && Object.keys(selectedEvent.participants).length > 0}
         <p class="env-muted text-xs">
@@ -412,13 +412,13 @@
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
   >
     <div role="presentation" onclick={(e) => e.stopPropagation()} class="w-full max-w-md">
-      <form onsubmit={handleSave} class="env-card space-y-4 rounded-3xl border p-7 shadow-2xl">
+      <form onsubmit={handleSave} class="env-card space-y-4 rounded-xl border p-7 shadow-2xl">
         <div class="flex items-center justify-between">
           <h3 id="cal-create-title" class="env-text text-lg font-semibold">Nouvel élément</h3>
           <button type="button" onclick={() => (showModal = false)} aria-label="Fermer" class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
         </div>
 
-        <div class="env-subtle env-border grid grid-cols-3 gap-1.5 rounded-2xl border p-1 text-xs">
+        <div class="env-subtle env-border grid grid-cols-3 gap-1.5 rounded-lg border p-1 text-xs">
           <button type="button" onclick={() => (kind = 'event')} class="rounded-xl py-2 font-medium {kind === 'event' ? 'env-accent-soft font-semibold' : 'env-muted'}">
             📅 Événement
           </button>
@@ -461,7 +461,7 @@
             rows="3"
             aria-label="Notes"
             placeholder="Notes (optionnel)"
-            class="env-input w-full rounded-2xl border p-3 text-sm"
+            class="env-input w-full rounded-lg border p-3 text-sm"
           ></textarea>
         </div>
 

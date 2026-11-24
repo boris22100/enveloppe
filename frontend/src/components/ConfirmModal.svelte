@@ -41,7 +41,7 @@
   <div
     role="presentation"
     onclick={(e) => e.stopPropagation()}
-    class="env-card w-full max-w-md space-y-4 rounded-3xl border p-7 shadow-2xl"
+    class="env-card w-full max-w-md space-y-4 rounded-xl border p-7 shadow-2xl"
   >
     <div class="space-y-1.5">
       <h3 id="confirm-modal-title" class="env-text text-lg font-semibold">{title}</h3>

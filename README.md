@@ -2,7 +2,7 @@
 
 Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContact, Calendrier JSCalendar*), conçu pour **Stalwart Mail Server** et compatible multi-serveurs.
 
-![Version](https://img.shields.io/badge/version-v0.5.0-48B17F?style=flat-square)
+![Version](https://img.shields.io/badge/version-v0.6.0-48B17F?style=flat-square)
 ![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)
 ![Image Size](https://img.shields.io/badge/image-9.95%20Mo-48B17F?style=flat-square)
 ![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)
@@ -25,7 +25,7 @@ Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContac
 * **Contacts (JSContact)** : consultation et gestion synchronisée avec le serveur.
 * **Recherche instantanée, filtres et fils de discussion** : filtrage en direct (expéditeur, objet, aperçu, *Non lus*, *PJ*) et regroupement par fil (`threadId`) avec navigation dans la conversation.
 * **Réponse, transfert et signatures par compte** : actions *Répondre*, *Répondre à tous* et *Transférer* avec citation automatique, raccourcis clavier (`R`, `A`, `F`) et signatures dédiées par compte.
-* **Trois thèmes harmonisés (Abysses, Sombre, Clair)** : sélecteur instantané dans le rail latéral sur la même charte graphique, persisté localement et adapté au lecteur d'emails.
+* **Trois thèmes harmonisés (BoWiz, Sombre, Clair)** : sélecteur instantané dans le rail latéral sur la même charte graphique, persisté localement et adapté au lecteur d'emails.
 * **Interface adoucie et accessibilité (`a11y`)** : panneaux flottants arrondis, espacement et typographie confortables, focus clavier visible, attributs ARIA et labels associés.
 * **Filtres serveur Sieve (JMAP RFC 9661)** : éditeur hybride façon *SievePad* combinant un constructeur visuel de règles (*Conditions → Actions* + répondeur *Vacances*) et un éditeur de code Sieve brut avec coloration syntaxique, modèles prêts à l'emploi, validation syntaxique auprès de Stalwart et gestion multi-scripts.
 * **Sécurité du compte** : changement de mot de passe intégré (API Stalwart) avec déconnexion automatique immédiate.
