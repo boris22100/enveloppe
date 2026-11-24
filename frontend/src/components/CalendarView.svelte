@@ -952,28 +952,11 @@
                 <input
                   id="cal-invitees"
                   bind:value={inviteesText}
-                  onfocus={() => (showInviteeDropdown = true)}
-                  oninput={() => (showInviteeDropdown = true)}
-                  onblur={() => setTimeout(() => (showInviteeDropdown = false), 160)}
                   placeholder="alice@domaine.fr, bob@domaine.fr"
                   autocomplete="off"
                   class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
                 />
-                {#if showInviteeDropdown && inviteeSuggestions.length > 0}
-                  <div role="listbox" class="env-card absolute left-0 right-0 top-full z-40 mt-1 overflow-hidden rounded-xl border shadow-2xl">
-                    {#each inviteeSuggestions as s}
-                      <button
-                        type="button"
-                        onmousedown={(e) => { e.preventDefault(); applyInviteeSuggestion(s.email); }}
-                        class="env-hover flex w-full items-center justify-between px-3.5 py-2 text-left text-xs"
-                      >
-                        <span class="env-text font-medium">{s.name}</span>
-                        <span class="env-accent-text">{s.email}</span>
-                      </button>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
+                </div>
             </div>
           {/if}
           <textarea
