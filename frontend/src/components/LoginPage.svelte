@@ -75,7 +75,7 @@
   }
 </script>
 
-<div class="env-app flex min-h-screen items-center justify-center p-5">
+<div class="env-app flex min-h-screen flex-col items-center justify-between p-5">
   <form onsubmit={submit} class="env-card w-full max-w-md space-y-5 rounded-xl border p-8 shadow-2xl">
     <div class="space-y-1.5">
       <div aria-hidden="true" class="env-accent-soft inline-flex h-12 w-12 items-center justify-center rounded-lg text-xl font-bold">✉️</div>
@@ -137,7 +137,9 @@
     </button>
   </form>
 
-  <footer class="env-faint mt-6 flex flex-wrap items-center justify-center gap-4 text-xs">
+  <footer class="env-faint mt-6 flex flex-wrap items-center justify-center gap-3 pb-2 text-center text-xs">
+    <span>Enveloppe par <strong class="env-muted font-medium">BoWiz</strong></span>
+    <span aria-hidden="true">·</span>
     <button
       type="button"
       onclick={() => (legalModal = 'legal')}
