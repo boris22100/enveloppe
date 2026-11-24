@@ -54,6 +54,9 @@ jobs:
 
       - name: Go vet & unit tests
         run: |
+          mkdir -p backend/static
+          : > backend/static/.keep
+          trap 'rm -rf backend/static' EXIT
           cd backend
           go vet ./...
           go test ./...
