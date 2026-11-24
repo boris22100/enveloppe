@@ -1,3 +1,14 @@
+      - name: Go vet & unit tests
+        run: |
+          cd backend
+          go vet ./...
+          go test ./...
+
+      - name: Frontend build check
+        run: |
+          cd frontend
+          npm ci --prefer-offline || npm install
+          npm run build
 name: Build & Push Multi-Arch Docker Image
 
 on:

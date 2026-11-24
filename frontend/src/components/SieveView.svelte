@@ -1,4 +1,6 @@
 <script lang="ts">
+  import SieveRuleEditor from './sieve/SieveRuleEditor.svelte';
+
   import { ROLE_META, type Mailbox } from '../lib/jmap/client';
   import {
     activateSieveScript,
