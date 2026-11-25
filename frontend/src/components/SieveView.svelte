@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../lib/i18n';
   import SieveRuleCard from './sieve/SieveRuleCard.svelte';
   import SieveCodeEditor from './sieve/SieveCodeEditor.svelte';
   import SieveVacationCard from './sieve/SieveVacationCard.svelte';
@@ -317,7 +318,7 @@
         onclick={() => (showNewModal = true)}
         class="env-accent-bg rounded-xl px-3 py-1.5 text-xs font-semibold hover:opacity-95"
       >
-        + Script
+        {t('sieve.newScript')}
       </button>
     </div>
 
@@ -377,7 +378,7 @@
     <header class="env-border flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
       <div class="flex flex-wrap items-center gap-3">
         <div>
-          <h2 class="env-text text-lg font-bold">Filtres serveur (Sieve)</h2>
+          <h2 class="env-text text-lg font-bold">{t('sieve.title')}</h2>
           <p class="env-muted text-xs">Éditeur visuel & code Sieve synchronisé avec Stalwart</p>
         </div>
 
@@ -394,14 +395,14 @@
             onclick={() => switchMode('visual')}
             class="rounded-lg px-3 py-1.5 {mode === 'visual' ? 'env-accent-soft font-semibold' : 'env-muted'}"
           >
-            🧩 Règles visuelles
+            🧩 {t('sieve.visualRules')}
           </button>
           <button
             type="button"
             onclick={() => switchMode('code')}
             class="rounded-lg px-3 py-1.5 {mode === 'code' ? 'env-accent-soft font-semibold' : 'env-muted'}"
           >
-            &lt;/&gt; Code Sieve
+            &lt;/&gt; {t('sieve.sieveCode')}
           </button>
         </div>
       </div>
@@ -413,7 +414,7 @@
           onclick={handleValidate}
           class="env-input env-hover rounded-xl border px-3.5 py-2 text-xs font-medium disabled:opacity-50"
         >
-          {validating ? 'Vérification...' : '✓ Valider la syntaxe'}
+          {validating ? t('common.loading') : `✓ ${t('sieve.validateSyntax')}`}
         </button>
 
         {#if selectedScript && !selectedScript.isActive && !isNewDraft}
@@ -433,7 +434,7 @@
           onclick={() => handleSave(false)}
           class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95 disabled:opacity-50"
         >
-          {saving ? 'Envoi...' : '💾 Enregistrer sur Stalwart'}
+          {saving ? t('common.loading') : `💾 ${t('sieve.saveToServer')}`}
         </button>
       </div>
     </header>
@@ -464,13 +465,13 @@
           {/if}
 
           <div class="flex items-center justify-between">
-            <h3 class="env-text text-sm font-semibold">Règles de filtrage ({rules.length})</h3>
+            <h3 class="env-text text-sm font-semibold">{t('sieve.rules')} ({rules.length})</h3>
             <button
               type="button"
               onclick={addRule}
               class="env-accent-soft rounded-xl border border-[#48B17F]/40 px-3.5 py-2 text-xs font-semibold hover:opacity-90"
             >
-              + Ajouter une règle
+              {t('sieve.addRule')}
             </button>
           </div>
 

@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
+  import { getLocale, subscribeLocale, t, type Locale } from '../lib/i18n';
+  let activeLocale = $state<Locale>(getLocale());
+  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
+  onDestroy(_unsubLocale);
   import { CALENDAR_VIEW_STORAGE_KEY, loadCalendarView, saveCalendarView, type CalendarViewMode } from '../lib/calendarViewStorage';
   import { jmapCall, sendEmail, uploadAttachment } from '../lib/jmap/client';
   import { buildIcsInvitation, createIcsFile } from '../lib/ics';
@@ -561,7 +566,7 @@ interface ContactEntry { name: string; email: string; }
     <div class="flex items-center gap-3">
       <div class="env-input flex items-center overflow-hidden rounded-xl border">
         <button type="button" onclick={() => shift(-1)} aria-label="Période précédente" class="env-hover px-3 py-1.5 text-sm font-medium">‹</button>
-        <button type="button" onclick={() => (cursor = new Date())} class="env-border env-hover border-x px-3.5 py-1.5 text-xs font-semibold">Aujourd'hui</button>
+        <button type="button" onclick={() => (cursor = new Date())} class="env-border env-hover border-x px-3.5 py-1.5 text-xs font-semibold">{t('calendar.today')}</button>
         <button type="button" onclick={() => shift(1)} aria-label="Période suivante" class="env-hover px-3 py-1.5 text-sm font-medium">›</button>
       </div>
       <h2 class="env-text text-lg font-bold capitalize">{headerLabel}</h2>
@@ -574,7 +579,7 @@ interface ContactEntry { name: string; email: string; }
         <button type="button" onclick={() => (view = 'day')} class="rounded-lg px-3 py-1.5 {view === 'day' ? 'env-accent-soft font-semibold' : 'env-muted'}">Jour</button>
       </div>
 
-      <button type="button" onclick={() => openCreateModal(toYMD(cursor))} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">+ Nouveau</button>
+      <button type="button" onclick={() => openCreateModal(toYMD(cursor))} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">{t('calendar.newShort')}</button>
       <button type="button" onclick={() => downloadFile(eventsToIcs(events), 'calendrier.ics', 'text/calendar')} class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium">.ics</button>
       <label class="env-input env-hover cursor-pointer rounded-xl border px-3 py-2 text-xs font-medium">
         Importer

@@ -899,7 +899,7 @@
                 onclick={() => handleMarkMailboxRead(activeMailbox!)}
                 class="env-input env-hover env-muted rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
               >
-                ✓ Tout marquer lu
+                ✓ {t('mail.markAllRead')}
               </button>
             {/if}
             <button type="button" onclick={openNewComposer} class="env-accent-bg rounded-lg px-4 py-1.5 text-xs font-semibold shadow-2xs hover:opacity-95">
@@ -917,7 +917,7 @@
                   bind:value={searchQuery}
                   type="search"
                   aria-label="Rechercher dans les messages"
-                  placeholder="Rechercher (expéditeur, objet, texte)..."
+                  placeholder={t('mail.searchPlaceholder')}
                   class="env-input w-full rounded-lg border py-1.5 pl-3 pr-8 text-xs"
                 />
                 {#if searchQuery}
@@ -935,7 +935,7 @@
                   type="button"
                   onclick={() => (filterUnreadOnly = !filterUnreadOnly)}
                   class="rounded-md border px-2.5 py-1 font-medium {filterUnreadOnly ? 'env-accent-soft border-[var(--env-accent)]/50 font-semibold' : 'env-input env-muted'}"
-                >Non lus</button>
+                >{t('mail.unread')}</button>
                 <button
                   type="button"
                   onclick={() => (filterAttachmentsOnly = !filterAttachmentsOnly)}
@@ -945,7 +945,7 @@
                   type="button"
                   onclick={() => (groupThreads = !groupThreads)}
                   class="rounded-md border px-2.5 py-1 font-medium {groupThreads ? 'env-accent-soft border-[var(--env-accent)]/50 font-semibold' : 'env-input env-muted'}"
-                >Fils</button>
+                >{t('mail.threads')}</button>
               </div>
             </div>
 
@@ -1012,7 +1012,7 @@
                 onForward={startForward}
               />
             {:else}
-              <div class="env-card env-faint flex h-full items-center justify-center rounded-xl border text-sm shadow-2xs">Sélectionne un message</div>
+              <div class="env-card env-faint flex h-full items-center justify-center rounded-xl border text-sm shadow-2xs">{t('mail.noSelection')}</div>
             {/if}
           </main>
         </div>

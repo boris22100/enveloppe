@@ -5,6 +5,7 @@ export type Locale = 'fr' | 'en';
 
 const STORAGE_KEY = 'enveloppe_lang';
 const dictionaries: Record<Locale, TranslationDictionary> = { fr, en };
+const listeners = new Set<(locale: Locale) => void>();
 
 function detectInitialLocale(): Locale {
   if (typeof localStorage !== 'undefined') {
@@ -36,6 +37,14 @@ export function setLocale(locale: Locale): void {
     localStorage.setItem(STORAGE_KEY, locale);
   }
   applyDocumentLang(locale);
+  for (const fn of listeners) {
+    fn(currentLocale);
+  }
+}
+
+export function subscribeLocale(fn: (locale: Locale) => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
 }
 
 function resolvePath(dict: unknown, path: string): string | undefined {

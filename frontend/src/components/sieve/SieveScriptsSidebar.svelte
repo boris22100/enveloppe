@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../../lib/i18n';
   export interface SieveScriptItem {
     id?: string;
     name: string;
@@ -28,7 +29,7 @@
       aria-label="Nouveau script Sieve"
       class="env-accent-soft rounded-lg px-2.5 py-1 text-xs font-semibold"
     >
-      + Nouveau
+      {t('calendar.newShort')}
     </button>
   </div>
   <div class="flex-1 space-y-1 overflow-y-auto p-2">

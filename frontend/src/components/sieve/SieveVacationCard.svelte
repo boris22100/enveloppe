@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../../lib/i18n';
   import type { SieveVacation } from '../../lib/utils/sieveGenerator';
 
   let {

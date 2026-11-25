@@ -12,7 +12,11 @@ export const en: TranslationDictionary = {
     close: 'Close',
     refresh: 'Refresh',
     search: 'Search',
-    language: 'Language'
+    language: 'Language',
+    import: 'Import',
+    export: 'Export',
+    add: 'Add',
+    active: 'Active'
   },
   nav: {
     sidebarLabel: 'Main navigation',
@@ -22,6 +26,8 @@ export const en: TranslationDictionary = {
     sieve: 'Sieve filters',
     security: 'Security',
     logout: 'Sign out',
+    notifications: 'Notifications',
+    storage: 'Storage',
     themeBowiz: 'BoWiz Theme',
     themeDark: 'Dark Theme',
     themeLight: 'Light Theme'
@@ -37,12 +43,59 @@ export const en: TranslationDictionary = {
     blockedImages: 'External images blocked',
     showImages: 'Show images',
     attachments: 'Attachments',
-    noSelection: 'Select a message to read it.'
+    noSelection: 'Select a message to read it.',
+    markAllRead: 'Mark all read',
+    searchPlaceholder: 'Search (sender, subject, text)...',
+    unread: 'Unread',
+    withAttachments: 'Attachments',
+    threads: 'Threads',
+    reply: 'Reply',
+    replyAll: 'Reply all',
+    forward: 'Forward'
   },
   calendar: {
     title: 'Calendar',
+    today: 'Today',
+    month: 'Month',
+    week: 'Week',
+    day: 'Day',
     newEvent: 'New event',
+    newShort: '+ New',
     deleteEvent: 'Delete event',
     cancelError: 'Failed to send cancellation (.ics).'
+  },
+  contacts: {
+    title: 'Contacts',
+    newContact: '+ Contact',
+    searchPlaceholder: 'Filter by name, email, phone...',
+    exportVcf: 'Export .vcf'
+  },
+  sieve: {
+    title: 'Server filters (Sieve)',
+    subtitle: 'Visual editor & Sieve script synced with Stalwart',
+    scripts: 'Sieve scripts',
+    newScript: '+ Script',
+    visualRules: 'Visual rules',
+    sieveCode: 'Sieve code',
+    validateSyntax: 'Validate syntax',
+    saveToServer: 'Save to Stalwart',
+    rules: 'Filtering rules',
+    addRule: '+ Add rule',
+    allConditions: 'If ALL conditions match',
+    anyConditions: 'If ANY condition matches',
+    conditions: 'CONDITIONS',
+    addCondition: '+ Condition',
+    actions: 'ACTIONS',
+    addAction: '+ Action',
+    moveToFolder: 'Move to folder',
+    contains: 'contains',
+    fromHeader: 'From',
+    subjectHeader: 'Subject',
+    vacation: 'Auto-reply (Out of office)',
+    vacationHint: 'Sieve vacation extension',
+    singleActiveNote: 'Only one Sieve script can be active at a time on Stalwart. Rules run server-side as soon as a message arrives.'
+  },
+  security: {
+    title: 'Security & Signatures'
   }
 };
