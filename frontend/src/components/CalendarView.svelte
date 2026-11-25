@@ -519,27 +519,28 @@ interface ContactEntry { name: string; email: string; }
                 <span class="truncate">
                   {badgeFor(ev)}{#if !ev.showWithoutTime}<span class="font-mono text-[11px] opacity-80">{formatTime(ev.start)} </span>{/if}{ev.title}
                 </span>
+
                 {#if ev.id}
-                  <button
-                    type="button"
-                    title="Modifier"
-                    aria-label="Modifier {ev.title}"
-                    onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
-                    class="shrink-0 text-xs opacity-0 hover:opacity-100 group-hover/ev:opacity-80"
-                  >
-                    ✏️
-                  </button>
-                {/if}
-                {#if ev.id}
-                  <button
-                    type="button"
-                    title="Supprimer"
-                    aria-label="Supprimer {ev.title}"
-                    onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
-                    class="shrink-0 text-xs opacity-0 hover:text-red-400 group-hover/ev:opacity-100"
-                  >
-                    ✕
-                  </button>
+                  <div class="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover/ev:opacity-100">
+                    <button
+                      type="button"
+                      title="Modifier"
+                      aria-label="Modifier {ev.title}"
+                      onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
+                      class="text-xs hover:opacity-100"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      type="button"
+                      title="Supprimer"
+                      aria-label="Supprimer {ev.title}"
+                      onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
+                      class="text-xs hover:text-red-400"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 {/if}
               </div>
             {/each}
@@ -579,23 +580,23 @@ interface ContactEntry { name: string; email: string; }
               >
                 <div class="flex items-start justify-between gap-1">
                   {#if !ev.showWithoutTime}
-                    <div class="font-mono text-xs">{formatTime(ev.start)}
-                  {#if ev.id}
-                    <button
-                      type="button"
-                      title="Modifier"
-                      aria-label="Modifier {ev.title}"
-                      onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
-                      class="shrink-0 text-xs opacity-75 hover:opacity-100"
-                    >
-                      ✏️
-                    </button>
-                  {/if}
-                </div>
+                    <div class="font-mono text-xs">{formatTime(ev.start)}</div>
                   {:else}
                     <div></div>
                   {/if}
-                  {#if ev.id}
+                  <div class="flex shrink-0 items-center gap-1">
+                    {#if ev.id}
+                      <button
+                        type="button"
+                        title="Modifier"
+                        aria-label="Modifier {ev.title}"
+                        onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
+                        class="rounded px-1.5 py-0.5 text-xs opacity-75 hover:opacity-100 group-hover/ev:opacity-100"
+                      >
+                        ✏️
+                      </button>
+                    {/if}
+                    {#if ev.id}
                     <button
                       type="button"
                       title="Supprimer"
@@ -606,19 +607,8 @@ interface ContactEntry { name: string; email: string; }
                       🗑️
                     </button>
                   {/if}
-                
-                      {#if ev.id}
-                        <button
-                          type="button"
-                          title="Modifier"
-                          aria-label="Modifier {ev.title}"
-                          onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
-                          class="shrink-0 text-xs opacity-75 hover:opacity-100"
-                        >
-                          ✏️
-                        </button>
-                      {/if}
-                    </div>
+                  </div>
+                </div>
                 <div class="env-text text-xs font-semibold">{badgeFor(ev)}{ev.title}</div>
                 {#if ev.description}<div class="env-muted mt-0.5 truncate text-xs">{ev.description}</div>{/if}
               </div>
