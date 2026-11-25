@@ -16,7 +16,9 @@ export const en: TranslationDictionary = {
     import: 'Import',
     export: 'Export',
     add: 'Add',
-    active: 'Active'
+    active: 'Active',
+    create: 'Create',
+    update: 'Update'
   },
   nav: {
     sidebarLabel: 'Main navigation',
@@ -51,7 +53,13 @@ export const en: TranslationDictionary = {
     threads: 'Threads',
     reply: 'Reply',
     replyAll: 'Reply all',
-    forward: 'Forward'
+    forward: 'Forward',
+    toPrefix: 'To',
+    moveTo: 'Move to',
+    reportJunk: 'Report as junk',
+    downloadEml: 'Download (.eml)',
+    createFilterHere: 'Create filter from here',
+    deleteAllJunk: 'Delete all junk'
   },
   calendar: {
     title: 'Calendar',
@@ -60,15 +68,22 @@ export const en: TranslationDictionary = {
     week: 'Week',
     day: 'Day',
     newEvent: 'New event',
+    newItem: 'New item',
     newShort: '+ New',
     deleteEvent: 'Delete event',
-    cancelError: 'Failed to send cancellation (.ics).'
+    cancelError: 'Failed to send cancellation (.ics).',
+    prevPeriod: 'Previous period',
+    nextPeriod: 'Next period',
+    viewDay: 'View this day',
+    inviteesLabel: 'Invite participants (comma-separated emails)'
   },
   contacts: {
     title: 'Contacts',
     newContact: '+ Contact',
     searchPlaceholder: 'Filter by name, email, phone...',
-    exportVcf: 'Export .vcf'
+    exportVcf: 'Export .vcf',
+    phone: 'Phone',
+    noneFound: 'No contacts found.'
   },
   sieve: {
     title: 'Server filters (Sieve)',
@@ -79,6 +94,8 @@ export const en: TranslationDictionary = {
     sieveCode: 'Sieve code',
     validateSyntax: 'Validate syntax',
     saveToServer: 'Save to Stalwart',
+    saveAndActivate: 'Save & Activate',
+    unsavedServer: 'Not saved on server',
     rules: 'Filtering rules',
     addRule: '+ Add rule',
     allConditions: 'If ALL conditions match',
@@ -88,14 +105,29 @@ export const en: TranslationDictionary = {
     actions: 'ACTIONS',
     addAction: '+ Action',
     moveToFolder: 'Move to folder',
+    redirectTo: 'Redirect to address',
+    stopProcessing: 'Stop processing rules',
     contains: 'contains',
+    matches: 'matches (* ?)',
+    over: 'over',
+    under: 'under',
     fromHeader: 'From',
     subjectHeader: 'Subject',
+    toCcHeader: 'To / Cc',
+    customHeader: 'Custom header',
+    ruleName: 'Rule name',
     vacation: 'Auto-reply (Out of office)',
     vacationHint: 'Sieve vacation extension',
+    repeatDays: 'Repeat every (days)',
+    replySubject: 'Reply subject',
+    templates: 'Templates:',
     singleActiveNote: 'Only one Sieve script can be active at a time on Stalwart. Rules run server-side as soon as a message arrives.'
   },
   security: {
-    title: 'Security & Signatures'
+    title: 'Security & Signatures',
+    signatureHint: 'Automatically appended to the end of your new messages for this account.',
+    signatureSaved: 'Signature saved for this account.',
+    saveSignature: 'Save signature',
+    copyPasswordNow: 'Copy this password now (it will not be shown again):'
   }
 };

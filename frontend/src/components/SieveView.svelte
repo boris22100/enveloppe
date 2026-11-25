@@ -369,7 +369,7 @@
       {#if isNewDraft}
         <div class="env-accent-soft rounded-lg border border-dashed border-[#48B17F]/60 px-3.5 py-2.5 text-xs">
           <div class="env-text text-sm font-semibold">{scriptName}</div>
-          <div class="env-accent-text mt-0.5 text-[11px]">Non enregistré sur le serveur</div>
+          <div class="env-accent-text mt-0.5 text-[11px]">{t('sieve.unsavedServer', undefined, activeLocale)}</div>
         </div>
       {/if}
     </div>
@@ -384,7 +384,7 @@
       <div class="flex flex-wrap items-center gap-3">
         <div>
           <h2 class="env-text text-lg font-bold">{t('sieve.title', undefined, activeLocale)}</h2>
-          <p class="env-muted text-xs">Éditeur visuel & code Sieve synchronisé avec Stalwart</p>
+          <p class="env-muted text-xs">{t('sieve.subtitle', undefined, activeLocale)}</p>
         </div>
 
         <input
@@ -429,7 +429,7 @@
             onclick={() => handleSave(true)}
             class="env-accent-soft rounded-xl border border-[#48B17F]/40 px-3.5 py-2 text-xs font-semibold hover:opacity-90"
           >
-            💾 Enregistrer & Activer
+            💾 {t('sieve.saveAndActivate', undefined, activeLocale)}
           </button>
         {/if}
 

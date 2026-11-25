@@ -1,6 +1,10 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
+  import { getLocale, subscribeLocale, t, type Locale } from '../lib/i18n';
+  let activeLocale = $state<Locale>(getLocale());
+  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
+  onDestroy(_unsubLocale);
   import { buildSandboxedEmailDoc } from '../lib/utils/sanitize';
-  import { getLocale, t } from '../lib/i18n';
   import { getDownloadUrl, type Attachment } from '../lib/jmap/client';
 
   export interface ThreadMessageItem {
@@ -64,7 +68,7 @@
       </div>
       <p class="env-muted truncate text-sm">{from}</p>
       {#if to}
-        <p class="env-faint truncate text-xs">À : {to}</p>
+        <p class="env-faint truncate text-xs">{t('mail.toPrefix', undefined, activeLocale)} : {to}</p>
       {/if}
       {#if receivedAt}
         <p class="env-faint text-xs">{new Date(receivedAt).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}</p>
@@ -75,7 +79,7 @@
       <button
         type="button"
         onclick={onReply}
-        title="Répondre (R)"
+        title={`${t('mail.reply', undefined, activeLocale)} (R)`}
         class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium"
       >
         ↩️ Répondre
@@ -83,7 +87,7 @@
       <button
         type="button"
         onclick={onReplyAll}
-        title="Répondre à tous (A)"
+        title={`${t('mail.replyAll', undefined, activeLocale)} (A)`}
         class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium"
       >
         ↩️↩️ Tous
@@ -91,7 +95,7 @@
       <button
         type="button"
         onclick={onForward}
-        title="Transférer (F)"
+        title={`${t('mail.forward', undefined, activeLocale)} (F)`}
         class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium"
       >
         ↪️ Transférer

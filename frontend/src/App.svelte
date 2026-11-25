@@ -968,7 +968,7 @@
                       <span class="truncate text-sm {isRowUnread ? 'env-text font-bold' : 'env-muted font-medium'}">{mail.from[0]?.name || mail.from[0]?.email || 'Inconnu'}</span>
                       <div class="flex shrink-0 items-center gap-1.5">
                         {#if entry.hasAttachment}
-                          <span class="env-faint text-xs" title="Pièce jointe">📎</span>
+                          <span class="env-faint text-xs" title={t('mail.attachments', undefined, lang)}>📎</span>
                         {/if}
                         {#if entry.threadItems.length > 1}
                           <span class="env-accent-soft rounded-full px-1.5 py-0.5 text-[11px] font-semibold">{entry.threadItems.length}</span>

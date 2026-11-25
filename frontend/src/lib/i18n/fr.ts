@@ -14,7 +14,9 @@ export const fr = {
     import: 'Importer',
     export: 'Exporter',
     add: 'Ajouter',
-    active: 'Actif'
+    active: 'Actif',
+    create: 'Créer',
+    update: 'Mettre à jour'
   },
   nav: {
     sidebarLabel: 'Navigation principale',
@@ -48,8 +50,14 @@ export const fr = {
     withAttachments: 'PJ',
     threads: 'Fils',
     reply: 'Répondre',
-    replyAll: 'Tous',
-    forward: 'Transférer'
+    replyAll: 'Répondre à tous',
+    forward: 'Transférer',
+    toPrefix: 'À',
+    moveTo: 'Déplacer vers',
+    reportJunk: 'Signaler comme indésirable',
+    downloadEml: 'Télécharger (.eml)',
+    createFilterHere: "Créer un filtre à partir d'ici",
+    deleteAllJunk: 'Supprimer tous les indésirables'
   },
   calendar: {
     title: 'Agenda',
@@ -58,15 +66,22 @@ export const fr = {
     week: 'Semaine',
     day: 'Jour',
     newEvent: 'Nouvel événement',
+    newItem: 'Nouvel élément',
     newShort: '+ Nouveau',
     deleteEvent: "Supprimer l'événement",
-    cancelError: "Échec de l'envoi de l'annulation (.ics)."
+    cancelError: "Échec de l'envoi de l'annulation (.ics).",
+    prevPeriod: 'Période précédente',
+    nextPeriod: 'Période suivante',
+    viewDay: 'Voir cette journée',
+    inviteesLabel: 'Inviter des participants (emails séparés par des virgules)'
   },
   contacts: {
     title: 'Contacts',
     newContact: '+ Contact',
     searchPlaceholder: 'Filtrer par nom, mail, tél...',
-    exportVcf: 'Export .vcf'
+    exportVcf: 'Export .vcf',
+    phone: 'Téléphone',
+    noneFound: 'Aucun contact trouvé.'
   },
   sieve: {
     title: 'Filtres serveur (Sieve)',
@@ -77,6 +92,8 @@ export const fr = {
     sieveCode: 'Code Sieve',
     validateSyntax: 'Valider la syntaxe',
     saveToServer: 'Enregistrer sur Stalwart',
+    saveAndActivate: 'Enregistrer & Activer',
+    unsavedServer: 'Non enregistré sur le serveur',
     rules: 'Règles de filtrage',
     addRule: '+ Ajouter une règle',
     allConditions: 'Si TOUTES les conditions sont vraies',
@@ -86,15 +103,30 @@ export const fr = {
     actions: 'ACTIONS',
     addAction: '+ Action',
     moveToFolder: 'Déplacer vers le dossier',
+    redirectTo: "Transférer à l'adresse",
+    stopProcessing: 'Arrêter les règles suivantes',
     contains: 'contient',
+    matches: 'correspond à (* ?)',
+    over: 'dépasse',
+    under: 'est inférieur à',
     fromHeader: 'De (From)',
     subjectHeader: 'Objet (Subject)',
+    toCcHeader: 'À / Cc (To, Cc)',
+    customHeader: 'En-tête personnalisé',
+    ruleName: 'Nom de la règle',
     vacation: 'Répondeur automatique (Absence du bureau)',
     vacationHint: 'Extension Sieve vacation',
+    repeatDays: 'Répéter tous les (jours)',
+    replySubject: 'Objet de la réponse',
+    templates: 'Modèles :',
     singleActiveNote: 'Un seul script Sieve peut être actif à la fois sur Stalwart. Les règles sont exécutées côté serveur dès réception d’un message.'
   },
   security: {
-    title: 'Sécurité & Signatures'
+    title: 'Sécurité & Signatures',
+    signatureHint: 'Ajoutée automatiquement à la fin de vos nouveaux messages pour ce compte.',
+    signatureSaved: 'Signature enregistrée pour ce compte.',
+    saveSignature: 'Enregistrer la signature',
+    copyPasswordNow: 'Copie ce mot de passe maintenant (il ne sera plus affiché) :'
   }
 };
 

@@ -159,7 +159,7 @@
 <div class="flex h-full flex-col overflow-hidden">
   <header class="env-border flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
     <div class="flex flex-wrap items-center gap-3">
-      <h2 class="env-text text-lg font-bold">Contacts ({contacts.length})</h2>
+      <h2 class="env-text text-lg font-bold">{t('contacts.title', undefined, activeLocale)} ({contacts.length})</h2>
       <input
         bind:value={search}
         aria-label="Rechercher un contact"
@@ -182,7 +182,7 @@
     <form onsubmit={add} class="env-subtle env-border grid grid-cols-1 gap-2.5 border-b px-6 py-3.5 md:grid-cols-4">
       <input bind:value={fullName} aria-label="Nom complet" placeholder="Nom complet" required class="env-input rounded-xl border px-3.5 py-2 text-sm" />
       <input bind:value={email} type="email" aria-label="Adresse email" placeholder="Email" required class="env-input rounded-xl border px-3.5 py-2 text-sm" />
-      <input bind:value={phone} aria-label="Téléphone" placeholder="Téléphone" class="env-input rounded-xl border px-3.5 py-2 text-sm" />
+      <input bind:value={phone} aria-label={t('contacts.phone', undefined, activeLocale)} placeholder={t('contacts.phone', undefined, activeLocale)} class="env-input rounded-xl border px-3.5 py-2 text-sm" />
       <div class="flex gap-2">
         <button class="env-accent-bg flex-1 rounded-xl px-3.5 py-2 text-xs font-semibold">Ajouter</button>
         <button type="button" onclick={() => (showAdd = false)} class="env-input env-hover env-muted rounded-xl border px-3.5 py-2 text-xs">Annuler</button>
@@ -244,7 +244,7 @@
           </div>
         </div>
       {:else}
-        <p class="env-faint py-12 text-center text-sm">Aucun contact trouvé.</p>
+        <p class="env-faint py-12 text-center text-sm">{t('contacts.noneFound', undefined, activeLocale)}</p>
       {/each}
     </div>
   </div>
@@ -271,7 +271,7 @@
         <input id="edit-contact-email" aria-label="Adresse e-mail du contact" placeholder="prenom.nom@domaine.fr" bind:value={editEmail} type="email" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
       </div>
       <div>
-        <label for="edit-contact-phone" class="env-muted mb-1 block text-xs">Téléphone</label>
+        <label for="edit-contact-phone" class="env-muted mb-1 block text-xs">{t('contacts.phone', undefined, activeLocale)}</label>
         <input id="edit-contact-phone" aria-label="Téléphone du contact" placeholder="+33 6 00 00 00 00" bind:value={editPhone} type="tel" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
       </div>
       <div>

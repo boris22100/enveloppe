@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { t } from '../../lib/i18n';
+  import { onDestroy } from 'svelte';
+  import { getLocale, subscribeLocale, t, type Locale } from '../../lib/i18n';
+  let activeLocale = $state<Locale>(getLocale());
+  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
+  onDestroy(_unsubLocale);
   import type { SieveVacation } from '../../lib/utils/sieveGenerator';
 
   let {
@@ -31,7 +35,7 @@
   {#if vacation.enabled}
     <div class="grid gap-3 pt-2 sm:grid-cols-4">
       <div>
-        <label for="vac-days" class="env-muted mb-1 block text-xs">Répéter tous les (jours)</label>
+        <label for="vac-days" class="env-muted mb-1 block text-xs">{t('sieve.repeatDays', undefined, activeLocale)}</label>
         <input
           id="vac-days"
           type="number"
@@ -43,7 +47,7 @@
         />
       </div>
       <div class="sm:col-span-3">
-        <label for="vac-subject" class="env-muted mb-1 block text-xs">Objet de la réponse</label>
+        <label for="vac-subject" class="env-muted mb-1 block text-xs">{t('sieve.replySubject', undefined, activeLocale)}</label>
         <input
           id="vac-subject"
           type="text"

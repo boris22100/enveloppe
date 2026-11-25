@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
+  import { getLocale, subscribeLocale, t, type Locale } from '../lib/i18n';
+  let activeLocale = $state<Locale>(getLocale());
+  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
+  onDestroy(_unsubLocale);
   import type { Account } from '../lib/jmap/client';
   import { getAccountSignature, setAccountSignature } from '../lib/signatures';
   import {
@@ -95,7 +100,7 @@
 <div class="flex h-full flex-col space-y-6 overflow-y-auto p-6">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
-      <h2 class="env-text text-xl font-bold">Sécurité — {account.label}</h2>
+      <h2 class="env-text text-xl font-bold">{t('security.title', undefined, activeLocale)} — {account.label}</h2>
       <p class="env-muted text-sm">{account.username} ({account.host})</p>
     </div>
     <a
@@ -116,7 +121,7 @@
       <input type="password" bind:value={currentPassword} aria-label="Mot de passe actuel" placeholder="Mot de passe actuel" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
       <input type="password" bind:value={newPassword} aria-label="Nouveau mot de passe" placeholder="Nouveau mot de passe" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
       <input type="password" bind:value={confirmPassword} aria-label="Confirmer le nouveau mot de passe" placeholder="Confirmer le nouveau mot de passe" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
-      <button class="env-accent-bg rounded-xl px-4 py-2.5 text-sm font-semibold hover:opacity-95">Mettre à jour</button>
+      <button class="env-accent-bg rounded-xl px-4 py-2.5 text-sm font-semibold hover:opacity-95">{t('common.update', undefined, activeLocale)}</button>
     </form>
   </section>
 
@@ -129,7 +134,7 @@
 
     {#if generatedSecret}
       <div class="env-accent-soft rounded-lg border border-[#48B17F] p-4 text-xs">
-        <p class="env-text mb-1.5 font-medium">Copie ce mot de passe maintenant (il ne sera plus affiché) :</p>
+        <p class="env-text mb-1.5 font-medium">{t('security.copyPasswordNow', undefined, activeLocale)}</p>
         <code class="env-card env-accent-text block select-all break-all rounded-xl border px-3 py-2 font-mono text-sm">{generatedSecret}</code>
       </div>
     {/if}
@@ -172,9 +177,9 @@
 
   <section class="env-card max-w-xl space-y-4 rounded-xl border p-6 shadow-xs">
     <h3 class="env-text text-base font-semibold">Signature de messagerie</h3>
-    <p class="env-muted text-xs">Ajoutée automatiquement à la fin de vos nouveaux messages pour ce compte.</p>
+    <p class="env-muted text-xs">{t('security.signatureHint', undefined, activeLocale)}</p>
     {#if sigSaved}
-      <p role="status" class="env-accent-soft rounded-lg p-3 text-xs font-medium">Signature enregistrée pour ce compte.</p>
+      <p role="status" class="env-accent-soft rounded-lg p-3 text-xs font-medium">{t('security.signatureSaved', undefined, activeLocale)}</p>
     {/if}
     <form onsubmit={saveSignature} class="space-y-3">
       <textarea

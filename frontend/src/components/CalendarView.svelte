@@ -565,9 +565,9 @@ interface ContactEntry { name: string; email: string; }
   <header class="env-border flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
     <div class="flex items-center gap-3">
       <div class="env-input flex items-center overflow-hidden rounded-xl border">
-        <button type="button" onclick={() => shift(-1)} aria-label="Période précédente" class="env-hover px-3 py-1.5 text-sm font-medium">‹</button>
+        <button type="button" onclick={() => shift(-1)} aria-label={t('calendar.prevPeriod', undefined, activeLocale)} class="env-hover px-3 py-1.5 text-sm font-medium">‹</button>
         <button type="button" onclick={() => (cursor = new Date())} class="env-border env-hover border-x px-3.5 py-1.5 text-xs font-semibold">{t('calendar.today', undefined, activeLocale)}</button>
-        <button type="button" onclick={() => shift(1)} aria-label="Période suivante" class="env-hover px-3 py-1.5 text-sm font-medium">›</button>
+        <button type="button" onclick={() => shift(1)} aria-label={t('calendar.nextPeriod', undefined, activeLocale)} class="env-hover px-3 py-1.5 text-sm font-medium">›</button>
       </div>
       <h2 class="env-text text-lg font-bold capitalize">{headerLabel}</h2>
     </div>
@@ -611,7 +611,7 @@ interface ContactEntry { name: string; email: string; }
         >
           <button
             type="button"
-            title="Voir cette journée"
+            title={t('calendar.viewDay', undefined, activeLocale)}
             onclick={(e) => { e.stopPropagation(); cursor = cell.date; view = 'day'; }}
             class="mb-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs {cell.ymd === todayYMD ? 'env-accent-bg font-bold' : 'env-muted hover:ring-1 hover:ring-[var(--env-accent)]'}"
           >
@@ -868,7 +868,7 @@ interface ContactEntry { name: string; email: string; }
     <div role="presentation" onclick={(e) => e.stopPropagation()} class="w-full max-w-md">
       <form onsubmit={handleSave} class="env-card space-y-4 rounded-xl border p-7 shadow-2xl">
         <div class="flex items-center justify-between">
-          <h3 id="cal-create-title" class="env-text text-lg font-semibold">Nouvel élément</h3>
+          <h3 id="cal-create-title" class="env-text text-lg font-semibold">{t('calendar.newItem', undefined, activeLocale)}</h3>
       <button type="button" onclick={() => (showModal = false)} aria-label="Fermer" class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
         </div>
 
@@ -901,7 +901,7 @@ interface ContactEntry { name: string; email: string; }
           />
           {#if kind === 'event'}
             <div>
-              <label for="cal-invitees" class="env-muted mb-1.5 block text-xs">Inviter des participants (emails séparés par des virgules)</label>
+              <label for="cal-invitees" class="env-muted mb-1.5 block text-xs">{t('calendar.inviteesLabel', undefined, activeLocale)}</label>
               <div class="relative">
                 <input
                   id="cal-invitees"

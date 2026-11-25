@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
+  import { getLocale, subscribeLocale, t, type Locale } from '../../lib/i18n';
+  let activeLocale = $state<Locale>(getLocale());
+  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
+  onDestroy(_unsubLocale);
   import { ROLE_META, type Mailbox } from '../../lib/jmap/client';
   import type { SieveActionType, SieveRule } from '../../lib/utils/sieveGenerator';
 
@@ -39,7 +44,7 @@
         bind:value={rule.name}
         oninput={onSync}
         aria-label="Nom de la règle"
-        placeholder="Nom de la règle"
+        placeholder={t('sieve.ruleName', undefined, activeLocale)}
         class="env-input rounded-xl border px-3 py-1.5 text-xs font-semibold"
       />
       <select
@@ -77,9 +82,9 @@
           class="env-input rounded-xl border px-3 py-2 text-xs"
         >
           <option value="from">De (From)</option>
-          <option value="to">À / Cc (To, Cc)</option>
+          <option value="to">{t('sieve.toCcHeader', undefined, activeLocale)}</option>
           <option value="subject">Objet (Subject)</option>
-          <option value="header">En-tête personnalisé</option>
+          <option value="header">{t('sieve.customHeader', undefined, activeLocale)}</option>
           <option value="size">Taille du message</option>
         </select>
 
@@ -100,8 +105,8 @@
             aria-label="Comparateur de taille"
             class="env-input rounded-xl border px-3 py-2 text-xs"
           >
-            <option value="over">dépasse</option>
-            <option value="under">est inférieur à</option>
+            <option value="over">{t('sieve.over', undefined, activeLocale)}</option>
+            <option value="under">{t('sieve.under', undefined, activeLocale)}</option>
           </select>
           <input
             bind:value={cond.value}
@@ -119,7 +124,7 @@
           >
             <option value="contains">contient</option>
             <option value="is">est exactement</option>
-            <option value="matches">correspond à (* ?)</option>
+            <option value="matches">{t('sieve.matches', undefined, activeLocale)}</option>
           </select>
           <input
             bind:value={cond.value}
@@ -158,12 +163,12 @@
           aria-label="Type d'action"
           class="env-input rounded-xl border px-3 py-2 text-xs"
         >
-          <option value="fileinto">📁 Déplacer vers le dossier</option>
+          <option value="fileinto">📁 {t('sieve.moveToFolder', undefined, activeLocale)}</option>
           <option value="markRead">📭 Marquer comme lu</option>
           <option value="star">★ Ajouter aux favoris</option>
-          <option value="redirect">↪️ Transférer à l'adresse</option>
+          <option value="redirect">↪️ {t('sieve.redirectTo', undefined, activeLocale)}</option>
           <option value="reject">🚫 Rejeter avec message</option>
-          <option value="stop">🛑 Arrêter les règles suivantes</option>
+          <option value="stop">🛑 {t('sieve.stopProcessing', undefined, activeLocale)}</option>
         </select>
 
         {#if act.type === 'fileinto'}

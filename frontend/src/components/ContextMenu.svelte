@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
+  import { getLocale, subscribeLocale, t, type Locale } from '../lib/i18n';
+  let activeLocale = $state<Locale>(getLocale());
+  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
+  onDestroy(_unsubLocale);
   import { onMount, tick } from 'svelte';
   import type { Mailbox } from '../lib/jmap/client';
 
@@ -149,7 +154,7 @@
           onclick={toggleMoveSub}
           class="env-hover flex w-full items-center justify-between px-3.5 py-2 text-left"
         >
-          <span>📁 Déplacer vers</span>
+          <span>📁 {t('mail.moveTo', undefined, activeLocale)}</span>
           <span class="env-faint text-xs">›</span>
         </button>
       </div>
@@ -158,7 +163,7 @@
         <span>{mail.keywords?.['$flagged'] ? '★ Retirer favori' : '☆ Marquer favori'}</span>
       </button>
       <button type="button" onclick={() => pick('spam')} class="env-hover flex w-full items-center justify-between px-3.5 py-2 text-left text-amber-400">
-        <span>🚫 Signaler comme indésirable</span>
+        <span>🚫 {t('mail.reportJunk', undefined, activeLocale)}</span>
       </button>
 
       <div class="env-border my-1 border-t"></div>
@@ -170,9 +175,9 @@
         </button>
         {#if showMoreSub}
           <div role="menu" class="env-card fixed z-50 w-52 rounded-xl border py-1.5 shadow-2xl" style="left: {Math.min(pos.left + 228, window.innerWidth - 224)}px; top: {Math.min(pos.top + 170, window.innerHeight - 140)}px;">
-            <button type="button" onclick={() => pick('downloadEml')} class="env-hover flex w-full items-center gap-2 px-3.5 py-2 text-left text-xs">💾 Télécharger (.eml)</button>
+            <button type="button" onclick={() => pick('downloadEml')} class="env-hover flex w-full items-center gap-2 px-3.5 py-2 text-left text-xs">💾 {t('mail.downloadEml', undefined, activeLocale)}</button>
             <button type="button" onclick={() => pick('print')} class="env-hover flex w-full items-center gap-2 px-3.5 py-2 text-left text-xs">🖨️ Imprimer</button>
-            <button type="button" onclick={() => pick('createFilter')} class="env-hover flex w-full items-center gap-2 px-3.5 py-2 text-left text-xs">⚡ Créer un filtre à partir d'ici</button>
+            <button type="button" onclick={() => pick('createFilter')} class="env-hover flex w-full items-center gap-2 px-3.5 py-2 text-left text-xs">⚡ {t('mail.createFilterHere', undefined, activeLocale)}</button>
           </div>
         {/if}
       </div>
@@ -182,7 +187,7 @@
       </button>
       {#if mailbox.role === 'junk'}
         <button type="button" onclick={() => pick('emptyJunk')} class="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-red-400 hover:bg-red-500/10">
-          <span>🗑️</span><span>Supprimer tous les indésirables</span>
+          <span>🗑️</span><span>{t('mail.deleteAllJunk', undefined, activeLocale)}</span>
         </button>
       {/if}
       {#if mailbox.role === 'trash'}
