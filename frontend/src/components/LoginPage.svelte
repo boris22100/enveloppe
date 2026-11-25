@@ -73,14 +73,28 @@
       loading = false;
     }
   }
+  let appVersion = $state('0.8.1');
+  $effect(() => {
+    fetch('/api/version')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.version) appVersion = String(d.version).replace(/^v/, '');
+      })
+      .catch(() => {});
+  });
 </script>
 
 <div class="env-app flex min-h-screen flex-col items-center justify-between p-5">
   <main class="flex w-full flex-1 items-center justify-center">
     <form onsubmit={submit} class="env-card w-full max-w-md space-y-5 rounded-xl border p-8 shadow-2xl">
     <div class="space-y-1.5">
-      <div aria-hidden="true" class="env-accent-soft inline-flex h-12 w-12 items-center justify-center rounded-lg text-xl font-bold">✉️</div>
-      <h1 class="env-text text-2xl font-bold">Enveloppe</h1>
+      <img src="/pwa-192.png" alt="Enveloppe JMAP" class="h-12 w-12 rounded-xl object-cover shadow-sm" />
+      <div class="flex flex-wrap items-center gap-2.5">
+        <h1 class="env-text text-2xl font-bold">Enveloppe JMAP</h1>
+        <span class="env-accent-soft env-accent-text rounded-full border border-[#48B17F]/35 px-2.5 py-0.5 font-mono text-xs font-medium">
+          v{appVersion}
+        </span>
+      </div>
       <p class="env-muted text-sm">Renseignez l'adresse de votre serveur JMAP pour vous connecter.</p>
     </div>
 

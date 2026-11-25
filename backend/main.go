@@ -17,7 +17,7 @@ import (
 //go:embed all:static
 var staticFS embed.FS
 
-var appVersion = "0.8.0"
+var appVersion = "0.8.1"
 
 func resolveVersion() string {
 	if v := strings.TrimSpace(os.Getenv("APP_VERSION")); v != "" {
