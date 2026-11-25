@@ -115,6 +115,10 @@ interface ContactEntry { name: string; email: string; }
   let editStart = $state('');
   let editDescription = $state('');
   let editInviteesText = $state('');
+  let editIcsStatus = $state<{ kind: 'idle' | 'sending' | 'ok' | 'error'; message: string }>({
+    kind: 'idle',
+    message: ''
+  });
   let updating = $state(false);
   let draggedEvent = $state<JSCalendarEvent | null>(null);
   let dragOverYmd = $state<string | null>(null);
@@ -250,25 +254,52 @@ interface ContactEntry { name: string; email: string; }
     }
     editDescription = ev.description || '';
     editInviteesText = extractParticipantEmails(ev).join(', ');
+    editIcsStatus = { kind: 'idle', message: '' };
+  }
+
+  function parseInvitees(raw: string): string[] {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const part of raw.split(/[,;\s]+/)) {
+      const email = part.trim();
+      if (email && email.includes('@') && !seen.has(email.toLowerCase())) {
+        seen.add(email.toLowerCase());
+        out.push(email);
+      }
+    }
+    return out;
+  }
+
+  function removeEditInvitee(targetEmail: string) {
+    const remaining = parseInvitees(editInviteesText).filter(
+      (em) => em.toLowerCase() !== targetEmail.toLowerCase()
+    );
+    editInviteesText = remaining.join(', ');
   }
 
   async function handleUpdateSave(e: Event) {
     e.preventDefault();
     if (!editingEvent?.id) return;
     updating = true;
+    editIcsStatus = { kind: 'idle', message: '' };
     try {
       const nextSeq = typeof editingEvent.sequence === 'number' ? editingEvent.sequence + 1 : 1;
+      const recipients = parseInvitees(editInviteesText);
+      const participantsMap = Object.fromEntries(
+        recipients.map((em, i) => [`p${i + 1}`, { email: em, name: em.split('@')[0] }])
+      );
       await updateEvent(accountId, editingEvent.id, {
         title: editTitle.trim() || editingEvent.title,
         start: editStart,
         description: editDescription,
-        sequence: nextSeq
+        sequence: nextSeq,
+        participants: participantsMap
       });
-      const recipients = editInviteesText
-        .split(/[,;\s]+/)
-        .map((s) => s.trim())
-        .filter((s) => s.includes('@'));
       if (recipients.length > 0) {
+        editIcsStatus = {
+          kind: 'sending',
+          message: `Envoi de la mise à jour (.ics) à ${recipients.join(', ')}...`
+        };
         try {
           await dispatchEventUpdateIcs(
             {
@@ -276,14 +307,22 @@ interface ContactEntry { name: string; email: string; }
               title: editTitle.trim() || editingEvent.title,
               description: editDescription,
               sequence: nextSeq,
-              participants: Object.fromEntries(recipients.map((em, i) => [`p${i + 1}`, { email: em }]))
+              participants: participantsMap
             },
             editStart
           );
+          const okMsg = `Modification (.ics) envoyée à ${recipients.join(', ')}.`;
+          editIcsStatus = { kind: 'ok', message: okMsg };
+          inviteSendStatus = okMsg;
+          setTimeout(() => (inviteSendStatus = ''), 5000);
         } catch (mailErr: any) {
           console.error('Modification .ics:', mailErr);
-          inviteSendStatus = mailErr?.message || "Échec de l'envoi de la modification (.ics).";
+          const errMsg = mailErr?.message || "Échec de l'envoi de la modification (.ics).";
+          editIcsStatus = { kind: 'error', message: errMsg };
+          inviteSendStatus = errMsg;
           setTimeout(() => (inviteSendStatus = ''), 6000);
+          await load();
+          return;
         }
       }
       editingEvent = null;
@@ -926,7 +965,30 @@ interface ContactEntry { name: string; email: string; }
             class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
           />
           <div>
-            <label for="cal-edit-invitees" class="env-muted mb-1.5 block text-xs">Participants (emails séparés par des virgules)</label>
+            <div class="mb-1.5 flex items-center justify-between gap-2">
+              <label for="cal-edit-invitees" class="env-muted block text-xs">
+                Participants (emails séparés par des virgules)
+              </label>
+              <span class="env-faint font-mono text-[11px]">{parseInvitees(editInviteesText).length}</span>
+            </div>
+            {#if parseInvitees(editInviteesText).length > 0}
+              <div class="mb-2 flex flex-wrap gap-1.5">
+                {#each parseInvitees(editInviteesText) as em}
+                  <span class="env-accent-soft env-accent-text inline-flex items-center gap-1.5 rounded-full border border-[#48B17F]/35 px-2.5 py-0.5 text-xs">
+                    <span>{em}</span>
+                    <button
+                      type="button"
+                      title="Retirer {em}"
+                      aria-label="Retirer {em}"
+                      onclick={() => removeEditInvitee(em)}
+                      class="rounded-full px-1 text-[11px] opacity-75 hover:bg-black/15 hover:opacity-100"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                {/each}
+              </div>
+            {/if}
             <input
               id="cal-edit-invitees"
               bind:value={editInviteesText}
@@ -943,6 +1005,17 @@ interface ContactEntry { name: string; email: string; }
             class="env-input w-full rounded-lg border p-3 text-sm"
           ></textarea>
         </div>
+
+        {#if editIcsStatus.kind !== 'idle'}
+          <p
+            role="status"
+            class={editIcsStatus.kind === 'error'
+              ? 'rounded-xl bg-red-500/15 px-3.5 py-2 text-xs font-medium text-red-400'
+              : 'env-accent-soft env-accent-text rounded-xl border border-[#48B17F]/30 px-3.5 py-2 text-xs font-medium'}
+          >
+            {editIcsStatus.message}
+          </p>
+        {/if}
 
         <div class="flex justify-end gap-2 pt-1">
           <button type="button" onclick={() => (editingEvent = null)} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">Annuler</button>
