@@ -151,6 +151,12 @@ Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
 * **Calendrier (.ics)** : envoi automatique d'une invitation `invitation.ics` (`METHOD:REQUEST`) à la création d'un événement avec participants, et d'un mail d'annulation (`METHOD:CANCEL`) lors de la suppression d'un événement comportant des participants.
 * **Sobriété, sécurité & accessibilité vérifiées** : image Docker finale `distroless` de **9,52 Mo** (< 10 Mo), **~1,48 MiB** de RAM au repos en fonctionnement *stateless*, **412 Ko** d'assets `dist/`, **0** vulnérabilité `HIGH`/`CRITICAL` (Trivy), **0** secret (Gitleaks), **0** alerte `govulncheck` / `npm audit`, et **0** anomalie sur le contrôle statique A11y Svelte.
 
+## Nouveautés v0.8.2
+- **Mises à jour calendrier (.ics)** : restauration de l'envoi automatique des e-mails de modification (`METHOD:REQUEST` avec `SEQUENCE` incrémentée) en complément des invitations (`METHOD:REQUEST`) et annulations (`METHOD:CANCEL`), avec retour visuel d'état dans la modale d'édition.
+- **Édition participants & ergonomie des vues** : édition directe des participants (badges avec retrait rapide et persistance sur l'événement), ajout du bouton d'édition (`✏️`) en vue journalière, et persistance de la vue sélectionnée (`month` / `week` / `day`) dans `localStorage` (`enveloppe_calendar_view_v1`) au rechargement (`F5`).
+- **Page de connexion** : affichage de la version dynamique (`v0.8.2` via `/api/version`) à côté d'**Enveloppe JMAP** et remplacement de l'icône enveloppe par l'image `/pwa-192.png`.
+- **Couverture de tests unitaires** : enrichissement des tests Vitest sur les mises à jour/annulations `.ics` (`ics.spec.ts`) et ajout d'une suite dédiée à la persistance de la vue calendrier (`calendarViewStorage.spec.ts`).
+
 ## Nouveautés v0.8.0
 * **Récurrences JSCalendar** : expansion des règles de récurrence (`daily`, `weekly`, `monthly`, `yearly`, `interval`, `count`, `until`) et prise en compte de `recurrenceOverrides` dans `calendar.ts` et `CalendarView.svelte` (avec tests `recurrence.spec.ts`).
 * **Recherche serveur JMAP (`Email/query`)** : requête `Email/query` + `Email/get` côté serveur (`searchEmails`) combinant texte, dossier, non-lus et pièces jointes en complément du cache local.
