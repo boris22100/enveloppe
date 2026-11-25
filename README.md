@@ -128,7 +128,7 @@ docker compose pull && docker compose up -d
 | Outil | Périmètre analysé | Résultat |
 | :--- | :--- | :--- |
 | **Trivy** | Image Docker finale (`debian 12.15` + binaire Go) | **0** vulnérabilité (`HIGH` / `CRITICAL`) |
-| **govulncheck** | Code source et dépendances Go (`go1.24.13`) | **26** avis stdlib Go (`>= 1.25.8`–`1.26.11`), **0** appel vulnérable dans les libs tierces |
+| **govulncheck** | Code source et dépendances Go (`go1.26.11`) | **0** vulnérabilité |
 | **npm audit** | Dépendances de production Frontend | **0** vulnérabilité |
 | **Gitleaks** | Historique Git complet | **0** secret exposé |
 | **OWASP ZAP** | Scan passif en production (HTTPS) | **0 FAIL** / **63 PASS** *(5 WARN informatifs attendus pour une PWA webmail)* |
