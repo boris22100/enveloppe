@@ -635,7 +635,7 @@ interface ContactEntry { name: string; email: string; }
                     <button
                       type="button"
                       title={t('common.edit', undefined, activeLocale)}
-                      aria-label="Modifier {ev.title}"
+                      aria-label={`${t('common.editAriaPrefix', undefined, activeLocale)} ${ev.title}`}
                       onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                       class="text-xs hover:opacity-100"
                     >
@@ -644,7 +644,7 @@ interface ContactEntry { name: string; email: string; }
                     <button
                       type="button"
                       title={t('common.delete', undefined, activeLocale)}
-                      aria-label="Supprimer {ev.title}"
+                      aria-label={`${t('common.deleteAriaPrefix', undefined, activeLocale)} ${ev.title}`}
                       onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
                       class="text-xs hover:text-red-400"
                     >
@@ -699,7 +699,7 @@ interface ContactEntry { name: string; email: string; }
                       <button
                         type="button"
                         title={t('common.edit', undefined, activeLocale)}
-                        aria-label="Modifier {ev.title}"
+                        aria-label={`${t('common.editAriaPrefix', undefined, activeLocale)} ${ev.title}`}
                         onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                         class="rounded px-1.5 py-0.5 text-xs opacity-75 hover:opacity-100 group-hover/ev:opacity-100"
                       >
@@ -710,7 +710,7 @@ interface ContactEntry { name: string; email: string; }
                     <button
                       type="button"
                       title={t('common.delete', undefined, activeLocale)}
-                      aria-label="Supprimer {ev.title}"
+                      aria-label={`${t('common.deleteAriaPrefix', undefined, activeLocale)} ${ev.title}`}
                       onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
                       class="rounded px-1.5 py-0.5 text-xs opacity-75 hover:bg-red-500/15 hover:text-red-400 group-hover/ev:opacity-100"
                     >
@@ -760,7 +760,7 @@ interface ContactEntry { name: string; email: string; }
                         <button
                           type="button"
                           title={t('common.edit', undefined, activeLocale)}
-                          aria-label="Modifier {ev.title}"
+                          aria-label={`${t('common.editAriaPrefix', undefined, activeLocale)} ${ev.title}`}
                           onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                           class="rounded-lg px-1.5 py-0.5 text-xs hover:bg-white/10"
                         >
@@ -769,7 +769,7 @@ interface ContactEntry { name: string; email: string; }
                         <button
                           type="button"
                           title={t('common.delete', undefined, activeLocale)}
-                          aria-label="Supprimer {ev.title}"
+                          aria-label={`${t('common.deleteAriaPrefix', undefined, activeLocale)} ${ev.title}`}
                           onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
                           class="rounded-lg px-1.5 py-0.5 text-xs hover:bg-red-500/15 hover:text-red-400"
                         >

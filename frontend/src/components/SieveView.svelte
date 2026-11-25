@@ -356,7 +356,7 @@
             <button
               type="button"
               title={t('sieve.deleteScript', undefined, activeLocale)}
-              aria-label="Supprimer {sc.name}"
+              aria-label={`${t('common.deleteAriaPrefix', undefined, activeLocale)} ${sc.name}`}
               onclick={() => (scriptToDelete = sc)}
               class="env-muted rounded-xl px-2 py-1.5 text-xs hover:bg-red-500/15 hover:text-red-400"
             >

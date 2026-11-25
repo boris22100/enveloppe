@@ -221,7 +221,7 @@
                     <button
                       type="button"
                       title={t('common.edit', undefined, activeLocale)}
-                      aria-label="Modifier {displayName}"
+                      aria-label={`${t('common.editAriaPrefix', undefined, activeLocale)} ${displayName}`}
                       onclick={() => openEditContact(c)}
                       class="env-muted rounded-xl px-2.5 py-1.5 text-sm opacity-75 transition-opacity hover:bg-white/10 hover:text-[var(--env-text)] group-hover:opacity-100"
                     >
@@ -230,7 +230,7 @@
                     <button
                       type="button"
                       title={t('common.delete', undefined, activeLocale)}
-                      aria-label="Supprimer {displayName}"
+                      aria-label={`${t('common.deleteAriaPrefix', undefined, activeLocale)} ${displayName}`}
                       onclick={() => (contactToDelete = { id: c.id!, name: displayName })}
                       class="env-muted rounded-xl px-2.5 py-1.5 text-sm opacity-75 transition-opacity hover:bg-red-500/15 hover:text-red-400 group-hover:opacity-100"
                     >

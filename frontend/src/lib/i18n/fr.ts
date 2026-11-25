@@ -1,5 +1,7 @@
 export const fr = {
   common: {
+    editAriaPrefix: 'Modifier',
+    deleteAriaPrefix: 'Supprimer',
     appName: 'enveloppe',
     protocol: 'jmap',
     loading: 'Chargement...',
@@ -61,6 +63,8 @@ export const fr = {
     privacyPolicy: 'Politique de confidentialité'
   },
   mail: {
+    newPushActivity: 'Nouvelle activité sur votre messagerie.',
+    newMailReceived: 'Vous avez reçu un nouveau message.',
     compose: 'Nouveau message',
     inbox: 'Boîte de réception',
     sent: 'Envoyés',
@@ -180,6 +184,9 @@ export const fr = {
     noneFound: 'Aucun contact trouvé.'
   },
   sieve: {
+    defaultScriptName: 'script.siv',
+    defaultRuleName: 'Règle',
+    disabledRuleComment: '# (Règle désactivée)',
     title: 'Filtres serveur (Sieve)',
     subtitle: 'Éditeur visuel & code Sieve synchronisé avec Stalwart',
     scripts: 'Scripts Sieve',
@@ -267,6 +274,7 @@ export const fr = {
     singleActiveNote: 'Un seul script Sieve peut être actif à la fois sur Stalwart. Les règles sont exécutées côté serveur dès réception d’un message.'
   },
   security: {
+    defaultSignaturePlaceholder: '-- \nPrénom Nom — Fonction\nhttps://exemple.fr',
     title: 'Sécurité & Signatures',
     changePassword: 'Changer le mot de passe du compte',
     currentPassword: 'Mot de passe actuel',

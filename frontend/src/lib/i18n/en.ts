@@ -2,6 +2,8 @@ import type { TranslationDictionary } from './fr';
 
 export const en: TranslationDictionary = {
   common: {
+    editAriaPrefix: 'Edit',
+    deleteAriaPrefix: 'Delete',
     appName: 'enveloppe',
     protocol: 'jmap',
     loading: 'Loading...',
@@ -63,6 +65,8 @@ export const en: TranslationDictionary = {
     privacyPolicy: 'Privacy policy'
   },
   mail: {
+    newPushActivity: 'New activity in your mailbox.',
+    newMailReceived: 'You received a new message.',
     compose: 'New message',
     inbox: 'Inbox',
     sent: 'Sent',
@@ -182,6 +186,9 @@ export const en: TranslationDictionary = {
     noneFound: 'No contacts found.'
   },
   sieve: {
+    defaultScriptName: 'script.siv',
+    defaultRuleName: 'Rule',
+    disabledRuleComment: '# (Disabled rule)',
     title: 'Server filters (Sieve)',
     subtitle: 'Visual editor & Sieve script synced with Stalwart',
     scripts: 'Sieve scripts',
@@ -269,6 +276,7 @@ export const en: TranslationDictionary = {
     singleActiveNote: 'Only one Sieve script can be active at a time on Stalwart. Rules run server-side as soon as a message arrives.'
   },
   security: {
+    defaultSignaturePlaceholder: '-- \nFirst Last — Role\nhttps://example.com',
     title: 'Security & Signatures',
     changePassword: 'Change account password',
     currentPassword: 'Current password',
