@@ -162,7 +162,7 @@
       <h2 class="env-text text-lg font-bold">{t('contacts.title', undefined, activeLocale)} ({contacts.length})</h2>
       <input
         bind:value={search}
-        aria-label="Rechercher un contact"
+        aria-label={t('contacts.searchAria', undefined, activeLocale)}
         placeholder={t('contacts.searchPlaceholder', undefined, activeLocale)}
         class="env-input w-64 rounded-xl border px-3.5 py-2 text-sm"
       />
@@ -173,7 +173,7 @@
       <button type="button" onclick={() => downloadFile(contactsToVcf(contacts), 'contacts.vcf', 'text/vcard')} class="env-input env-hover rounded-xl border px-3.5 py-2 text-xs font-medium">{t('contacts.exportVcf', undefined, activeLocale)}</button>
       <label class="env-input env-hover cursor-pointer rounded-xl border px-3.5 py-2 text-xs font-medium">
         Importer
-        <input type="file" accept=".vcf,.json" onchange={handleImport} class="hidden" aria-label="Importer des contacts (.vcf ou .json)" />
+        <input type="file" accept=".vcf,.json" onchange={handleImport} class="hidden" aria-label={t('contacts.importAria', undefined, activeLocale)} />
       </label>
     </div>
     </div>
@@ -184,7 +184,7 @@
       <input bind:value={email} type="email" aria-label="Adresse email" placeholder="Email" required class="env-input rounded-xl border px-3.5 py-2 text-sm" />
       <input bind:value={phone} aria-label={t('contacts.phone', undefined, activeLocale)} placeholder={t('contacts.phone', undefined, activeLocale)} class="env-input rounded-xl border px-3.5 py-2 text-sm" />
       <div class="flex gap-2">
-        <button class="env-accent-bg flex-1 rounded-xl px-3.5 py-2 text-xs font-semibold">Ajouter</button>
+        <button class="env-accent-bg flex-1 rounded-xl px-3.5 py-2 text-xs font-semibold">{t('common.add', undefined, activeLocale)}</button>
         <button type="button" onclick={() => (showAdd = false)} class="env-input env-hover env-muted rounded-xl border px-3.5 py-2 text-xs">Annuler</button>
       </div>
     </form>
@@ -220,7 +220,7 @@
                   {#if c.id}
                     <button
                       type="button"
-                      title="Modifier ce contact"
+                      title={t('common.edit', undefined, activeLocale)}
                       aria-label="Modifier {displayName}"
                       onclick={() => openEditContact(c)}
                       class="env-muted rounded-xl px-2.5 py-1.5 text-sm opacity-75 transition-opacity hover:bg-white/10 hover:text-[var(--env-text)] group-hover:opacity-100"
@@ -229,7 +229,7 @@
                     </button>
                     <button
                       type="button"
-                      title="Supprimer ce contact"
+                      title={t('common.delete', undefined, activeLocale)}
                       aria-label="Supprimer {displayName}"
                       onclick={() => (contactToDelete = { id: c.id!, name: displayName })}
                       class="env-muted rounded-xl px-2.5 py-1.5 text-sm opacity-75 transition-opacity hover:bg-red-500/15 hover:text-red-400 group-hover:opacity-100"
@@ -251,9 +251,9 @@
 </div>
 {#if contactToDelete}
   <ConfirmModal
-    title="Supprimer le contact"
+    title={t('contacts.deleteContact', undefined, activeLocale)}
     message={"Voulez-vous vraiment supprimer « " + contactToDelete.name + " » de votre carnet d'adresses ? Cette action est définitive."}
-    confirmLabel="Supprimer le contact"
+    confirmLabel={t('contacts.deleteContact', undefined, activeLocale)}
     onConfirm={confirmDeleteContact}
     onCancel={() => (contactToDelete = null)}
   />
@@ -261,18 +261,18 @@
 {#if editingContact}
   <div role="dialog" aria-modal="true" class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
     <form onsubmit={saveEditedContact} class="env-card w-full max-w-md space-y-3 rounded-xl border p-5 shadow-2xl">
-      <h3 class="env-text text-base font-bold">Modifier le contact</h3>
+      <h3 class="env-text text-base font-bold">{t('contacts.editContact', undefined, activeLocale)}</h3>
       <div>
         <label for="edit-contact-name" class="env-muted mb-1 block text-xs">Nom</label>
-        <input id="edit-contact-name" aria-label="Nom du contact" placeholder="Nom complet" bind:value={editName} type="text" required class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
+        <input id="edit-contact-name" aria-label={t('contacts.nameAria', undefined, activeLocale)} placeholder="Nom complet" bind:value={editName} type="text" required class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="edit-contact-email" class="env-muted mb-1 block text-xs">Adresse e-mail</label>
-        <input id="edit-contact-email" aria-label="Adresse e-mail du contact" placeholder="prenom.nom@domaine.fr" bind:value={editEmail} type="email" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
+        <input id="edit-contact-email" aria-label={t('contacts.emailAria', undefined, activeLocale)} placeholder="prenom.nom@domaine.fr" bind:value={editEmail} type="email" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="edit-contact-phone" class="env-muted mb-1 block text-xs">{t('contacts.phone', undefined, activeLocale)}</label>
-        <input id="edit-contact-phone" aria-label="Téléphone du contact" placeholder="+33 6 00 00 00 00" bind:value={editPhone} type="tel" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
+        <input id="edit-contact-phone" aria-label={t('contacts.phoneAria', undefined, activeLocale)} placeholder="+33 6 00 00 00 00" bind:value={editPhone} type="tel" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="edit-contact-notes" class="env-muted mb-1 block text-xs">Notes</label>
@@ -284,7 +284,7 @@
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" onclick={() => (editingContact = null)} class="env-input env-muted rounded-lg border px-3.5 py-1.5 text-xs">Annuler</button>
         <button type="submit" disabled={editSaving} class="env-accent-bg rounded-lg px-4 py-1.5 text-xs font-semibold disabled:opacity-50">
-          {editSaving ? 'Enregistrement...' : 'Enregistrer'}
+          {editSaving ? t('common.saving', undefined, activeLocale) : 'Enregistrer'}
         </button>
       </div>
     </form>

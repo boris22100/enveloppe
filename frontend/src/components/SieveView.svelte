@@ -315,7 +315,7 @@
 </script>
 
 <div class="flex h-full overflow-hidden">
-  <aside aria-label="Scripts Sieve" class="env-subtle env-border flex w-72 shrink-0 flex-col border-r p-4">
+  <aside aria-label={t('sieve.scripts', undefined, activeLocale)} class="env-subtle env-border flex w-72 shrink-0 flex-col border-r p-4">
     <div class="mb-3.5 flex items-center justify-between">
       <span class="env-muted text-xs font-semibold uppercase tracking-wider">Scripts Sieve</span>
       <button
@@ -346,7 +346,7 @@
           <div class="flex shrink-0 items-center gap-1">
             <button
               type="button"
-              title={sc.isActive ? 'Désactiver ce script' : 'Activer ce script'}
+              title={sc.isActive ? t('sieve.deactivateScript', undefined, activeLocale) : t('sieve.activateScript', undefined, activeLocale)}
               aria-label={sc.isActive ? 'Désactiver ' + sc.name : 'Activer ' + sc.name}
               onclick={() => handleToggleActive(sc)}
               class="env-hover rounded-xl px-2 py-1.5 text-xs {sc.isActive ? 'env-accent-text' : 'env-muted'}"
@@ -355,7 +355,7 @@
             </button>
             <button
               type="button"
-              title="Supprimer ce script"
+              title={t('sieve.deleteScript', undefined, activeLocale)}
               aria-label="Supprimer {sc.name}"
               onclick={() => (scriptToDelete = sc)}
               class="env-muted rounded-xl px-2 py-1.5 text-xs hover:bg-red-500/15 hover:text-red-400"
@@ -389,8 +389,8 @@
 
         <input
           bind:value={scriptName}
-          aria-label="Nom du script Sieve"
-          placeholder="Nom du script"
+          aria-label={t('sieve.scriptNameAria', undefined, activeLocale)}
+          placeholder={t('sieve.scriptNamePlaceholder', undefined, activeLocale)}
           class="env-input w-44 rounded-xl border px-3 py-2 text-xs font-medium"
         />
 
@@ -451,7 +451,7 @@
     {/if}
 
     {#if loading}
-      <div class="env-muted flex flex-1 items-center justify-center text-sm">Chargement des scripts Sieve...</div>
+      <div class="env-muted flex flex-1 items-center justify-center text-sm">{t('sieve.loadingScripts', undefined, activeLocale)}</div>
 
     {:else if mode === 'visual'}
       <div class="flex-1 space-y-5 overflow-y-auto p-6">
@@ -527,9 +527,9 @@
 
 {#if scriptToDelete}
   <ConfirmModal
-    title="Supprimer le script Sieve"
+    title={t('sieve.deleteScript', undefined, activeLocale)}
     message={'Voulez-vous vraiment supprimer le script « ' + scriptToDelete.name + ' » du serveur Stalwart ? Cette action est irréversible.'}
-    confirmLabel="Supprimer le script"
+    confirmLabel={t('sieve.deleteScriptConfirm', undefined, activeLocale)}
     onConfirm={confirmDeleteScript}
     onCancel={() => (scriptToDelete = null)}
   />

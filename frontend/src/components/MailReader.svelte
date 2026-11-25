@@ -155,7 +155,7 @@
   <div class="flex-1 overflow-auto p-6">
     {#if html}
       <iframe
-        title="Contenu du message"
+        title={t('mail.messageBody', undefined, activeLocale)}
         sandbox="allow-popups allow-popups-to-escape-sandbox"
         {srcdoc}
         class="h-full w-full rounded-lg border-0"

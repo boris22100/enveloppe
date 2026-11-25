@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
+  import { getLocale, subscribeLocale, t, type Locale } from '../../lib/i18n';
+  let activeLocale = $state<Locale>(getLocale());
+  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
+  onDestroy(_unsubLocale);
   import { highlightSieveCode } from '../../lib/utils/sieveGenerator';
 
   let {
@@ -46,7 +51,7 @@
       onscroll={syncScroll}
       onkeydown={onKeydown}
       spellcheck="false"
-      aria-label="Éditeur de code Sieve"
+      aria-label={t('sieve.codeEditorAria', undefined, activeLocale)}
       placeholder={'require ["fileinto"];\n\nif header :contains "From" "exemple@domaine.fr" {\n    fileinto "Archives";\n}'}
       class="absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent p-4 font-mono text-xs leading-6 text-transparent caret-[#48B17F] selection:bg-[var(--env-accent)]/30 focus:outline-none"
     ></textarea>

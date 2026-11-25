@@ -25,8 +25,8 @@
     <button
       type="button"
       onclick={onNew}
-      title="Nouveau script"
-      aria-label="Nouveau script Sieve"
+      title={t('sieve.newScriptModalTitle', undefined, activeLocale)}
+      aria-label={t('sieve.newScriptModalTitle', undefined, activeLocale)}
       class="env-accent-soft rounded-lg px-2.5 py-1 text-xs font-semibold"
     >
       {t('calendar.newShort', undefined, activeLocale)}

@@ -37,10 +37,10 @@
         onsubmit={onSubmit}
         class="env-card space-y-4 rounded-xl border p-7 shadow-2xl"
       >
-        <h3 id="new-sieve-title" class="env-text text-lg font-semibold">Nouveau script Sieve</h3>
+        <h3 id="new-sieve-title" class="env-text text-lg font-semibold">{t('sieve.newScriptModalTitle', undefined, activeLocale)}</h3>
         <input
           bind:value={title}
-          aria-label="Nom du nouveau script"
+          aria-label={t('sieve.newScriptNameAria', undefined, activeLocale)}
           placeholder="Ex : vacances, tri-pro, enveloppe"
           required
           class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"

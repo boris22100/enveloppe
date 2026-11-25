@@ -53,12 +53,12 @@
           type="text"
           bind:value={vacation.subject}
           oninput={onChange}
-          placeholder="Absence du bureau"
+          placeholder={t('sieve.outOfOffice', undefined, activeLocale)}
           class="env-input w-full rounded-xl border px-3 py-2 text-xs"
         />
       </div>
       <div class="sm:col-span-4">
-        <label for="vac-reason" class="env-muted mb-1 block text-xs">Message d'absence</label>
+        <label for="vac-reason" class="env-muted mb-1 block text-xs">{t('sieve.absenceMessage', undefined, activeLocale)}</label>
         <textarea
           id="vac-reason"
           rows="3"

@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
+  import { getLocale, subscribeLocale, t, type Locale } from '../lib/i18n';
+  let activeLocale = $state<Locale>(getLocale());
+  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
+  onDestroy(_unsubLocale);
   let { onAdded, onClose }: { onAdded: () => void; onClose: () => void } = $props();
 
   let label = $state('');
@@ -79,21 +84,21 @@
 >
   <div role="presentation" onclick={(e) => e.stopPropagation()} class="w-full max-w-md">
     <form onsubmit={submit} class="env-card space-y-4 rounded-xl border p-7 shadow-2xl">
-      <h3 id="acc-modal-title" class="env-text text-lg font-semibold">Connecter un serveur JMAP</h3>
+      <h3 id="acc-modal-title" class="env-text text-lg font-semibold">{t('account.connectServer', undefined, activeLocale)}</h3>
       {#if error}
         <p role="alert" class="rounded-lg bg-red-500/15 p-3 text-xs font-medium text-red-400">{error}</p>
       {/if}
       <div class="grid grid-cols-5 gap-2.5">
-        <input bind:value={label} aria-label="Nom du compte" placeholder="Nom (ex: Perso)" class="env-input col-span-4 rounded-xl border px-3.5 py-2.5 text-sm" />
-        <input type="color" bind:value={color} aria-label="Couleur du compte" class="env-input h-11 w-full cursor-pointer rounded-xl border p-1" />
+        <input bind:value={label} aria-label={t('account.accountName', undefined, activeLocale)} placeholder="Nom (ex: Perso)" class="env-input col-span-4 rounded-xl border px-3.5 py-2.5 text-sm" />
+        <input type="color" bind:value={color} aria-label={t('account.accountColor', undefined, activeLocale)} class="env-input h-11 w-full cursor-pointer rounded-xl border p-1" />
       </div>
       <div>
         <div class="mb-1.5 flex items-center justify-between">
           <label for="acc-host" class="env-muted text-xs font-semibold">Serveur</label>
           {#if checkingOidc}
-            <span class="env-faint text-xs">Vérification OIDC...</span>
+            <span class="env-faint text-xs">{t('account.checkingOidc', undefined, activeLocale)}</span>
           {:else if oidcSupported}
-            <span class="env-accent-soft rounded-full px-2 py-0.5 text-xs font-semibold">OIDC détecté</span>
+            <span class="env-accent-soft rounded-full px-2 py-0.5 text-xs font-semibold">{t('account.oidcDetected', undefined, activeLocale)}</span>
           {/if}
         </div>
         <input id="acc-host" bind:value={host} placeholder="https://mail.mondomaine.fr" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
@@ -102,11 +107,11 @@
       {#if oidcSupported}
         <button type="button" onclick={startOidc} class="env-accent-bg flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold hover:opacity-95">
           <span>🔐</span>
-          <span>Continuer avec OIDC (SSO)</span>
+          <span>{t('account.continueOidc', undefined, activeLocale)}</span>
         </button>
         <div class="relative flex items-center py-1">
           <div class="env-border flex-grow border-t"></div>
-          <span class="env-faint mx-3 flex-shrink text-xs">ou mot de passe d'application</span>
+          <span class="env-faint mx-3 flex-shrink text-xs">{t('account.orAppPassword', undefined, activeLocale)}</span>
           <div class="env-border flex-grow border-t"></div>
         </div>
       {/if}
@@ -116,7 +121,7 @@
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" onclick={onClose} class="env-muted env-hover rounded-xl px-4 py-2 text-sm">Annuler</button>
         <button disabled={loading} class="rounded-xl {oidcSupported ? 'env-input env-hover border font-medium' : 'env-accent-bg font-semibold'} px-4 py-2 text-sm disabled:opacity-50">
-          {loading ? 'Découverte JMAP...' : 'Connecter'}
+          {loading ? t('account.discoveringJmap', undefined, activeLocale) : 'Connecter'}
         </button>
       </div>
     </form>

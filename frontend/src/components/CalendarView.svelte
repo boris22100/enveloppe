@@ -583,7 +583,7 @@ interface ContactEntry { name: string; email: string; }
       <button type="button" onclick={() => downloadFile(eventsToIcs(events), 'calendrier.ics', 'text/calendar')} class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium">.ics</button>
       <label class="env-input env-hover cursor-pointer rounded-xl border px-3 py-2 text-xs font-medium">
         Importer
-        <input type="file" accept=".ics,.json" onchange={handleImport} class="hidden" aria-label="Importer un calendrier (.ics ou .json)" />
+        <input type="file" accept=".ics,.json" onchange={handleImport} class="hidden" aria-label={t('calendar.importAria', undefined, activeLocale)} />
       </label>
     </div>
   </header>
@@ -634,7 +634,7 @@ interface ContactEntry { name: string; email: string; }
                   <div class="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover/ev:opacity-100">
                     <button
                       type="button"
-                      title="Modifier"
+                      title={t('common.edit', undefined, activeLocale)}
                       aria-label="Modifier {ev.title}"
                       onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                       class="text-xs hover:opacity-100"
@@ -643,7 +643,7 @@ interface ContactEntry { name: string; email: string; }
                     </button>
                     <button
                       type="button"
-                      title="Supprimer"
+                      title={t('common.delete', undefined, activeLocale)}
                       aria-label="Supprimer {ev.title}"
                       onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
                       class="text-xs hover:text-red-400"
@@ -698,7 +698,7 @@ interface ContactEntry { name: string; email: string; }
                     {#if ev.id}
                       <button
                         type="button"
-                        title="Modifier"
+                        title={t('common.edit', undefined, activeLocale)}
                         aria-label="Modifier {ev.title}"
                         onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                         class="rounded px-1.5 py-0.5 text-xs opacity-75 hover:opacity-100 group-hover/ev:opacity-100"
@@ -709,7 +709,7 @@ interface ContactEntry { name: string; email: string; }
                     {#if ev.id}
                     <button
                       type="button"
-                      title="Supprimer"
+                      title={t('common.delete', undefined, activeLocale)}
                       aria-label="Supprimer {ev.title}"
                       onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
                       class="rounded px-1.5 py-0.5 text-xs opacity-75 hover:bg-red-500/15 hover:text-red-400 group-hover/ev:opacity-100"
@@ -759,7 +759,7 @@ interface ContactEntry { name: string; email: string; }
                       {#if ev.id}
                         <button
                           type="button"
-                          title="Modifier"
+                          title={t('common.edit', undefined, activeLocale)}
                           aria-label="Modifier {ev.title}"
                           onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                           class="rounded-lg px-1.5 py-0.5 text-xs hover:bg-white/10"
@@ -768,7 +768,7 @@ interface ContactEntry { name: string; email: string; }
                         </button>
                         <button
                           type="button"
-                          title="Supprimer"
+                          title={t('common.delete', undefined, activeLocale)}
                           aria-label="Supprimer {ev.title}"
                           onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
                           class="rounded-lg px-1.5 py-0.5 text-xs hover:bg-red-500/15 hover:text-red-400"
@@ -816,7 +816,7 @@ interface ContactEntry { name: string; email: string; }
             {selectedEvent.start ? new Date(selectedEvent.start).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: selectedEvent.showWithoutTime ? undefined : 'short' }) : ''}
           </p>
         </div>
-        <button type="button" onclick={() => (selectedEvent = null)} aria-label="Fermer" class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
+        <button type="button" onclick={() => (selectedEvent = null)} aria-label={t('common.close', undefined, activeLocale)} class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
       </div>
       {#if selectedEvent.description}
         <p class="env-subtle env-text whitespace-pre-wrap rounded-lg border p-3.5 text-sm">{selectedEvent.description}</p>
@@ -869,7 +869,7 @@ interface ContactEntry { name: string; email: string; }
       <form onsubmit={handleSave} class="env-card space-y-4 rounded-xl border p-7 shadow-2xl">
         <div class="flex items-center justify-between">
           <h3 id="cal-create-title" class="env-text text-lg font-semibold">{t('calendar.newItem', undefined, activeLocale)}</h3>
-      <button type="button" onclick={() => (showModal = false)} aria-label="Fermer" class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
+      <button type="button" onclick={() => (showModal = false)} aria-label={t('common.close', undefined, activeLocale)} class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
         </div>
 
         <div class="env-subtle env-border grid grid-cols-3 gap-1.5 rounded-lg border p-1 text-xs">
@@ -925,7 +925,7 @@ interface ContactEntry { name: string; email: string; }
         <div class="flex justify-end gap-2 pt-1">
           <button type="button" onclick={() => (showModal = false)} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">Annuler</button>
           <button disabled={saving} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold disabled:opacity-50">
-            {saving ? 'Enregistrement...' : 'Enregistrer'}
+            {saving ? t('common.saving', undefined, activeLocale) : 'Enregistrer'}
           </button>
         </div>
       </form>
@@ -950,8 +950,8 @@ interface ContactEntry { name: string; email: string; }
     <div role="presentation" onclick={(e) => e.stopPropagation()} class="w-full max-w-md">
       <form onsubmit={handleUpdateSave} class="env-card space-y-4 rounded-xl border p-7 shadow-2xl">
         <div class="flex items-center justify-between">
-          <h3 id="cal-edit-title" class="env-text text-lg font-semibold">Modifier l'événement</h3>
-          <button type="button" onclick={() => (editingEvent = null)} aria-label="Fermer" class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
+          <h3 id="cal-edit-title" class="env-text text-lg font-semibold">{t('calendar.editEvent', undefined, activeLocale)}</h3>
+          <button type="button" onclick={() => (editingEvent = null)} aria-label={t('common.close', undefined, activeLocale)} class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
         </div>
 
         <div class="space-y-3">
@@ -1025,7 +1025,7 @@ interface ContactEntry { name: string; email: string; }
         <div class="flex justify-end gap-2 pt-1">
           <button type="button" onclick={() => (editingEvent = null)} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">Annuler</button>
           <button disabled={updating} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold disabled:opacity-50">
-            {updating ? 'Mise à jour...' : 'Enregistrer les modifications'}
+            {updating ? t('common.updating', undefined, activeLocale) : t('common.save', undefined, activeLocale)}
           </button>
         </div>
       </form>
@@ -1037,7 +1037,7 @@ interface ContactEntry { name: string; email: string; }
   <ConfirmModal
     title="Supprimer l'élément du calendrier"
     message={'Voulez-vous vraiment supprimer « ' + eventToDelete.title + ' » ? Cette action est définitive.'}
-    confirmLabel="Supprimer"
+    confirmLabel={t('common.delete', undefined, activeLocale)}
     onConfirm={confirmDeleteEvent}
     onCancel={() => (eventToDelete = null)}
   />

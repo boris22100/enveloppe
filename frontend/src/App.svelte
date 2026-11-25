@@ -486,13 +486,13 @@
     const ids = getMailboxSubtreeIds(mailboxes, box.id);
 
     confirmDialog = {
-      title: isTrash ? 'Vider la corbeille' : isJunk ? 'Supprimer les indésirables' : 'Vider « ' + box.name + ' »',
+      title: isTrash ? t('mail.emptyTrash', undefined, lang) : isJunk ? t('mail.deleteAllJunk', undefined, lang) : 'Vider « ' + box.name + ' »',
       message: isTrash
         ? 'Voulez-vous vraiment supprimer définitivement tous les messages de la corbeille (et de ses sous-dossiers) ? Cette action est irréversible.'
         : isJunk
           ? 'Voulez-vous vraiment supprimer définitivement tous les messages indésirables ? Cette action est irréversible.'
           : 'Voulez-vous vraiment supprimer définitivement tous les messages de « ' + box.name + ' » ? Cette action est irréversible.',
-      confirmLabel: isTrash ? 'Vider la corbeille' : isJunk ? 'Supprimer les indésirables' : 'Supprimer tout',
+      confirmLabel: isTrash ? t('mail.emptyTrash', undefined, lang) : isJunk ? t('mail.deleteAllJunk', undefined, lang) : 'Supprimer tout',
       onConfirm: async () => {
         const count = await emptyMailboxes(accId, ids);
         confirmDialog = null;
@@ -691,7 +691,7 @@
             type="button"
             onclick={() => (railExpanded = !railExpanded)}
             aria-expanded={railExpanded}
-            title={railExpanded ? 'Rétracter le menu' : 'Déplier le menu'}
+            title={railExpanded ? t('nav.collapseSidebar', undefined, lang) : t('nav.expandSidebar', undefined, lang)}
             class="env-muted env-hover flex h-8 w-8 items-center justify-center rounded-lg text-sm {railExpanded ? '' : 'mx-auto'}"
           >
             {railExpanded ? '«' : '»'}
@@ -719,11 +719,11 @@
           <button
             type="button"
             onclick={() => (showAccountModal = true)}
-            title="Ajouter un compte"
+            title={t('account.addAccount', undefined, lang)}
             class="env-muted env-hover flex items-center gap-2.5 rounded-lg text-xs font-medium {railExpanded ? 'w-full px-2.5 py-1.5' : 'h-8 w-8 justify-center'}"
           >
             <span>+</span>
-            {#if railExpanded}<span>Ajouter un compte</span>{/if}
+            {#if railExpanded}<span>{t('account.addAccount', undefined, lang)}</span>{/if}
           </button>
         </div>
 
@@ -757,8 +757,8 @@
                   <div class="flex shrink-0 items-center gap-1">
                     <button
                       type="button"
-                      title="Marquer comme lu(s)"
-                      aria-label="Marquer comme lu(s)"
+                      title={t('mail.markAsRead', undefined, lang)}
+                      aria-label={t('mail.markAsRead', undefined, lang)}
                       disabled={batchBusy}
                       onclick={(e) => { e.stopPropagation(); handleMarkMailboxRead(box); }}
                       class="env-faint rounded px-1 py-0.5 text-[11px] opacity-0 hover:opacity-100 focus:opacity-100 group-hover:opacity-100"
@@ -766,16 +766,16 @@
                     {#if box.role === 'trash' || box.role === 'junk'}
                       <button
                         type="button"
-                        title={box.role === 'trash' ? 'Vider la corbeille' : 'Supprimer les indésirables'}
-                        aria-label={box.role === 'trash' ? 'Vider la corbeille' : 'Supprimer les indésirables'}
+                        title={box.role === 'trash' ? t('mail.emptyTrash', undefined, lang) : t('mail.deleteAllJunk', undefined, lang)}
+                        aria-label={box.role === 'trash' ? t('mail.emptyTrash', undefined, lang) : t('mail.deleteAllJunk', undefined, lang)}
                         onclick={(e) => { e.stopPropagation(); requestEmptyMailbox(box); }}
                         class="env-faint rounded px-1 py-0.5 text-[11px] opacity-0 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
                       >🗑️</button>
                     {:else if !box.role}
                       <button
                         type="button"
-                        title="Supprimer le dossier"
-                        aria-label="Supprimer le dossier"
+                        title={t('mail.deleteFolder', undefined, lang)}
+                        aria-label={t('mail.deleteFolder', undefined, lang)}
                         onclick={(e) => { e.stopPropagation(); requestDeleteFolder(box); }}
                         class="env-faint rounded px-1 py-0.5 text-[11px] opacity-0 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
                       >🗑️</button>
@@ -809,7 +809,7 @@
         {#if quota && railExpanded}
           <div class="env-card mb-2 rounded-lg border p-2.5">
             <div class="env-muted mb-1 flex items-center justify-between text-[11px]">
-              {lang === 'fr' ? 'Stockage' : 'Storage'}
+              {lang === 'fr' ? t('nav.storage', undefined, lang) : t('nav.storage', undefined, lang)}
               <span class="env-text font-semibold">{quota.percent} %</span>
             </div>
             <div class="env-subtle h-1.5 w-full overflow-hidden rounded-full">
@@ -821,7 +821,7 @@
 
         <div
           role="group"
-          aria-label="Langue / Language"
+          aria-label={t('common.language', undefined, lang)}
           class="env-muted flex items-center rounded-lg text-xs font-medium {railExpanded ? 'w-full justify-between px-3 py-1.5' : 'h-9 w-9 justify-center'}"
         >
           {#if railExpanded}
@@ -861,8 +861,8 @@
         <button type="button" onclick={cycleTheme} title={themeLabel} aria-label={themeLabel} class="env-muted env-hover flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
           <span>{themeIcon}</span>{#if railExpanded}<span class="truncate">{themeLabel}</span>{/if}
         </button>
-        <button type="button" onclick={handleEnablePush} title={lang === 'fr' ? 'Notifications' : 'Notifications'} class="env-muted env-hover flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
-          <span>🔔</span>{#if railExpanded}{lang === 'fr' ? 'Notifications' : 'Notifications'}{/if}
+        <button type="button" onclick={handleEnablePush} title={lang === 'fr' ? t('nav.notifications', undefined, lang) : t('nav.notifications', undefined, lang)} class="env-muted env-hover flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
+          <span>🔔</span>{#if railExpanded}{lang === 'fr' ? t('nav.notifications', undefined, lang) : t('nav.notifications', undefined, lang)}{/if}
         </button>
         <button type="button" onclick={handleLogout} title={t('nav.logout', undefined, lang)} class="env-muted flex items-center gap-3 rounded-lg text-sm hover:bg-red-500/10 hover:text-red-500 {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
           <span>🚪</span>{#if railExpanded}{t('nav.logout', undefined, lang)}{/if}
@@ -881,8 +881,8 @@
                 if (!railExpanded) { railExpanded = true; showFolders = true; }
                 else { showFolders = !showFolders; }
               }}
-              title="Afficher/Masquer les dossiers"
-              aria-label="Afficher/Masquer les dossiers"
+              title={t('nav.toggleFolders', undefined, lang)}
+              aria-label={t('nav.toggleFolders', undefined, lang)}
               class="env-muted env-hover rounded-lg p-1.5 text-base"
             >☰</button>
             <h1 class="env-text truncate text-xl font-bold tracking-tight">{folderDisplayName(activeMailbox)}</h1>
@@ -910,13 +910,13 @@
 
         <div class="flex min-h-0 flex-1 gap-5 overflow-hidden p-5">
           <!-- Carte liste des messages -->
-          <section aria-label="Liste des messages" class="env-card flex w-[26rem] shrink-0 flex-col overflow-hidden rounded-xl border shadow-2xs">
+          <section aria-label={t('mail.messageListAria', undefined, lang)} class="env-card flex w-[26rem] shrink-0 flex-col overflow-hidden rounded-xl border shadow-2xs">
             <div class="env-border space-y-2 border-b p-3.5">
               <div class="relative flex items-center">
                 <input
                   bind:value={searchQuery}
                   type="search"
-                  aria-label="Rechercher dans les messages"
+                  aria-label={t('mail.searchAria', undefined, lang)}
                   placeholder={t('mail.searchPlaceholder', undefined, lang)}
                   class="env-input w-full rounded-lg border py-1.5 pl-3 pr-8 text-xs"
                 />
@@ -924,7 +924,7 @@
                   <button
                     type="button"
                     onclick={() => (searchQuery = '')}
-                    aria-label="Effacer la recherche"
+                    aria-label={t('mail.clearSearch', undefined, lang)}
                     class="env-faint hover:env-text absolute right-2.5 text-xs"
                   >✕</button>
                 {/if}
@@ -982,7 +982,7 @@
                 </button>
               {:else}
                 <div class="env-faint p-10 text-center text-sm">
-                  {searchQuery || filterUnreadOnly || filterAttachmentsOnly ? 'Aucun message ne correspond aux filtres.' : 'Aucun message dans ce dossier.'}
+                  {searchQuery || filterUnreadOnly || filterAttachmentsOnly ? t('mail.noMessagesFiltered', undefined, lang) : t('mail.noMessagesFolder', undefined, lang)}
                 </div>
               {/each}
             </div>
@@ -1048,11 +1048,11 @@
         <h3 id="composer-title" class="env-text text-lg font-semibold">{t('mail.compose', undefined, lang)}</h3>
         <input bind:value={composeTo} type="text" aria-label="Destinataire" placeholder="Destinataire(s)" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
         <input bind:value={composeSubject} aria-label="Objet" placeholder="Objet" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
-        <textarea bind:value={composeText} rows="9" aria-label="Message" placeholder="Message..." required class="env-input w-full rounded-lg border p-3.5 text-sm"></textarea>
+        <textarea bind:value={composeText} rows="9" aria-label={t('mail.messageBody', undefined, lang)} placeholder={t('mail.messagePlaceholder', undefined, lang)} required class="env-input w-full rounded-lg border p-3.5 text-sm"></textarea>
         <div class="flex items-center justify-between gap-2 pt-1">
           <label class="env-input env-hover env-muted cursor-pointer rounded-xl border px-3.5 py-2 text-xs font-medium">
-            {uploading ? 'Upload...' : '📎 Joindre un fichier'}
-            <input type="file" multiple onchange={handleFileUpload} class="hidden" aria-label="Joindre des fichiers" />
+            {uploading ? t('mail.uploading', undefined, lang) : `📎 ${t('mail.attachFile', undefined, lang)}`}
+            <input type="file" multiple onchange={handleFileUpload} class="hidden" aria-label={t('mail.attachFiles', undefined, lang)} />
           </label>
           <div class="flex gap-2">
             <button type="button" onclick={() => (showComposer = false)} class="env-muted env-hover rounded-xl px-4 py-2 text-sm">Annuler</button>

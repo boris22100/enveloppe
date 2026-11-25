@@ -114,19 +114,19 @@
   </div>
 
   <section class="env-card max-w-xl space-y-4 rounded-xl border p-6 shadow-xs">
-    <h3 class="env-text text-base font-semibold">Changer le mot de passe du compte</h3>
+    <h3 class="env-text text-base font-semibold">{t('security.changePassword', undefined, activeLocale)}</h3>
     {#if pwdMessage}<p role="status" class="env-accent-soft rounded-lg p-3 text-xs font-medium">{pwdMessage}</p>{/if}
     {#if pwdError}<p role="alert" class="rounded-lg bg-red-500/15 p-3 text-xs font-medium text-red-400">{pwdError}</p>{/if}
     <form onsubmit={changePassword} class="space-y-3">
-      <input type="password" bind:value={currentPassword} aria-label="Mot de passe actuel" placeholder="Mot de passe actuel" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
-      <input type="password" bind:value={newPassword} aria-label="Nouveau mot de passe" placeholder="Nouveau mot de passe" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
-      <input type="password" bind:value={confirmPassword} aria-label="Confirmer le nouveau mot de passe" placeholder="Confirmer le nouveau mot de passe" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+      <input type="password" bind:value={currentPassword} aria-label={t('security.currentPassword', undefined, activeLocale)} placeholder={t('security.currentPassword', undefined, activeLocale)} required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+      <input type="password" bind:value={newPassword} aria-label={t('security.newPassword', undefined, activeLocale)} placeholder={t('security.newPassword', undefined, activeLocale)} required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+      <input type="password" bind:value={confirmPassword} aria-label={t('security.confirmNewPassword', undefined, activeLocale)} placeholder={t('security.confirmNewPassword', undefined, activeLocale)} required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
       <button class="env-accent-bg rounded-xl px-4 py-2.5 text-sm font-semibold hover:opacity-95">{t('common.update', undefined, activeLocale)}</button>
     </form>
   </section>
 
   <section class="env-card max-w-xl space-y-4 rounded-xl border p-6 shadow-xs">
-    <h3 class="env-text text-base font-semibold">Mots de passe d'application</h3>
+    <h3 class="env-text text-base font-semibold">{t('security.appPasswords', undefined, activeLocale)}</h3>
 
     {#if appError}
       <p role="alert" class="rounded-lg bg-red-500/15 p-3 text-xs font-medium text-red-400">{appError}</p>
@@ -170,13 +170,13 @@
           </button>
         </div>
       {:else}
-        <p class="env-faint py-2 text-xs">Aucun mot de passe d'application configuré.</p>
+        <p class="env-faint py-2 text-xs">{t('security.noAppPasswords', undefined, activeLocale)}</p>
       {/each}
     </div>
   </section>
 
   <section class="env-card max-w-xl space-y-4 rounded-xl border p-6 shadow-xs">
-    <h3 class="env-text text-base font-semibold">Signature de messagerie</h3>
+    <h3 class="env-text text-base font-semibold">{t('security.signatureTitle', undefined, activeLocale)}</h3>
     <p class="env-muted text-xs">{t('security.signatureHint', undefined, activeLocale)}</p>
     {#if sigSaved}
       <p role="status" class="env-accent-soft rounded-lg p-3 text-xs font-medium">{t('security.signatureSaved', undefined, activeLocale)}</p>
@@ -185,7 +185,7 @@
       <textarea
         bind:value={signature}
         rows="4"
-        aria-label="Signature de messagerie"
+        aria-label={t('security.signatureTitle', undefined, activeLocale)}
         placeholder={'-- \nPrénom Nom — Fonction\nhttps://exemple.fr'}
         class="env-input w-full rounded-lg border p-3.5 text-sm"
       ></textarea>
