@@ -210,7 +210,7 @@
           <button
             type="button"
             onclick={() => onRemoveAction(rule, act.id)}
-            aria-label="Supprimer l'action"
+            aria-label={t('sieve.deleteAction', undefined, activeLocale)}
             class="env-faint rounded-xl px-2 py-1.5 text-xs hover:text-red-400"
           >
             ✕

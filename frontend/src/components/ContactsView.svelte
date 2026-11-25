@@ -74,7 +74,7 @@
       }
       editingContact = null;
     } catch (err: any) {
-      editError = err?.message || 'Erreur réseau lors de la mise à jour.';
+      editError = err?.message || t('contacts.networkError', undefined, activeLocale);
     } finally {
       editSaving = false;
     }

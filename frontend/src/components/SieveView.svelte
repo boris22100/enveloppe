@@ -138,7 +138,7 @@
         rawCode = compileSieveScript(rules, vacation);
       }
     } catch (err: any) {
-      notify('err', err.message || 'Impossible de charger les scripts Sieve.');
+      notify('err', err.message || t('sieve.loadError', undefined, activeLocale));
     } finally {
       loading = false;
     }
@@ -155,7 +155,7 @@
       rules = [...rules, newRule];
       mode = 'visual';
       syncVisualToCode();
-      notify('ok', 'Règle pré-remplie depuis le message. Pense à enregistrer.');
+      notify('ok', t('sieve.prefilledRuleHint', undefined, activeLocale));
       onPrefillConsumed?.();
     }
   });
@@ -211,7 +211,7 @@
   async function handleValidate() {
     const codeToTest = mode === 'visual' && !hasAdvancedCode ? compileSieveScript(rules, vacation) : rawCode;
     if (!codeToTest.trim()) {
-      notify('err', 'Le script Sieve est vide.');
+      notify('err', t('sieve.scriptEmpty', undefined, activeLocale));
       return;
     }
     validating = true;
@@ -221,7 +221,7 @@
       if (res.valid) {
         notify('ok', 'Syntaxe Sieve valide selon Stalwart.');
       } else {
-        notify('err', 'Erreur Sieve : ' + (res.error || 'inconnue'));
+        notify('err', `${t('sieve.syntaxErrorPrefix', undefined, activeLocale)} ` + (res.error || 'inconnue'));
       }
     } catch (err: any) {
       notify('err', err.message);
@@ -233,7 +233,7 @@
   async function handleSave(activateAfter = false) {
     const codeToSave = mode === 'visual' && !hasAdvancedCode ? compileSieveScript(rules, vacation) : rawCode;
     if (!codeToSave.trim()) {
-      notify('err', 'Ajoute au moins une règle ou du code Sieve avant de pousser sur le serveur.');
+      notify('err', t('sieve.addRuleOrCodeHint', undefined, activeLocale));
       return;
     }
     rawCode = codeToSave;
@@ -248,7 +248,7 @@
         activate: shouldActivate
       });
       await loadAll(savedId);
-      notify('ok', shouldActivate ? 'Script Sieve enregistré et activé sur Stalwart.' : 'Script Sieve enregistré sur Stalwart.');
+      notify('ok', shouldActivate ? t('sieve.savedAndActivated', undefined, activeLocale) : t('sieve.savedOnServer', undefined, activeLocale));
     } catch (err: any) {
       notify('err', err.message);
     } finally {
@@ -528,7 +528,7 @@
 {#if scriptToDelete}
   <ConfirmModal
     title={t('sieve.deleteScript', undefined, activeLocale)}
-    message={'Voulez-vous vraiment supprimer le script « ' + scriptToDelete.name + ' » du serveur Stalwart ? Cette action est irréversible.'}
+    message={`${t('sieve.confirmDeleteScriptPrefix', undefined, activeLocale)} ` + scriptToDelete.name + ` ${t('sieve.confirmDeleteScriptSuffix', undefined, activeLocale)}`}
     confirmLabel={t('sieve.deleteScriptConfirm', undefined, activeLocale)}
     onConfirm={confirmDeleteScript}
     onCancel={() => (scriptToDelete = null)}

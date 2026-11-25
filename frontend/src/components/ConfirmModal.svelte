@@ -2,7 +2,7 @@
   let {
     title,
     message,
-    confirmLabel = 'Supprimer',
+    confirmLabel,
     danger = true,
     onConfirm,
     onCancel

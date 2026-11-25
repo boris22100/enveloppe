@@ -424,7 +424,7 @@ interface ContactEntry { name: string; email: string; }
       formattedDate ? `Date : ${formattedDate}` : '',
       evDescription ? `\nNotes :\n${evDescription}` : '',
       '',
-      'Le fichier invitation.ics est joint à cet e-mail.'
+      t('calendar.icsAttached', undefined, activeLocale)
     ].filter((line, idx, arr) => !(line === '' && arr[idx - 1] === '')).join('\n');
 
     await sendEmail(
@@ -486,7 +486,7 @@ interface ContactEntry { name: string; email: string; }
       whenTxt ? `Nouvelle date : ${whenTxt}` : '',
       ev.description ? `\nNotes :\n${ev.description}` : '',
       '',
-      'Le fichier invitation.ics mis à jour est joint à cet e-mail.'
+      t('calendar.icsUpdatedAttached', undefined, activeLocale)
     ].filter((l, idx, arr) => !(l === '' && arr[idx - 1] === '')).join('\n');
 
     await sendEmail(
@@ -530,7 +530,7 @@ interface ContactEntry { name: string; email: string; }
       uid: ev.uid || ev.id || undefined,
       title: evTitle,
       start: evStart,
-      description: ev.description ? `Annulé : ${ev.description}` : 'Événement annulé.',
+      description: ev.description ? `Annulé : ${ev.description}` : t('calendar.eventCancelled', undefined, activeLocale),
       sequence: typeof ev?.sequence === 'number' ? ev.sequence + 1 : 1,
       organizerEmail: sender || (localStorage.getItem('enveloppe_calendar_organizer_v1')?.trim() || ''),
       attendees: recipients,
@@ -546,7 +546,7 @@ interface ContactEntry { name: string; email: string; }
       `L\'événement suivant a été annulé : ${evTitle}`,
       whenTxt ? `Date prévue : ${whenTxt}` : '',
       '',
-      'Le fichier invitation.ics (annulation) est joint à cet e-mail.'
+      t('calendar.icsCancelledAttached', undefined, activeLocale)
     ].filter((l, idx, arr) => !(l === '' && arr[idx - 1] === '')).join('\n');
 
     await sendEmail(
@@ -888,7 +888,7 @@ interface ContactEntry { name: string; email: string; }
           <input
             bind:value={title}
             aria-label="Titre"
-            placeholder={kind === 'birthday' ? 'Nom de la personne' : kind === 'task' ? 'Titre de la tâche' : "Titre de l'événement"}
+            placeholder={kind === 'birthday' ? 'Nom de la personne' : kind === 'task' ? t('calendar.taskTitlePlaceholder', undefined, activeLocale) : "Titre de l'événement"}
             required
             class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
           />
@@ -1036,7 +1036,7 @@ interface ContactEntry { name: string; email: string; }
 {#if eventToDelete}
   <ConfirmModal
     title="Supprimer l'élément du calendrier"
-    message={'Voulez-vous vraiment supprimer « ' + eventToDelete.title + ' » ? Cette action est définitive.'}
+    message={`${t('calendar.confirmDeleteItemPrefix', undefined, activeLocale)} ` + eventToDelete.title + ` ${t('calendar.definitiveSuffix', undefined, activeLocale)}`}
     confirmLabel={t('common.delete', undefined, activeLocale)}
     onConfirm={confirmDeleteEvent}
     onCancel={() => (eventToDelete = null)}

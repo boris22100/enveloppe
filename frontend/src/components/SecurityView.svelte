@@ -34,7 +34,7 @@
     try {
       appPasswords = await fetchAppPasswords(account.id);
     } catch (err: any) {
-      appError = err.message || 'Impossible de charger les mots de passe d’application.';
+      appError = err.message || t('security.appPasswordsLoadError', undefined, activeLocale);
     }
   }
 
@@ -62,11 +62,11 @@
     }
     try {
       await updateAccountPassword(account.id, currentPassword, newPassword);
-      pwdMessage = 'Mot de passe mis à jour. Déconnexion en cours...';
+      pwdMessage = t('security.passwordUpdatedLogout', undefined, activeLocale);
       currentPassword = newPassword = confirmPassword = '';
       setTimeout(() => onLogout(), 1200);
     } catch (err: any) {
-      pwdError = err.message || 'Impossible de modifier le mot de passe.';
+      pwdError = err.message || t('security.passwordUpdateError', undefined, activeLocale);
     }
   }
 

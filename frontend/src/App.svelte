@@ -218,7 +218,7 @@
       id: m.id,
       fromLabel: m.from?.[0]?.name || m.from?.[0]?.email || 'Inconnu',
       receivedAt: m.receivedAt,
-      preview: m.preview || '(Sans aperçu)',
+      preview: m.preview || t('mail.noPreview', undefined, lang),
       isUnread: m.isUnread
     }));
   });
@@ -231,7 +231,7 @@
   }
 
   function folderDisplayName(box: Mailbox | null): string {
-    if (!box) return 'Messages';
+    if (!box) return t('mail.messagesCount', undefined, lang);
     return (box.role && ROLE_META[box.role]?.label) || box.name;
   }
 
@@ -368,7 +368,7 @@
       : '';
     const sig = getAccountSignature(activeAccountId);
     const sigBlock = sig ? '\n\n' + sig : '';
-    return sigBlock + '\n\n--- Le ' + dateStr + ', ' + who + ' a écrit :\n' + quoted;
+    return sigBlock + '\n\n--- Le ' + dateStr + ', ' + who + ` ${t('mail.wroteSuffix', undefined, lang)}\n` + quoted;
   }
 
   function startReply(all = false) {
@@ -421,9 +421,9 @@
         activeBody = null;
       }
       mailboxes = await fetchMailboxes(activeAccountId);
-      showToast('Déplacé vers « ' + folderDisplayName(targetBox) + ' ».');
+      showToast(`${t('mail.movedToPrefix', undefined, lang)} ` + folderDisplayName(targetBox) + ' ».');
     } catch (err: any) {
-      showToast(err?.message || 'Échec du déplacement du message.');
+      showToast(err?.message || t('mail.moveFailed', undefined, lang));
     }
   }
 
@@ -444,11 +444,11 @@
     const label = mail.subject || '(Sans objet)';
 
     confirmDialog = {
-      title: permanent ? 'Supprimer définitivement le message' : 'Déplacer vers la corbeille',
+      title: permanent ? t('mail.deleteMessageTitle', undefined, lang) : t('mail.moveToTrashTitle', undefined, lang),
       message: permanent
-        ? 'Voulez-vous vraiment supprimer définitivement « ' + label + ' » ? Cette action est irréversible.'
-        : 'Voulez-vous vraiment déplacer « ' + label + ' » dans la corbeille ?',
-      confirmLabel: permanent ? 'Supprimer définitivement' : 'Mettre à la corbeille',
+        ? `${t('mail.confirmDeleteMessage', undefined, lang)} ` + label + ` ${t('mail.irreversibleSuffix', undefined, lang)}`
+        : `${t('mail.confirmMoveTrash', undefined, lang)} ` + label + ` ${t('mail.inTrashSuffix', undefined, lang)}`,
+      confirmLabel: permanent ? t('common.deletePermanent', undefined, lang) : t('mail.putInTrash', undefined, lang),
       onConfirm: async () => {
         if (permanent) await destroyEmail(accId, mail.id);
         else await updateEmailMailbox(accId, mail.id, trash!.id);
@@ -472,7 +472,7 @@
       if (activeMailboxId && ids.includes(activeMailboxId)) {
         await loadFolderEmails(accId, activeMailboxId);
       }
-      showToast(count > 0 ? count + ' message(s) marqué(s) comme lu(s) dans « ' + folderDisplayName(box) + ' ».' : 'Aucun message non lu dans « ' + folderDisplayName(box) + ' ».');
+      showToast(count > 0 ? count + ` ${t('mail.markedReadPrefix', undefined, lang)} ` + folderDisplayName(box) + ' ».' : `${t('mail.noneUnreadPrefix', undefined, lang)} ` + folderDisplayName(box) + ' ».');
     } finally {
       batchBusy = false;
     }
@@ -486,13 +486,13 @@
     const ids = getMailboxSubtreeIds(mailboxes, box.id);
 
     confirmDialog = {
-      title: isTrash ? t('mail.emptyTrash', undefined, lang) : isJunk ? t('mail.deleteAllJunk', undefined, lang) : 'Vider « ' + box.name + ' »',
+      title: isTrash ? t('mail.emptyTrash', undefined, lang) : isJunk ? t('mail.deleteAllJunk', undefined, lang) : `${t('mail.emptyFolderPrefix', undefined, lang)} ` + box.name + ' »',
       message: isTrash
-        ? 'Voulez-vous vraiment supprimer définitivement tous les messages de la corbeille (et de ses sous-dossiers) ? Cette action est irréversible.'
+        ? t('mail.confirmEmptyTrash', undefined, lang)
         : isJunk
-          ? 'Voulez-vous vraiment supprimer définitivement tous les messages indésirables ? Cette action est irréversible.'
-          : 'Voulez-vous vraiment supprimer définitivement tous les messages de « ' + box.name + ' » ? Cette action est irréversible.',
-      confirmLabel: isTrash ? t('mail.emptyTrash', undefined, lang) : isJunk ? t('mail.deleteAllJunk', undefined, lang) : 'Supprimer tout',
+          ? t('mail.confirmEmptyJunk', undefined, lang)
+          : `${t('mail.confirmEmptyFolderPrefix', undefined, lang)} ` + box.name + ` ${t('mail.irreversibleSuffix', undefined, lang)}`,
+      confirmLabel: isTrash ? t('mail.emptyTrash', undefined, lang) : isJunk ? t('mail.deleteAllJunk', undefined, lang) : t('common.deleteAll', undefined, lang),
       onConfirm: async () => {
         const count = await emptyMailboxes(accId, ids);
         confirmDialog = null;
@@ -503,7 +503,7 @@
         }
         mailboxes = await fetchMailboxes(accId);
         quota = await fetchQuota(accId);
-        showToast(count > 0 ? count + ' message(s) supprimé(s) définitivement.' : 'Ce dossier était déjà vide.');
+        showToast(count > 0 ? count + ` ${t('mail.deletedPermSuffix', undefined, lang)}` : t('mail.folderAlreadyEmpty', undefined, lang));
       }
     };
   }
@@ -524,7 +524,7 @@
           if (fallback) await selectMailbox(fallback.id);
           else { activeMailboxId = null; emails = []; selectedEmail = null; activeBody = null; }
         }
-        showToast('Dossier « ' + box.name + ' » supprimé.');
+        showToast(`${t('mail.folderDeletedPrefix', undefined, lang)} ` + box.name + ` ${t('mail.folderDeletedSuffix', undefined, lang)}`);
       }
     };
   }
@@ -579,7 +579,7 @@
     composeTo = composeSubject = composeText = '';
     composeFiles = [];
     showComposer = false;
-    showToast('Message envoyé.');
+    showToast(t('mail.messageSent', undefined, lang));
   }
 
   function handleKeydown(e: KeyboardEvent) {
@@ -646,10 +646,10 @@
       } else if (action === 'emptyJunk' || action === 'emptyTrash') {
         requestEmptyMailbox(box);
       } else if (action === 'newSubfolder') {
-        const name = prompt('Nom du sous-dossier dans « ' + folderDisplayName(box) + ' » :');
+        const name = prompt(`${t('mail.subfolderPromptPrefix', undefined, lang)} ` + folderDisplayName(box) + ' » :');
         if (name?.trim()) { await createMailbox(accId, name.trim(), box.id); mailboxes = await fetchMailboxes(accId); }
       } else if (action === 'renameFolder') {
-        const name = prompt('Nouveau nom du dossier :', box.name);
+        const name = prompt(t('mail.renameFolderPrompt', undefined, lang), box.name);
         if (name?.trim()) { await renameMailbox(accId, box.id, name.trim()); mailboxes = await fetchMailboxes(accId); }
       } else if (action === 'deleteFolder') {
         requestDeleteFolder(box);
@@ -667,7 +667,7 @@
 {/if}
 
 {#if !loaded}
-  <div class="env-app env-muted flex h-screen items-center justify-center text-sm">Chargement...</div>
+  <div class="env-app env-muted flex h-screen items-center justify-center text-sm">{t('common.loading', undefined, lang)}</div>
 {:else if accounts.length === 0}
   <LoginPage onLoggedIn={loadAccounts} />
 {:else}
