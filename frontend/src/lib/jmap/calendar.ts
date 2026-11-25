@@ -20,6 +20,7 @@ export interface JSCalendarEvent {
   duration?: string;
   description?: string;
   showWithoutTime?: boolean;
+  sequence?: number;
   categories?: Record<string, boolean>;
   participants?: Record<string, { email?: string; name?: string }>;
   calendarIds?: Record<string, boolean>;
@@ -120,12 +121,20 @@ export async function importEventsJSON(accountId: string, calendarId: string, js
 export async function updateEvent(
   accountId: string,
   eventId: string,
-  patch: Partial<Pick<JSCalendarEvent, 'title' | 'start' | 'description' | 'showWithoutTime' | 'categories'>> & { end?: string }
+  patch: Partial<Pick<JSCalendarEvent, 'title' | 'start' | 'description' | 'showWithoutTime' | 'categories' | 'sequence' | 'participants'>> & { end?: string }
 ) {
-  const accId = await getPrimaryAccountId(accountId);
-  await jmapCall(accountId, [
-    ['CalendarEvent/set', { accountId: accId, update: { [eventId]: patch } }, 'u0']
-  ]);
+  const accId = await getPrimaryAccountId(accountId, CAP);
+  const cleanPatch: Record<string, any> = { ...patch };
+  if (typeof cleanPatch.start === 'string' && cleanPatch.start.length === 16) {
+    cleanPatch.start = `${cleanPatch.start}:00`;
+  }
+  const res = await jmapCall(accountId, [
+    ['CalendarEvent/set', { accountId: accId, update: { [eventId]: cleanPatch } }, 'u0']
+  ], [CAP]);
+  const result = res.methodResponses?.[0]?.[1];
+  if (result?.notUpdated?.[eventId]) {
+    throw new Error(result.notUpdated[eventId].description || "Mise à jour de l'événement refusée");
+  }
 }
 
 

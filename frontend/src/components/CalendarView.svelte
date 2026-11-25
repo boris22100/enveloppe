@@ -106,6 +106,12 @@ interface ContactEntry { name: string; email: string; }
   let inviteesText = $state('');
   let saving = $state(false);
   let inviteSendStatus = $state('');
+  let editingEvent = $state<JSCalendarEvent | null>(null);
+  let editTitle = $state('');
+  let editStart = $state('');
+  let editDescription = $state('');
+  let editInviteesText = $state('');
+  let updating = $state(false);
   let draggedEvent = $state<JSCalendarEvent | null>(null);
   let dragOverYmd = $state<string | null>(null);
 
@@ -214,62 +220,72 @@ interface ContactEntry { name: string; email: string; }
     cursor = d;
   }
 
-  function shiftIsoDateKeepingDuration(isoStr: string, deltaDays: number): string {
-    const parsed = new Date(isoStr);
-    if (Number.isNaN(parsed.getTime())) return isoStr;
-    parsed.setDate(parsed.getDate() + deltaDays);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}T${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`;
+  function toDatetimeLocal(iso: string): string {
+    if (!iso) return '';
+    return iso.length >= 16 ? iso.slice(0, 16) : iso;
   }
 
-  function handleEventDragStart(e: DragEvent, ev: JSCalendarEvent) {
-    e.stopPropagation();
-    draggedEvent = ev;
-    if (e.dataTransfer) {
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', ev.id || ev.title);
+  function extractParticipantEmails(ev: any): string[] {
+    if (!ev?.participants || typeof ev.participants !== 'object') return [];
+    return Object.values(ev.participants)
+      .map((p: any) => (typeof p === 'string' ? p : (p?.email || p?.address || p?.mail || '')))
+      .map((s: string) => s.trim())
+      .filter((s: string) => s.includes('@'));
+  }
+
+  function openEditModal(ev: JSCalendarEvent, overrideYmd?: string, overrideHour?: string) {
+    selectedEvent = null;
+    editingEvent = ev;
+    editTitle = ev.title || '';
+    const baseIso = toDatetimeLocal(ev.start || '');
+    if (overrideYmd) {
+      const timePart = overrideHour ? `${overrideHour}:00` : (baseIso.length >= 16 ? baseIso.slice(11, 16) : '09:00');
+      editStart = `${overrideYmd}T${timePart}`;
+    } else {
+      editStart = baseIso;
     }
+    editDescription = ev.description || '';
+    editInviteesText = extractParticipantEmails(ev).join(', ');
   }
 
-  function handleEventDragEnd() {
-    draggedEvent = null;
-    dragOverYmd = null;
-  }
-
-  function computeDayDelta(srcIso: string, targetYmd: string): number {
-    const [sy, sm, sd] = srcIso.slice(0, 10).split('-').map(Number);
-    const [ty, tm, td] = targetYmd.split('-').map(Number);
-    if (!sy || !sm || !sd || !ty || !tm || !td) return 0;
-    const utcSrc = Date.UTC(sy, sm - 1, sd);
-    const utcDst = Date.UTC(ty, tm - 1, td);
-    return Math.round((utcDst - utcSrc) / 86400000);
-  }
-
-  async function handleDropEventOnDate(e: DragEvent, targetYmd: string) {
+  async function handleUpdateSave(e: Event) {
     e.preventDefault();
-    e.stopPropagation();
-    const ev = draggedEvent;
-    draggedEvent = null;
-    dragOverYmd = null;
-    if (!ev || !ev.id || !ev.start) return;
-    const deltaDays = computeDayDelta(ev.start, targetYmd);
-    if (deltaDays === 0) return;
-    const nextStart = shiftIsoDateKeepingDuration(ev.start, deltaDays);
-    const nextEnd = (ev as any).end ? shiftIsoDateKeepingDuration((ev as any).end, deltaDays) : undefined;
+    if (!editingEvent?.id) return;
+    updating = true;
     try {
-      await updateEvent(accountId, ev.id, { start: nextStart, ...(nextEnd ? { end: nextEnd } : {}) });
-      try {
-        await dispatchEventUpdateIcs(ev, nextStart);
-      } catch (mailErr: any) {
-        console.error('Modification .ics:', mailErr);
-        inviteSendStatus = mailErr?.message || "Échec de l'envoi de la modification (.ics).";
-        setTimeout(() => (inviteSendStatus = ''), 6000);
+      const nextSeq = typeof editingEvent.sequence === 'number' ? editingEvent.sequence + 1 : 1;
+      await updateEvent(accountId, editingEvent.id, {
+        title: editTitle.trim() || editingEvent.title,
+        start: editStart,
+        description: editDescription,
+        sequence: nextSeq
+      });
+      const recipients = editInviteesText
+        .split(/[,;\s]+/)
+        .map((s) => s.trim())
+        .filter((s) => s.includes('@'));
+      if (recipients.length > 0) {
+        try {
+          await dispatchEventUpdateIcs(
+            {
+              ...editingEvent,
+              title: editTitle.trim() || editingEvent.title,
+              description: editDescription,
+              sequence: nextSeq,
+              participants: Object.fromEntries(recipients.map((em, i) => [`p${i + 1}`, { email: em }]))
+            },
+            editStart
+          );
+        } catch (mailErr: any) {
+          console.error('Modification .ics:', mailErr);
+          inviteSendStatus = mailErr?.message || "Échec de l'envoi de la modification (.ics).";
+          setTimeout(() => (inviteSendStatus = ''), 6000);
+        }
       }
+      editingEvent = null;
       await load();
-    } catch (err: any) {
-      console.error('Déplacement événement:', err);
-      inviteSendStatus = err?.message || "Échec du déplacement de l'événement.";
-      setTimeout(() => (inviteSendStatus = ''), 6000);
+    } finally {
+      updating = false;
     }
   }
 
@@ -471,11 +487,8 @@ interface ContactEntry { name: string; email: string; }
         <div
           role="button"
           tabindex="0"
-          ondragover={(e) => { if (draggedEvent) { e.preventDefault(); dragOverYmd = cell.ymd; } }}
-          ondragleave={() => { if (dragOverYmd === cell.ymd) dragOverYmd = null; }}
-          ondrop={(e) => handleDropEventOnDate(e, cell.ymd)}
           onclick={(e) => {
-            if (e.target instanceof Element && e.target.closest('button, [draggable="true"]')) return;
+            if (e.target instanceof Element && e.target.closest('button')) return;
             openCreateModal(cell.ymd);
           }}
           onkeydown={(e) => {
@@ -499,16 +512,24 @@ interface ContactEntry { name: string; email: string; }
               <div
                 role="button"
                 tabindex="0"
-                draggable={true}
-                ondragstart={(e) => handleEventDragStart(e, ev)}
-                ondragend={handleEventDragEnd}
                 onclick={(e) => { e.stopPropagation(); selectedEvent = ev; }}
                 onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); selectedEvent = ev; } }}
-                class="env-accent-soft group/ev flex cursor-grab items-center justify-between gap-1 rounded-lg px-2 py-0.5 text-xs font-medium active:cursor-grabbing {draggedEvent?.id === ev.id ? 'opacity-60' : ''}"
+                class="env-accent-soft group/ev flex items-center justify-between gap-1 rounded-lg px-2 py-0.5 text-xs font-medium"
               >
                 <span class="truncate">
                   {badgeFor(ev)}{#if !ev.showWithoutTime}<span class="font-mono text-[11px] opacity-80">{formatTime(ev.start)} </span>{/if}{ev.title}
                 </span>
+                {#if ev.id}
+                  <button
+                    type="button"
+                    title="Modifier"
+                    aria-label="Modifier {ev.title}"
+                    onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
+                    class="shrink-0 text-xs opacity-0 hover:opacity-100 group-hover/ev:opacity-80"
+                  >
+                    ✏️
+                  </button>
+                {/if}
                 {#if ev.id}
                   <button
                     type="button"
@@ -767,6 +788,69 @@ interface ContactEntry { name: string; email: string; }
   {#if inviteSendStatus}
     <p role="status" class="env-accent-soft mt-3 rounded-xl px-4 py-2.5 text-xs font-medium">{inviteSendStatus}</p>
   {/if}
+    </div>
+  </div>
+{/if}
+
+
+{#if editingEvent}
+  <div
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cal-edit-title"
+    tabindex="-1"
+    onclick={() => !updating && (editingEvent = null)}
+    onkeydown={(e) => e.key === 'Escape' && !updating && (editingEvent = null)}
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
+  >
+    <div role="presentation" onclick={(e) => e.stopPropagation()} class="w-full max-w-md">
+      <form onsubmit={handleUpdateSave} class="env-card space-y-4 rounded-xl border p-7 shadow-2xl">
+        <div class="flex items-center justify-between">
+          <h3 id="cal-edit-title" class="env-text text-lg font-semibold">Modifier l'événement</h3>
+          <button type="button" onclick={() => (editingEvent = null)} aria-label="Fermer" class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
+        </div>
+
+        <div class="space-y-3">
+          <input
+            bind:value={editTitle}
+            aria-label="Titre"
+            placeholder="Titre de l'événement"
+            required
+            class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
+          />
+          <input
+            bind:value={editStart}
+            type="datetime-local"
+            aria-label="Date et heure"
+            required
+            class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
+          />
+          <div>
+            <label for="cal-edit-invitees" class="env-muted mb-1.5 block text-xs">Participants (emails séparés par des virgules)</label>
+            <input
+              id="cal-edit-invitees"
+              bind:value={editInviteesText}
+              placeholder="alice@domaine.fr, bob@domaine.fr"
+              autocomplete="off"
+              class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
+            />
+          </div>
+          <textarea
+            bind:value={editDescription}
+            rows="3"
+            aria-label="Notes"
+            placeholder="Notes (optionnel)"
+            class="env-input w-full rounded-lg border p-3 text-sm"
+          ></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" onclick={() => (editingEvent = null)} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">Annuler</button>
+          <button disabled={updating} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold disabled:opacity-50">
+            {updating ? 'Mise à jour...' : 'Enregistrer les modifications'}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 {/if}
