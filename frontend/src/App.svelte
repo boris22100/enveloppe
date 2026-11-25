@@ -814,6 +814,45 @@
           </div>
         {/if}
 
+        <div
+          role="group"
+          aria-label="Langue / Language"
+          class="env-muted flex items-center rounded-lg text-xs font-medium {railExpanded ? 'w-full justify-between px-3 py-1.5' : 'h-9 w-9 justify-center'}"
+        >
+          {#if railExpanded}
+            <span class="truncate">🌐 Langue</span>
+            <div class="inline-flex items-center gap-1">
+              <button
+                type="button"
+                onclick={() => switchLang('fr')}
+                aria-pressed={lang === 'fr'}
+                class={lang === 'fr' ? 'env-text rounded px-1.5 py-0.5 font-semibold underline' : 'rounded px-1.5 py-0.5 opacity-70 hover:opacity-100'}
+              >
+                FR
+              </button>
+              <span class="opacity-40">|</span>
+              <button
+                type="button"
+                onclick={() => switchLang('en')}
+                aria-pressed={lang === 'en'}
+                class={lang === 'en' ? 'env-text rounded px-1.5 py-0.5 font-semibold underline' : 'rounded px-1.5 py-0.5 opacity-70 hover:opacity-100'}
+              >
+                EN
+              </button>
+            </div>
+          {:else}
+            <button
+              type="button"
+              onclick={() => switchLang(lang === 'fr' ? 'en' : 'fr')}
+              title={lang === 'fr' ? 'Passer en anglais (EN)' : 'Switch to French (FR)'}
+              aria-label={lang === 'fr' ? 'Passer en anglais (EN)' : 'Switch to French (FR)'}
+              class="env-hover flex h-full w-full items-center justify-center rounded-lg font-semibold uppercase"
+            >
+              {lang}
+            </button>
+          {/if}
+        </div>
+
         <button type="button" onclick={cycleTheme} title={themeLabel} aria-label={themeLabel} class="env-muted env-hover flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
           <span>{themeIcon}</span>{#if railExpanded}<span class="truncate">{themeLabel}</span>{/if}
         </button>
