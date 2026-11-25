@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { CALENDAR_VIEW_STORAGE_KEY, loadCalendarView, saveCalendarView, type CalendarViewMode } from '../lib/calendarViewStorage';
   import { jmapCall, sendEmail, uploadAttachment } from '../lib/jmap/client';
   import { buildIcsInvitation, createIcsFile } from '../lib/ics';
   import {
@@ -94,19 +95,9 @@ interface ContactEntry { name: string; email: string; }
 
   let defaultCalId = $state('');
   let events = $state<JSCalendarEvent[]>([]);
-  const VIEW_STORAGE_KEY = 'enveloppe_calendar_view_v1';
-  function loadSavedView(): 'month' | 'week' | 'day' {
-    try {
-      const saved = localStorage.getItem(VIEW_STORAGE_KEY);
-      if (saved === 'month' || saved === 'week' || saved === 'day') return saved;
-    } catch {}
-    return 'month';
-  }
-  let view = $state<'month' | 'week' | 'day'>(loadSavedView());
+  let view = $state<CalendarViewMode>(loadCalendarView());
   $effect(() => {
-    try {
-      localStorage.setItem(VIEW_STORAGE_KEY, view);
-    } catch {}
+    saveCalendarView(view);
   });
   let cursor = $state(new Date());
 
