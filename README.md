@@ -150,10 +150,3 @@ Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
 * **Édition participants & ergonomie des vues** : édition directe des participants (badges avec retrait rapide et persistance sur l'événement), bouton d'édition (`✏️`) en vue journalière, et persistance de la vue (`month` / `week` / `day`) dans `localStorage` (`enveloppe_calendar_view_v1`) au rechargement (`F5`).
 * **Page de connexion** : affichage de la version dynamique (`v0.8.2` via `/api/version`) à côté d'**Enveloppe JMAP** et remplacement de l'icône enveloppe par `/pwa-192.png`.
 * **Tests & qualité** : tests Vitest étendus sur les mises à jour/annulations `.ics` (`ics.spec.ts`) et la persistance de la vue calendrier (`calendarViewStorage.spec.ts`), plus correction des alertes `svelte-check` (`0 error`).
-
-## Nouveautés v0.8.0
-* **Navigation, thèmes & contacts** : barre latérale ouverte par défaut (mémorisée), thèmes **BoWiz**, **Sombre** et **Clair**, clic direct sur une adresse e-mail pour composer un message pré-rempli, et édition rapide des contacts (`✏️`).
-* **Récurrences JSCalendar & .ics** : expansion des règles de récurrence (`daily`, `weekly`, `monthly`, `yearly`, `interval`, `count`, `until`) avec `recurrenceOverrides`, invitations `.ics` à la création et annulations `.ics` à la suppression.
-* **Recherche serveur JMAP & Drag & Drop** : recherche `Email/query` + `Email/get` côté serveur (`searchEmails`), glisser-déposer d'e-mails vers les dossiers et d'événements vers un autre jour en vue mois.
-* **Composeur, lecture & bilingue FR/EN** : retrait individuel des pièces jointes, blocage/affichage des images externes dans `MailReader.svelte`, sélecteur `FR | EN`, et version dynamique `/api/version`.
-* **Industrialisation backend** : découpage de `backend/main.go` vers `backend/internal/httpapi` (`middleware.go`, `oidc.go`, `handlers.go`, `router.go`).
