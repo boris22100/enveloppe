@@ -136,11 +136,14 @@
   }
 
   function openCreateModal(ymd: string, hour = '09') {
+    draggedEvent = null;
+    dragOverYmd = null;
+    selectedEvent = null;
     kind = 'event';
     title = '';
     description = '';
     inviteesText = '';
-    start = ymd + 'T' + hour + ':00';
+    start = `${ymd}T${hour}:00`;
     showModal = true;
   }
 
@@ -456,8 +459,16 @@
           ondragover={(e) => { if (draggedEvent) { e.preventDefault(); dragOverYmd = cell.ymd; } }}
           ondragleave={() => { if (dragOverYmd === cell.ymd) dragOverYmd = null; }}
           ondrop={(e) => handleDropEventOnDate(e, cell.ymd)}
-          onclick={() => openCreateModal(cell.ymd)}
-          onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && openCreateModal(cell.ymd)}
+          onclick={(e) => {
+            if (e.target instanceof Element && e.target.closest('button, [draggable="true"]')) return;
+            openCreateModal(cell.ymd);
+          }}
+          onkeydown={(e) => {
+            if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+              e.preventDefault();
+              openCreateModal(cell.ymd);
+            }
+          }}
           class="env-card env-hover flex cursor-pointer flex-col overflow-hidden rounded-lg border p-2 text-left transition-colors {cell.inMonth ? '' : 'opacity-45'} {dragOverYmd === cell.ymd ? 'ring-2 ring-[var(--env-accent)]' : ''}"
         >
           <button
