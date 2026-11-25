@@ -63,7 +63,7 @@
       </div>
       <p class="env-muted truncate text-sm">{from}</p>
       {#if to}
-        <p class="env-faint truncate text-xs">{'Ã'} : {to}</p>
+        <p class="env-faint truncate text-xs">À : {to}</p>
       {/if}
       {#if receivedAt}
         <p class="env-faint text-xs">{new Date(receivedAt).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}</p>
@@ -74,7 +74,7 @@
       <button
         type="button"
         onclick={onReply}
-        title={`${'RÃ©pondre'} (R)`}
+        title="Répondre (R)"
         class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium"
       >
         ↩️ Répondre
@@ -82,7 +82,7 @@
       <button
         type="button"
         onclick={onReplyAll}
-        title={`${'RÃ©pondre Ã  tous'} (A)`}
+        title="Répondre à tous (A)"
         class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium"
       >
         ↩️↩️ Tous
@@ -90,7 +90,7 @@
       <button
         type="button"
         onclick={onForward}
-        title={`${'TransfÃ©rer'} (F)`}
+        title="Transférer (F)"
         class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium"
       >
         ↪️ Transférer
@@ -150,7 +150,7 @@
   <div class="flex-1 overflow-auto p-6">
     {#if html}
       <iframe
-        title={'Contenu du message'}
+        title="Contenu du message"
         sandbox="allow-popups allow-popups-to-escape-sandbox"
         {srcdoc}
         class="h-full w-full rounded-lg border-0"

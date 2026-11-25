@@ -46,7 +46,7 @@
       onscroll={syncScroll}
       onkeydown={onKeydown}
       spellcheck="false"
-      aria-label={'Ãditeur de code Sieve'}
+      aria-label="Éditeur de code Sieve"
       placeholder={'require ["fileinto"];\n\nif header :contains "From" "exemple@domaine.fr" {\n    fileinto "Archives";\n}'}
       class="absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent p-4 font-mono text-xs leading-6 text-transparent caret-[#48B17F] selection:bg-[var(--env-accent)]/30 focus:outline-none"
     ></textarea>

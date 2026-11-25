@@ -32,17 +32,17 @@
         onsubmit={onSubmit}
         class="env-card space-y-4 rounded-xl border p-7 shadow-2xl"
       >
-        <h3 id="new-sieve-title" class="env-text text-lg font-semibold">{'Nouveau script Sieve'}</h3>
+        <h3 id="new-sieve-title" class="env-text text-lg font-semibold">Nouveau script Sieve</h3>
         <input
           bind:value={title}
-          aria-label={'Nom du nouveau script'}
+          aria-label="Nom du nouveau script"
           placeholder="Ex : vacances, tri-pro, enveloppe"
           required
           class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
         />
         <div class="flex justify-end gap-2">
-          <button type="button" onclick={onClose} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">{'Annuler'}</button>
-          <button class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold">{'CrÃ©er'}</button>
+          <button type="button" onclick={onClose} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">Annuler</button>
+          <button class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold">Créer</button>
         </div>
       </form>
     </div>

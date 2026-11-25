@@ -29,17 +29,13 @@
   }
 
   let themeLabel = $derived(
-    themeMode === 'bowiz'
-      ? 'ThÃ¨me BoWiz'
-      : themeMode === 'dark'
-        ? 'ThÃ¨me Sombre'
-        : 'ThÃ¨me Clair'
+    themeMode === 'bowiz' ? 'Thème : BoWiz' : themeMode === 'dark' ? 'Thème : Sombre' : 'Thème : Clair'
   );
   let themeIcon = $derived(
     themeMode === 'bowiz' ? '💠' : themeMode === 'dark' ? '🌙' : '☀️'
   );
 
-  let appVersion = $state(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.8.3');
+  let appVersion = $state(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.8.4');
   let accounts = $state<Account[]>([]);
   let loaded = $state(false);
   let activeAccountId = $state<string | null>(null);
@@ -214,7 +210,7 @@
       id: m.id,
       fromLabel: m.from?.[0]?.name || m.from?.[0]?.email || 'Inconnu',
       receivedAt: m.receivedAt,
-      preview: m.preview || '(Sans aperÃ§u)',
+      preview: m.preview || '(Sans aperçu)',
       isUnread: m.isUnread
     }));
   });
@@ -364,7 +360,7 @@
       : '';
     const sig = getAccountSignature(activeAccountId);
     const sigBlock = sig ? '\n\n' + sig : '';
-    return sigBlock + '\n\n--- Le ' + dateStr + ', ' + who + ` ${'a Ã©crit :'}\n` + quoted;
+    return sigBlock + '\n\n--- Le ' + dateStr + ', ' + who + ' a écrit :\n' + quoted;
   }
 
   function startReply(all = false) {
@@ -417,9 +413,9 @@
         activeBody = null;
       }
       mailboxes = await fetchMailboxes(activeAccountId);
-      showToast(`${'DÃ©placÃ© vers Â«'} ` + folderDisplayName(targetBox) + ' ».');
+      showToast('Déplacé vers « ' + folderDisplayName(targetBox) + ' ».');
     } catch (err: any) {
-      showToast(err?.message || 'Ãchec du dÃ©placement du message.');
+      showToast(err?.message || 'Échec du déplacement du message.');
     }
   }
 
@@ -440,11 +436,11 @@
     const label = mail.subject || '(Sans objet)';
 
     confirmDialog = {
-      title: permanent ? 'Supprimer dÃ©finitivement le message' : 'DÃ©placer vers la corbeille',
+      title: permanent ? 'Supprimer définitivement le message' : 'Déplacer vers la corbeille',
       message: permanent
-        ? `${'Voulez-vous vraiment supprimer dÃ©finitivement Â«'} ` + label + ` ${'Â» ? Cette action est irrÃ©versible.'}`
-        : `${'Voulez-vous vraiment dÃ©placer Â«'} ` + label + ` ${'Â» dans la corbeille ?'}`,
-      confirmLabel: permanent ? 'Supprimer dÃ©finitivement' : 'Mettre Ã  la corbeille',
+        ? 'Voulez-vous vraiment supprimer définitivement « ' + label + ' » ? Cette action est irréversible.'
+        : 'Voulez-vous vraiment déplacer « ' + label + ' » dans la corbeille ?',
+      confirmLabel: permanent ? 'Supprimer définitivement' : 'Mettre à la corbeille',
       onConfirm: async () => {
         if (permanent) await destroyEmail(accId, mail.id);
         else await updateEmailMailbox(accId, mail.id, trash!.id);
@@ -468,7 +464,7 @@
       if (activeMailboxId && ids.includes(activeMailboxId)) {
         await loadFolderEmails(accId, activeMailboxId);
       }
-      showToast(count > 0 ? count + ` ${'message(s) marquÃ©(s) comme lu(s) dans Â«'} ` + folderDisplayName(box) + ' ».' : `${'Aucun message non lu dans Â«'} ` + folderDisplayName(box) + ' ».');
+      showToast(count > 0 ? count + ' message(s) marqué(s) comme lu(s) dans « ' + folderDisplayName(box) + ' ».' : 'Aucun message non lu dans « ' + folderDisplayName(box) + ' ».');
     } finally {
       batchBusy = false;
     }
@@ -482,13 +478,13 @@
     const ids = getMailboxSubtreeIds(mailboxes, box.id);
 
     confirmDialog = {
-      title: isTrash ? 'Vider la corbeille' : isJunk ? 'Supprimer tous les indÃ©sirables' : `${'Vider Â«'} ` + box.name + ' »',
+      title: isTrash ? 'Vider la corbeille' : isJunk ? 'Supprimer les indésirables' : 'Vider « ' + box.name + ' »',
       message: isTrash
-        ? 'Voulez-vous vraiment supprimer dÃ©finitivement tous les messages de la corbeille (et de ses sous-dossiers) ? Cette action est irrÃ©versible.'
+        ? 'Voulez-vous vraiment supprimer définitivement tous les messages de la corbeille (et de ses sous-dossiers) ? Cette action est irréversible.'
         : isJunk
-          ? 'Voulez-vous vraiment supprimer dÃ©finitivement tous les messages indÃ©sirables ? Cette action est irrÃ©versible.'
-          : `${'Voulez-vous vraiment supprimer dÃ©finitivement tous les messages de Â«'} ` + box.name + ` ${'Â» ? Cette action est irrÃ©versible.'}`,
-      confirmLabel: isTrash ? 'Vider la corbeille' : isJunk ? 'Supprimer tous les indÃ©sirables' : 'Supprimer tout',
+          ? 'Voulez-vous vraiment supprimer définitivement tous les messages indésirables ? Cette action est irréversible.'
+          : 'Voulez-vous vraiment supprimer définitivement tous les messages de « ' + box.name + ' » ? Cette action est irréversible.',
+      confirmLabel: isTrash ? 'Vider la corbeille' : isJunk ? 'Supprimer les indésirables' : 'Supprimer tout',
       onConfirm: async () => {
         const count = await emptyMailboxes(accId, ids);
         confirmDialog = null;
@@ -499,7 +495,7 @@
         }
         mailboxes = await fetchMailboxes(accId);
         quota = await fetchQuota(accId);
-        showToast(count > 0 ? count + ` ${'message(s) supprimÃ©(s) dÃ©finitivement.'}` : 'Ce dossier Ã©tait dÃ©jÃ  vide.');
+        showToast(count > 0 ? count + ' message(s) supprimé(s) définitivement.' : 'Ce dossier était déjà vide.');
       }
     };
   }
@@ -520,7 +516,7 @@
           if (fallback) await selectMailbox(fallback.id);
           else { activeMailboxId = null; emails = []; selectedEmail = null; activeBody = null; }
         }
-        showToast(`${'Dossier Â«'} ` + box.name + ` ${'Â» supprimÃ©.'}`);
+        showToast('Dossier « ' + box.name + ' » supprimé.');
       }
     };
   }
@@ -575,7 +571,7 @@
     composeTo = composeSubject = composeText = '';
     composeFiles = [];
     showComposer = false;
-    showToast('Message envoyÃ©.');
+    showToast('Message envoyé.');
   }
 
   function handleKeydown(e: KeyboardEvent) {
@@ -642,7 +638,7 @@
       } else if (action === 'emptyJunk' || action === 'emptyTrash') {
         requestEmptyMailbox(box);
       } else if (action === 'newSubfolder') {
-        const name = prompt(`${'Nom du sous-dossier dans Â«'} ` + folderDisplayName(box) + ' » :');
+        const name = prompt('Nom du sous-dossier dans « ' + folderDisplayName(box) + ' » :');
         if (name?.trim()) { await createMailbox(accId, name.trim(), box.id); mailboxes = await fetchMailboxes(accId); }
       } else if (action === 'renameFolder') {
         const name = prompt('Nouveau nom du dossier :', box.name);
@@ -663,7 +659,7 @@
 {/if}
 
 {#if !loaded}
-  <div class="env-app env-muted flex h-screen items-center justify-center text-sm">{'Chargement...'}</div>
+  <div class="env-app env-muted flex h-screen items-center justify-center text-sm">Chargement...</div>
 {:else if accounts.length === 0}
   <LoginPage onLoggedIn={loadAccounts} />
 {:else}
@@ -683,16 +679,146 @@
               </div>
             </div>
           {/if}
+          <button
+            type="button"
+            onclick={() => (railExpanded = !railExpanded)}
+            aria-expanded={railExpanded}
+            title={railExpanded ? 'Rétracter le menu' : 'Déplier le menu'}
+            class="env-muted env-hover flex h-8 w-8 items-center justify-center rounded-lg text-sm {railExpanded ? '' : 'mx-auto'}"
+          >
+            {railExpanded ? '«' : '»'}
+          </button>
         </div>
+
+        <!-- Sélecteur de comptes -->
+        <div class="env-border border-b p-2.5 {railExpanded ? 'space-y-1' : 'flex flex-col items-center gap-1.5'}">
+          {#each accounts as acc}
+            <button
+              type="button"
+              onclick={() => selectAccount(acc.id)}
+              aria-current={activeAccountId === acc.id ? 'true' : undefined}
+              title="{acc.label} ({acc.host})"
+              class="flex items-center gap-2.5 rounded-lg text-sm transition-colors {railExpanded ? 'w-full px-2.5 py-1.5 text-left' : 'h-9 w-9 justify-center'} {activeAccountId === acc.id ? 'env-active env-accent-text font-semibold' : 'env-muted env-hover'}"
+            >
+              <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] font-bold" style="background-color: {acc.color}; color: #08101A;">
+                {acc.label.slice(0, 2).toUpperCase()}
+              </span>
+              {#if railExpanded}
+                <span class="truncate">{acc.label}</span>
+              {/if}
+            </button>
+          {/each}
+          <button
+            type="button"
+            onclick={() => (showAccountModal = true)}
+            title="Ajouter un compte"
+            class="env-muted env-hover flex items-center gap-2.5 rounded-lg text-xs font-medium {railExpanded ? 'w-full px-2.5 py-1.5' : 'h-8 w-8 justify-center'}"
+          >
+            <span>+</span>
+            {#if railExpanded}<span>Ajouter un compte</span>{/if}
+          </button>
+        </div>
+
+        <!-- Menu principal (style AdGuard 1.0) -->
+        <nav aria-label="Sections principales" class="space-y-0.5 p-2.5 {railExpanded ? '' : 'flex flex-col items-center'}">
+          <button type="button" onclick={() => (activeTab = 'mail')} aria-current={activeTab === 'mail' ? 'page' : undefined} title="Messagerie" class="flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-2' : 'h-9 w-9 justify-center'} {activeTab === 'mail' ? 'env-accent-text env-active font-semibold' : 'env-muted env-hover'}">
+            <span>✉️</span>{#if railExpanded}<span>Messagerie</span>{/if}
+          </button>
+
+          <!-- Sous-arborescence Dossiers intégrée à la sidebar quand Messagerie est actif et déplié -->
+          {#if activeTab === 'mail' && railExpanded && showFolders}
+            <div class="space-y-0.5 py-1 pl-3">
+              {#each mailboxes as box}
+                <div
+                  role="group"
+                  ondragover={(e) => { if (draggedMail && activeMailboxId !== box.id) { e.preventDefault(); dropTargetMailboxId = box.id; } }}
+                  ondragleave={() => { if (dropTargetMailboxId === box.id) dropTargetMailboxId = null; }}
+                  ondrop={(e) => handleDropOnMailbox(e, box)}
+                  oncontextmenu={(e) => { e.preventDefault(); ctxMenu = { x: e.clientX, y: e.clientY, type: 'mailbox', mailbox: box }; }}
+                  style="padding-left: {8 + (box.depth ?? 0) * 12}px"
+                  class="group flex items-center justify-between gap-1 rounded-lg pr-1.5 text-xs transition-colors {dropTargetMailboxId === box.id ? 'ring-2 ring-[var(--env-accent)] env-active font-semibold' : ''} {activeMailboxId === box.id ? 'env-active env-accent-text font-semibold' : 'env-muted env-hover'}"
+                >
+                  <button
+                    type="button"
+                    onclick={() => selectMailbox(box.id)}
+                    class="flex min-w-0 flex-1 items-center gap-2 py-1.5 text-left"
+                  >
+                    <span class="shrink-0 opacity-80">{box.depth ? '📁' : (box.role && ROLE_META[box.role]?.icon) || '📁'}</span>
+                    <span class="truncate">{folderDisplayName(box)}</span>
+                  </button>
+                  <div class="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      title="Marquer comme lu(s)"
+                      aria-label="Marquer comme lu(s)"
+                      disabled={batchBusy}
+                      onclick={(e) => { e.stopPropagation(); handleMarkMailboxRead(box); }}
+                      class="env-faint rounded px-1 py-0.5 text-[11px] opacity-0 hover:opacity-100 focus:opacity-100 group-hover:opacity-100"
+                    >✓</button>
+                    {#if box.role === 'trash' || box.role === 'junk'}
+                      <button
+                        type="button"
+                        title={box.role === 'trash' ? 'Vider la corbeille' : 'Supprimer les indésirables'}
+                        aria-label={box.role === 'trash' ? 'Vider la corbeille' : 'Supprimer les indésirables'}
+                        onclick={(e) => { e.stopPropagation(); requestEmptyMailbox(box); }}
+                        class="env-faint rounded px-1 py-0.5 text-[11px] opacity-0 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
+                      >🗑️</button>
+                    {:else if !box.role}
+                      <button
+                        type="button"
+                        title="Supprimer le dossier"
+                        aria-label="Supprimer le dossier"
+                        onclick={(e) => { e.stopPropagation(); requestDeleteFolder(box); }}
+                        class="env-faint rounded px-1 py-0.5 text-[11px] opacity-0 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
+                      >🗑️</button>
+                    {/if}
+                    {#if box.unreadEmails > 0}
+                      <span class="env-accent-soft rounded-full px-1.5 py-0.5 text-[11px] font-semibold">{box.unreadEmails}</span>
+                    {/if}
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {/if}
+
+          <button type="button" onclick={() => (activeTab = 'contacts')} aria-current={activeTab === 'contacts' ? 'page' : undefined} title="Contacts" class="flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-2' : 'h-9 w-9 justify-center'} {activeTab === 'contacts' ? 'env-accent-text env-active font-semibold' : 'env-muted env-hover'}">
+            <span>👤</span>{#if railExpanded}<span>Contacts</span>{/if}
+          </button>
+          <button type="button" onclick={() => (activeTab = 'calendar')} aria-current={activeTab === 'calendar' ? 'page' : undefined} title="Calendrier" class="flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-2' : 'h-9 w-9 justify-center'} {activeTab === 'calendar' ? 'env-accent-text env-active font-semibold' : 'env-muted env-hover'}">
+            <span>📅</span>{#if railExpanded}<span>Calendrier</span>{/if}
+          </button>
+          <button type="button" onclick={() => (activeTab = 'sieve')} aria-current={activeTab === 'sieve' ? 'page' : undefined} title="Filtres (Sieve)" class="flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-2' : 'h-9 w-9 justify-center'} {activeTab === 'sieve' ? 'env-accent-text env-active font-semibold' : 'env-muted env-hover'}">
+            <span>⚡</span>{#if railExpanded}<span>Filtres</span>{/if}
+          </button>
+          <button type="button" onclick={() => (activeTab = 'security')} aria-current={activeTab === 'security' ? 'page' : undefined} title="Sécurité & Signatures" class="flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-2' : 'h-9 w-9 justify-center'} {activeTab === 'security' ? 'env-accent-text env-active font-semibold' : 'env-muted env-hover'}">
+            <span>🛡️</span>{#if railExpanded}<span>Sécurité</span>{/if}
+          </button>
+        </nav>
+      </div>
+
+      <!-- Pied de barre latérale : stockage, thème, notifications, déconnexion -->
+      <div class="env-border shrink-0 space-y-1 border-t p-2.5 {railExpanded ? '' : 'flex flex-col items-center'}">
+        {#if quota && railExpanded}
+          <div class="env-card mb-2 rounded-lg border p-2.5">
+            <div class="env-muted mb-1 flex items-center justify-between text-[11px]">
+              <span>Stockage</span>
+              <span class="env-text font-semibold">{quota.percent} %</span>
+            </div>
+            <div class="env-subtle h-1.5 w-full overflow-hidden rounded-full">
+              <div class="h-full rounded-full {quota.percent > 85 ? 'bg-red-500' : 'bg-[var(--env-accent)]'}" style="width: {quota.percent}%"></div>
+            </div>
+            <p class="env-faint mt-1 text-[11px]">{(quota.used / 1048576).toFixed(1)} Mo / {(quota.limit / 1073741824).toFixed(1)} Go</p>
+          </div>
+        {/if}
 
         <button type="button" onclick={cycleTheme} title={themeLabel} aria-label={themeLabel} class="env-muted env-hover flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
           <span>{themeIcon}</span>{#if railExpanded}<span class="truncate">{themeLabel}</span>{/if}
         </button>
-        <button type="button" onclick={handleEnablePush} title={'Notifications'} class="env-muted env-hover flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
-          <span>🔔</span>{#if railExpanded}{'Notifications'}{/if}
+        <button type="button" onclick={handleEnablePush} title="Notifications" class="env-muted env-hover flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
+          <span>🔔</span>{#if railExpanded}<span>Notifications</span>{/if}
         </button>
-        <button type="button" onclick={handleLogout} title={'Déconnexion'} class="env-muted flex items-center gap-3 rounded-lg text-sm hover:bg-red-500/10 hover:text-red-500 {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
-          <span>🚪</span>{#if railExpanded}{'Déconnexion'}{/if}
+        <button type="button" onclick={handleLogout} title="Déconnexion" class="env-muted flex items-center gap-3 rounded-lg text-sm hover:bg-red-500/10 hover:text-red-500 {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
+          <span>🚪</span>{#if railExpanded}<span>Déconnexion</span>{/if}
         </button>
       </div>
     </aside>
@@ -708,8 +834,8 @@
                 if (!railExpanded) { railExpanded = true; showFolders = true; }
                 else { showFolders = !showFolders; }
               }}
-              title={'Afficher/Masquer les dossiers'}
-              aria-label={'Afficher/Masquer les dossiers'}
+              title="Afficher/Masquer les dossiers"
+              aria-label="Afficher/Masquer les dossiers"
               class="env-muted env-hover rounded-lg p-1.5 text-base"
             >☰</button>
             <h1 class="env-text truncate text-xl font-bold tracking-tight">{folderDisplayName(activeMailbox)}</h1>
@@ -726,32 +852,32 @@
                 onclick={() => handleMarkMailboxRead(activeMailbox!)}
                 class="env-input env-hover env-muted rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
               >
-                ✓ {'Tout marquer lu'}
+                ✓ Tout marquer lu
               </button>
             {/if}
             <button type="button" onclick={openNewComposer} class="env-accent-bg rounded-lg px-4 py-1.5 text-xs font-semibold shadow-2xs hover:opacity-95">
-              {'Nouveau message'} (C)
+              Nouveau message (C)
             </button>
           </div>
         </header>
 
         <div class="flex min-h-0 flex-1 gap-5 overflow-hidden p-5">
           <!-- Carte liste des messages -->
-          <section aria-label={'Liste des messages'} class="env-card flex w-[26rem] shrink-0 flex-col overflow-hidden rounded-xl border shadow-2xs">
+          <section aria-label="Liste des messages" class="env-card flex w-[26rem] shrink-0 flex-col overflow-hidden rounded-xl border shadow-2xs">
             <div class="env-border space-y-2 border-b p-3.5">
               <div class="relative flex items-center">
                 <input
                   bind:value={searchQuery}
                   type="search"
-                  aria-label={'Rechercher dans les messages'}
-                  placeholder={'Rechercher (expÃ©diteur, objet, texte)...'}
+                  aria-label="Rechercher dans les messages"
+                  placeholder="Rechercher (expéditeur, objet, texte)..."
                   class="env-input w-full rounded-lg border py-1.5 pl-3 pr-8 text-xs"
                 />
                 {#if searchQuery}
                   <button
                     type="button"
                     onclick={() => (searchQuery = '')}
-                    aria-label={'Effacer la recherche'}
+                    aria-label="Effacer la recherche"
                     class="env-faint hover:env-text absolute right-2.5 text-xs"
                   >✕</button>
                 {/if}
@@ -762,7 +888,7 @@
                   type="button"
                   onclick={() => (filterUnreadOnly = !filterUnreadOnly)}
                   class="rounded-md border px-2.5 py-1 font-medium {filterUnreadOnly ? 'env-accent-soft border-[var(--env-accent)]/50 font-semibold' : 'env-input env-muted'}"
-                >{'Non lus'}</button>
+                >Non lus</button>
                 <button
                   type="button"
                   onclick={() => (filterAttachmentsOnly = !filterAttachmentsOnly)}
@@ -772,7 +898,7 @@
                   type="button"
                   onclick={() => (groupThreads = !groupThreads)}
                   class="rounded-md border px-2.5 py-1 font-medium {groupThreads ? 'env-accent-soft border-[var(--env-accent)]/50 font-semibold' : 'env-input env-muted'}"
-                >{'Fils'}</button>
+                >Fils</button>
               </div>
             </div>
 
@@ -795,7 +921,7 @@
                       <span class="truncate text-sm {isRowUnread ? 'env-text font-bold' : 'env-muted font-medium'}">{mail.from[0]?.name || mail.from[0]?.email || 'Inconnu'}</span>
                       <div class="flex shrink-0 items-center gap-1.5">
                         {#if entry.hasAttachment}
-                          <span class="env-faint text-xs" title={'PiÃ¨ces jointes'}>📎</span>
+                          <span class="env-faint text-xs" title="Pièce jointe">📎</span>
                         {/if}
                         {#if entry.threadItems.length > 1}
                           <span class="env-accent-soft rounded-full px-1.5 py-0.5 text-[11px] font-semibold">{entry.threadItems.length}</span>
@@ -839,7 +965,7 @@
                 onForward={startForward}
               />
             {:else}
-              <div class="env-card env-faint flex h-full items-center justify-center rounded-xl border text-sm shadow-2xs">{'SÃ©lectionnez un message pour le lire.'}</div>
+              <div class="env-card env-faint flex h-full items-center justify-center rounded-xl border text-sm shadow-2xs">Sélectionne un message</div>
             {/if}
           </main>
         </div>
@@ -872,17 +998,17 @@
   >
     <div role="presentation" onclick={(e) => e.stopPropagation()} class="w-full max-w-lg">
       <form onsubmit={handleSend} class="env-card space-y-3.5 rounded-xl border p-7 shadow-2xl">
-        <h3 id="composer-title" class="env-text text-lg font-semibold">{'Nouveau message'}</h3>
+        <h3 id="composer-title" class="env-text text-lg font-semibold">Nouveau message</h3>
         <input bind:value={composeTo} type="text" aria-label="Destinataire" placeholder="Destinataire(s)" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
         <input bind:value={composeSubject} aria-label="Objet" placeholder="Objet" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
-        <textarea bind:value={composeText} rows="9" aria-label={'Contenu du message'} placeholder={'Message...'} required class="env-input w-full rounded-lg border p-3.5 text-sm"></textarea>
+        <textarea bind:value={composeText} rows="9" aria-label="Message" placeholder="Message..." required class="env-input w-full rounded-lg border p-3.5 text-sm"></textarea>
         <div class="flex items-center justify-between gap-2 pt-1">
           <label class="env-input env-hover env-muted cursor-pointer rounded-xl border px-3.5 py-2 text-xs font-medium">
-            {uploading ? 'Upload...' : `📎 ${'Joindre un fichier'}`}
-            <input type="file" multiple onchange={handleFileUpload} class="hidden" aria-label={'Joindre des fichiers'} />
+            {uploading ? 'Upload...' : '📎 Joindre un fichier'}
+            <input type="file" multiple onchange={handleFileUpload} class="hidden" aria-label="Joindre des fichiers" />
           </label>
           <div class="flex gap-2">
-            <button type="button" onclick={() => (showComposer = false)} class="env-muted env-hover rounded-xl px-4 py-2 text-sm">{'Annuler'}</button>
+            <button type="button" onclick={() => (showComposer = false)} class="env-muted env-hover rounded-xl px-4 py-2 text-sm">Annuler</button>
             <button disabled={uploading} class="env-accent-bg rounded-xl px-5 py-2 text-sm font-semibold hover:opacity-95 disabled:opacity-50">Envoyer</button>
           </div>
         </div>

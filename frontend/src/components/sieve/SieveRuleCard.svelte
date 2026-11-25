@@ -32,24 +32,24 @@
         type="checkbox"
         bind:checked={rule.enabled}
         onchange={onSync}
-        aria-label={'Activer la rÃ¨gle'}
+        aria-label="Activer la règle"
         class="h-4 w-4 accent-[#48B17F]"
       />
       <input
         bind:value={rule.name}
         oninput={onSync}
-        aria-label={'Nom de la rÃ¨gle'}
-        placeholder={'Nom de la rÃ¨gle'}
+        aria-label="Nom de la règle"
+        placeholder="Nom de la règle"
         class="env-input rounded-xl border px-3 py-1.5 text-xs font-semibold"
       />
       <select
         bind:value={rule.matchType}
         onchange={onSync}
-        aria-label={'Logique des conditions'}
+        aria-label="Logique des conditions"
         class="env-input rounded-xl border px-3 py-1.5 text-xs"
       >
-        <option value="allof">{'Si TOUTES les conditions sont vraies'}</option>
-        <option value="anyof">{'Si AU MOINS UNE condition est vraie'}</option>
+        <option value="allof">Si TOUTES les conditions sont vraies</option>
+        <option value="anyof">Si AU MOINS UNE condition est vraie</option>
       </select>
     </div>
 
@@ -73,14 +73,14 @@
         <select
           bind:value={cond.field}
           onchange={onSync}
-          aria-label={'Champ du message'}
+          aria-label="Champ du message"
           class="env-input rounded-xl border px-3 py-2 text-xs"
         >
           <option value="from">De (From)</option>
-          <option value="to">{'Ã / Cc (To, Cc)'}</option>
+          <option value="to">À / Cc (To, Cc)</option>
           <option value="subject">Objet (Subject)</option>
-          <option value="header">{'En-tÃªte personnalisÃ©'}</option>
-          <option value="size">{'Taille du message'}</option>
+          <option value="header">En-tête personnalisé</option>
+          <option value="size">Taille du message</option>
         </select>
 
         {#if cond.field === 'header'}
@@ -97,16 +97,16 @@
           <select
             bind:value={cond.operator}
             onchange={onSync}
-            aria-label={'Comparateur de taille'}
+            aria-label="Comparateur de taille"
             class="env-input rounded-xl border px-3 py-2 text-xs"
           >
-            <option value="over">{'dÃ©passe'}</option>
-            <option value="under">{'est infÃ©rieur Ã '}</option>
+            <option value="over">dépasse</option>
+            <option value="under">est inférieur à</option>
           </select>
           <input
             bind:value={cond.value}
             oninput={onSync}
-            aria-label={'Valeur de taille'}
+            aria-label="Valeur de taille"
             placeholder="Ex: 5M ou 500K"
             class="env-input min-w-44 flex-1 rounded-xl border px-3.5 py-2 text-xs"
           />
@@ -114,18 +114,18 @@
           <select
             bind:value={cond.operator}
             onchange={onSync}
-            aria-label={'OpÃ©rateur'}
+            aria-label="Opérateur"
             class="env-input rounded-xl border px-3 py-2 text-xs"
           >
             <option value="contains">contient</option>
-            <option value="is">{'est exactement'}</option>
-            <option value="matches">{'correspond Ã  (* ?)'}</option>
+            <option value="is">est exactement</option>
+            <option value="matches">correspond à (* ?)</option>
           </select>
           <input
             bind:value={cond.value}
             oninput={onSync}
-            aria-label={'Valeur de condition'}
-            placeholder={cond.field === 'from' ? 'ex: newsletter@domaine.fr' : 'Texte Ã  rechercher...'}
+            aria-label="Valeur de condition"
+            placeholder={cond.field === 'from' ? 'ex: newsletter@domaine.fr' : 'Texte à rechercher...'}
             class="env-input min-w-48 flex-1 rounded-xl border px-3.5 py-2 text-xs"
           />
         {/if}
@@ -134,7 +134,7 @@
           <button
             type="button"
             onclick={() => onRemoveCondition(rule, cond.id)}
-            aria-label={'Supprimer la condition'}
+            aria-label="Supprimer la condition"
             class="env-faint rounded-xl px-2 py-1.5 text-xs hover:text-red-400"
           >
             ✕
@@ -158,19 +158,19 @@
           aria-label="Type d'action"
           class="env-input rounded-xl border px-3 py-2 text-xs"
         >
-          <option value="fileinto">📁 {'DÃ©placer vers le dossier'}</option>
-          <option value="markRead">📭 {'Marquer comme lu'}</option>
-          <option value="star">★ {'Ajouter aux favoris'}</option>
-          <option value="redirect">↪️ {'TransfÃ©rer Ã  l\'adresse'}</option>
-          <option value="reject">🚫 {'Rejeter avec message'}</option>
-          <option value="stop">🛑 {'ArrÃªter les rÃ¨gles suivantes'}</option>
+          <option value="fileinto">📁 Déplacer vers le dossier</option>
+          <option value="markRead">📭 Marquer comme lu</option>
+          <option value="star">★ Ajouter aux favoris</option>
+          <option value="redirect">↪️ Transférer à l'adresse</option>
+          <option value="reject">🚫 Rejeter avec message</option>
+          <option value="stop">🛑 Arrêter les règles suivantes</option>
         </select>
 
         {#if act.type === 'fileinto'}
           <select
             bind:value={act.value}
             onchange={onSync}
-            aria-label={'Dossier de destination'}
+            aria-label="Dossier de destination"
             class="env-input min-w-48 flex-1 rounded-xl border px-3 py-2 text-xs"
           >
             {#each mailboxes as box}
@@ -187,7 +187,7 @@
             type="email"
             bind:value={act.value}
             oninput={onSync}
-            aria-label={'Adresse de transfert'}
+            aria-label="Adresse de transfert"
             placeholder="destinataire@domaine.fr"
             class="env-input min-w-48 flex-1 rounded-xl border px-3.5 py-2 text-xs"
           />
@@ -195,8 +195,8 @@
           <input
             bind:value={act.value}
             oninput={onSync}
-            aria-label={'Motif du rejet'}
-            placeholder={'Motif du rejet...'}
+            aria-label="Motif du rejet"
+            placeholder="Motif du rejet..."
             class="env-input min-w-48 flex-1 rounded-xl border px-3.5 py-2 text-xs"
           />
         {/if}
@@ -205,7 +205,7 @@
           <button
             type="button"
             onclick={() => onRemoveAction(rule, act.id)}
-            aria-label={'Supprimer l\'action'}
+            aria-label="Supprimer l'action"
             class="env-faint rounded-xl px-2 py-1.5 text-xs hover:text-red-400"
           >
             ✕

@@ -69,7 +69,7 @@
       }
       editingContact = null;
     } catch (err: any) {
-      editError = err?.message || 'Erreur rÃ©seau lors de la mise Ã  jour.';
+      editError = err?.message || 'Erreur réseau lors de la mise à jour.';
     } finally {
       editSaving = false;
     }
@@ -154,21 +154,21 @@
 <div class="flex h-full flex-col overflow-hidden">
   <header class="env-border flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
     <div class="flex flex-wrap items-center gap-3">
-      <h2 class="env-text text-lg font-bold">{'Contacts'} ({contacts.length})</h2>
+      <h2 class="env-text text-lg font-bold">Contacts ({contacts.length})</h2>
       <input
         bind:value={search}
-        aria-label={'Rechercher un contact'}
-        placeholder={'Filtrer par nom, mail, tÃ©l...'}
+        aria-label="Rechercher un contact"
+        placeholder="Filtrer par nom, mail, tél..."
         class="env-input w-64 rounded-xl border px-3.5 py-2 text-sm"
       />
     </div>
     <div class="flex flex-wrap gap-2">
       <div class="flex items-center justify-between gap-2">
-                      <button type="button" onclick={() => (showAdd = !showAdd)} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">{'+ Contact'}</button>
-      <button type="button" onclick={() => downloadFile(contactsToVcf(contacts), 'contacts.vcf', 'text/vcard')} class="env-input env-hover rounded-xl border px-3.5 py-2 text-xs font-medium">{'Export .vcf'}</button>
+                      <button type="button" onclick={() => (showAdd = !showAdd)} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">+ Contact</button>
+      <button type="button" onclick={() => downloadFile(contactsToVcf(contacts), 'contacts.vcf', 'text/vcard')} class="env-input env-hover rounded-xl border px-3.5 py-2 text-xs font-medium">Export .vcf</button>
       <label class="env-input env-hover cursor-pointer rounded-xl border px-3.5 py-2 text-xs font-medium">
         Importer
-        <input type="file" accept=".vcf,.json" onchange={handleImport} class="hidden" aria-label={'Importer des contacts (.vcf ou .json)'} />
+        <input type="file" accept=".vcf,.json" onchange={handleImport} class="hidden" aria-label="Importer des contacts (.vcf ou .json)" />
       </label>
     </div>
     </div>
@@ -177,10 +177,10 @@
     <form onsubmit={add} class="env-subtle env-border grid grid-cols-1 gap-2.5 border-b px-6 py-3.5 md:grid-cols-4">
       <input bind:value={fullName} aria-label="Nom complet" placeholder="Nom complet" required class="env-input rounded-xl border px-3.5 py-2 text-sm" />
       <input bind:value={email} type="email" aria-label="Adresse email" placeholder="Email" required class="env-input rounded-xl border px-3.5 py-2 text-sm" />
-      <input bind:value={phone} aria-label={'TÃ©lÃ©phone'} placeholder={'TÃ©lÃ©phone'} class="env-input rounded-xl border px-3.5 py-2 text-sm" />
+      <input bind:value={phone} aria-label="Téléphone" placeholder="Téléphone" class="env-input rounded-xl border px-3.5 py-2 text-sm" />
       <div class="flex gap-2">
-        <button class="env-accent-bg flex-1 rounded-xl px-3.5 py-2 text-xs font-semibold">{'Ajouter'}</button>
-        <button type="button" onclick={() => (showAdd = false)} class="env-input env-hover env-muted rounded-xl border px-3.5 py-2 text-xs">{'Annuler'}</button>
+        <button class="env-accent-bg flex-1 rounded-xl px-3.5 py-2 text-xs font-semibold">Ajouter</button>
+        <button type="button" onclick={() => (showAdd = false)} class="env-input env-hover env-muted rounded-xl border px-3.5 py-2 text-xs">Annuler</button>
       </div>
     </form>
   {/if}
@@ -215,8 +215,8 @@
                   {#if c.id}
                     <button
                       type="button"
-                      title={'Modifier'}
-                      aria-label={`${'Modifier'} ${displayName}`}
+                      title="Modifier ce contact"
+                      aria-label="Modifier {displayName}"
                       onclick={() => openEditContact(c)}
                       class="env-muted rounded-xl px-2.5 py-1.5 text-sm opacity-75 transition-opacity hover:bg-white/10 hover:text-[var(--env-text)] group-hover:opacity-100"
                     >
@@ -224,8 +224,8 @@
                     </button>
                     <button
                       type="button"
-                      title={'Supprimer'}
-                      aria-label={`${'Supprimer'} ${displayName}`}
+                      title="Supprimer ce contact"
+                      aria-label="Supprimer {displayName}"
                       onclick={() => (contactToDelete = { id: c.id!, name: displayName })}
                       class="env-muted rounded-xl px-2.5 py-1.5 text-sm opacity-75 transition-opacity hover:bg-red-500/15 hover:text-red-400 group-hover:opacity-100"
                     >
@@ -239,16 +239,16 @@
           </div>
         </div>
       {:else}
-        <p class="env-faint py-12 text-center text-sm">{'Aucun contact trouvÃ©.'}</p>
+        <p class="env-faint py-12 text-center text-sm">Aucun contact trouvé.</p>
       {/each}
     </div>
   </div>
 </div>
 {#if contactToDelete}
   <ConfirmModal
-    title={'Supprimer le contact'}
+    title="Supprimer le contact"
     message={"Voulez-vous vraiment supprimer « " + contactToDelete.name + " » de votre carnet d'adresses ? Cette action est définitive."}
-    confirmLabel={'Supprimer le contact'}
+    confirmLabel="Supprimer le contact"
     onConfirm={confirmDeleteContact}
     onCancel={() => (contactToDelete = null)}
   />
@@ -256,18 +256,18 @@
 {#if editingContact}
   <div role="dialog" aria-modal="true" class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
     <form onsubmit={saveEditedContact} class="env-card w-full max-w-md space-y-3 rounded-xl border p-5 shadow-2xl">
-      <h3 class="env-text text-base font-bold">{'Modifier le contact'}</h3>
+      <h3 class="env-text text-base font-bold">Modifier le contact</h3>
       <div>
         <label for="edit-contact-name" class="env-muted mb-1 block text-xs">Nom</label>
-        <input id="edit-contact-name" aria-label={'Nom du contact'} placeholder="Nom complet" bind:value={editName} type="text" required class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
+        <input id="edit-contact-name" aria-label="Nom du contact" placeholder="Nom complet" bind:value={editName} type="text" required class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="edit-contact-email" class="env-muted mb-1 block text-xs">Adresse e-mail</label>
-        <input id="edit-contact-email" aria-label={'Adresse e-mail du contact'} placeholder="prenom.nom@domaine.fr" bind:value={editEmail} type="email" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
+        <input id="edit-contact-email" aria-label="Adresse e-mail du contact" placeholder="prenom.nom@domaine.fr" bind:value={editEmail} type="email" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
       </div>
       <div>
-        <label for="edit-contact-phone" class="env-muted mb-1 block text-xs">{'TÃ©lÃ©phone'}</label>
-        <input id="edit-contact-phone" aria-label={'TÃ©lÃ©phone du contact'} placeholder="+33 6 00 00 00 00" bind:value={editPhone} type="tel" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
+        <label for="edit-contact-phone" class="env-muted mb-1 block text-xs">Téléphone</label>
+        <input id="edit-contact-phone" aria-label="Téléphone du contact" placeholder="+33 6 00 00 00 00" bind:value={editPhone} type="tel" class="env-input w-full rounded-lg border px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="edit-contact-notes" class="env-muted mb-1 block text-xs">Notes</label>
@@ -277,7 +277,7 @@
         <p class="text-xs text-red-400">{editError}</p>
       {/if}
       <div class="flex justify-end gap-2 pt-2">
-        <button type="button" onclick={() => (editingContact = null)} class="env-input env-muted rounded-lg border px-3.5 py-1.5 text-xs">{'Annuler'}</button>
+        <button type="button" onclick={() => (editingContact = null)} class="env-input env-muted rounded-lg border px-3.5 py-1.5 text-xs">Annuler</button>
         <button type="submit" disabled={editSaving} class="env-accent-bg rounded-lg px-4 py-1.5 text-xs font-semibold disabled:opacity-50">
           {editSaving ? 'Enregistrement...' : 'Enregistrer'}
         </button>

@@ -132,11 +132,11 @@
         <kbd class="env-faint text-xs">E</kbd>
       </button>
       <button type="button" onclick={() => pick('delete')} class="flex w-full items-center justify-between px-3.5 py-2 text-left text-red-400 hover:bg-red-500/10">
-        <span>🗑️ {'Supprimer'}</span>
+        <span>🗑️ Supprimer</span>
         <kbd class="env-faint text-xs">Suppr</kbd>
       </button>
       <button type="button" onclick={() => pick('toggleRead')} class="env-hover flex w-full items-center justify-between px-3.5 py-2 text-left">
-        <span>{mail.isUnread ? `✉️ ${'Marquer comme lu'}` : `📩 ${'Marquer comme non lu'}`}</span>
+        <span>{mail.isUnread ? '✉️ Marquer comme lu' : '📩 Marquer comme non lu'}</span>
       </button>
 
       <div class="env-border my-1 border-t"></div>
@@ -149,16 +149,16 @@
           onclick={toggleMoveSub}
           class="env-hover flex w-full items-center justify-between px-3.5 py-2 text-left"
         >
-          <span>📁 {'DÃ©placer vers'}</span>
+          <span>📁 Déplacer vers</span>
           <span class="env-faint text-xs">›</span>
         </button>
       </div>
 
       <button type="button" onclick={() => pick('toggleStar')} class="env-hover flex w-full items-center justify-between px-3.5 py-2 text-left">
-        <span>{mail.keywords?.['$flagged'] ? `★ ${'Retirer favori'}` : `☆ ${'Marquer favori'}`}</span>
+        <span>{mail.keywords?.['$flagged'] ? '★ Retirer favori' : '☆ Marquer favori'}</span>
       </button>
       <button type="button" onclick={() => pick('spam')} class="env-hover flex w-full items-center justify-between px-3.5 py-2 text-left text-amber-400">
-        <span>🚫 {'Signaler comme indÃ©sirable'}</span>
+        <span>🚫 Signaler comme indésirable</span>
       </button>
 
       <div class="env-border my-1 border-t"></div>
@@ -170,36 +170,36 @@
         </button>
         {#if showMoreSub}
           <div role="menu" class="env-card fixed z-50 w-52 rounded-xl border py-1.5 shadow-2xl" style="left: {Math.min(pos.left + 228, window.innerWidth - 224)}px; top: {Math.min(pos.top + 170, window.innerHeight - 140)}px;">
-            <button type="button" onclick={() => pick('downloadEml')} class="env-hover flex w-full items-center gap-2 px-3.5 py-2 text-left text-xs">💾 {'TÃ©lÃ©charger (.eml)'}</button>
+            <button type="button" onclick={() => pick('downloadEml')} class="env-hover flex w-full items-center gap-2 px-3.5 py-2 text-left text-xs">💾 Télécharger (.eml)</button>
             <button type="button" onclick={() => pick('print')} class="env-hover flex w-full items-center gap-2 px-3.5 py-2 text-left text-xs">🖨️ Imprimer</button>
-            <button type="button" onclick={() => pick('createFilter')} class="env-hover flex w-full items-center gap-2 px-3.5 py-2 text-left text-xs">⚡ {'CrÃ©er un filtre Ã  partir d\'ici'}</button>
+            <button type="button" onclick={() => pick('createFilter')} class="env-hover flex w-full items-center gap-2 px-3.5 py-2 text-left text-xs">⚡ Créer un filtre à partir d'ici</button>
           </div>
         {/if}
       </div>
     {:else if type === 'mailbox' && mailbox}
       <button type="button" onclick={() => pick('markRead')} class="env-hover flex w-full items-center gap-2.5 px-3.5 py-2 text-left">
-        <span>✓</span><span>{'Tout marquer lu'}</span>
+        <span>✓</span><span>Marquer tout comme lu</span>
       </button>
       {#if mailbox.role === 'junk'}
         <button type="button" onclick={() => pick('emptyJunk')} class="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-red-400 hover:bg-red-500/10">
-          <span>🗑️</span><span>{'Supprimer tous les indÃ©sirables'}</span>
+          <span>🗑️</span><span>Supprimer tous les indésirables</span>
         </button>
       {/if}
       {#if mailbox.role === 'trash'}
         <button type="button" onclick={() => pick('emptyTrash')} class="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-red-400 hover:bg-red-500/10">
-          <span>🗑️</span><span>{'Vider la corbeille'}</span>
+          <span>🗑️</span><span>Vider la corbeille</span>
         </button>
       {/if}
       <div class="env-border my-1 border-t"></div>
       <button type="button" onclick={() => pick('newSubfolder')} class="env-hover flex w-full items-center gap-2.5 px-3.5 py-2 text-left">
-        <span>📁</span><span>{'Nouveau sous-dossier'}</span>
+        <span>📁</span><span>Nouveau sous-dossier</span>
       </button>
       {#if !mailbox.role}
         <button type="button" onclick={() => pick('renameFolder')} class="env-hover flex w-full items-center gap-2.5 px-3.5 py-2 text-left">
           <span>✏️</span><span>Renommer</span>
         </button>
         <button type="button" onclick={() => pick('deleteFolder')} class="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-red-400 hover:bg-red-500/10">
-          <span>🗑️</span><span>{'Supprimer le dossier'}</span>
+          <span>🗑️</span><span>Supprimer le dossier</span>
         </button>
       {/if}
     {/if}

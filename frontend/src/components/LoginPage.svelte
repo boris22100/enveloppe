@@ -73,7 +73,7 @@
       loading = false;
     }
   }
-  let appVersion = $state('0.8.3');
+  let appVersion = $state('0.8.4');
   $effect(() => {
     fetch('/api/version')
       .then((r) => (r.ok ? r.json() : null))
@@ -95,7 +95,7 @@
           v{appVersion}
         </span>
       </div>
-      <p class="env-muted text-sm">{'Renseignez l\'adresse de votre serveur JMAP pour vous connecter.'}</p>
+      <p class="env-muted text-sm">Renseignez l'adresse de votre serveur JMAP pour vous connecter.</p>
     </div>
 
     {#if error}
@@ -107,7 +107,7 @@
         <label for="login-label" class="env-muted mb-1.5 block text-xs font-semibold">Nom du compte</label>
         <div class="grid grid-cols-5 gap-2.5">
           <input id="login-label" bind:value={label} placeholder="Ex : Perso, Pro..." class="env-input col-span-4 rounded-xl border px-3.5 py-2.5 text-sm" />
-          <input type="color" bind:value={color} aria-label={'Couleur du compte'} title={'Couleur du compte'} class="env-input h-11 w-full cursor-pointer rounded-xl border p-1" />
+          <input type="color" bind:value={color} aria-label="Couleur du compte" title="Couleur du compte" class="env-input h-11 w-full cursor-pointer rounded-xl border p-1" />
         </div>
       </div>
 
@@ -115,9 +115,9 @@
         <div class="mb-1.5 flex items-center justify-between">
           <label for="login-host" class="env-muted block text-xs font-semibold">Nom du serveur</label>
           {#if checkingOidc}
-            <span class="env-faint text-xs">{'VÃ©rification OIDC...'}</span>
+            <span class="env-faint text-xs">Vérification OIDC...</span>
           {:else if oidcSupported}
-            <span class="env-accent-soft rounded-full px-2 py-0.5 text-xs font-semibold">{'OIDC dÃ©tectÃ©'}</span>
+            <span class="env-accent-soft rounded-full px-2 py-0.5 text-xs font-semibold">OIDC détecté</span>
           {/if}
         </div>
         <input id="login-host" bind:value={host} placeholder="https://mail.mondomaine.fr" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
@@ -126,12 +126,12 @@
       {#if oidcSupported}
         <button type="button" onclick={startOidc} class="env-accent-bg flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold shadow-sm hover:opacity-95">
           <span>🔐</span>
-          <span>{'Continuer avec OIDC (SSO)'}</span>
+          <span>Continuer avec OIDC (SSO)</span>
         </button>
 
         <div class="relative flex items-center py-1">
           <div class="env-border flex-grow border-t"></div>
-          <span class="env-faint mx-3 flex-shrink text-xs">{'ou avec un mot de passe d\'application'}</span>
+          <span class="env-faint mx-3 flex-shrink text-xs">ou avec un mot de passe d'application</span>
           <div class="env-border flex-grow border-t"></div>
         </div>
       {/if}
@@ -154,14 +154,14 @@
   </main>
 
   <footer class="env-faint mt-6 flex flex-wrap items-center justify-center gap-3 pb-2 text-center text-xs">
-    <span>{'Enveloppe par'} <strong class="env-muted font-medium">BoWiz</strong></span>
+    <span>Enveloppe par <strong class="env-muted font-medium">BoWiz</strong></span>
     <span aria-hidden="true">·</span>
     <button
       type="button"
       onclick={() => (legalModal = 'legal')}
       class="hover:env-text underline underline-offset-4 transition-colors"
     >
-      {'Mentions lÃ©gales'}
+      Mentions légales
     </button>
     <span aria-hidden="true">·</span>
     <button
@@ -169,7 +169,7 @@
       onclick={() => (legalModal = 'privacy')}
       class="hover:env-text underline underline-offset-4 transition-colors"
     >
-      {'Politique de confidentialitÃ©'}
+      Politique de confidentialité
     </button>
   </footer>
 
@@ -192,12 +192,12 @@
       >
         <div class="env-border mb-4 flex items-center justify-between border-b pb-3">
           <h2 id="legal-modal-title" class="env-text text-base font-bold">
-            {legalModal === 'legal' ? 'Mentions lÃ©gales' : 'Politique de confidentialitÃ©'}
+            {legalModal === 'legal' ? 'Mentions légales' : 'Politique de confidentialité'}
           </h2>
           <button
             type="button"
             onclick={() => (legalModal = null)}
-            aria-label={'Fermer'}
+            aria-label="Fermer"
             class="env-muted env-hover rounded-lg px-2.5 py-1 text-xs font-medium"
           >
             ✕ Fermer

@@ -380,7 +380,7 @@ export async function deleteMailbox(accountId: string, mailboxId: string) {
   const accId = await getPrimaryAccountId(accountId);
   await jmapCall(accountId, [[
     'Mailbox/set',
-    { accountId: accId, destroy: [mailboxId], RemoveEmails: false },
+    { accountId: accId, destroy: [mailboxId], onDestroyRemoveEmails: false },
     'mbd0'
   ]]);
 }

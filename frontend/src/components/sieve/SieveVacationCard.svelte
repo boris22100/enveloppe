@@ -30,7 +30,7 @@
   {#if vacation.enabled}
     <div class="grid gap-3 pt-2 sm:grid-cols-4">
       <div>
-        <label for="vac-days" class="env-muted mb-1 block text-xs">{'RÃ©pÃ©ter tous les (jours)'}</label>
+        <label for="vac-days" class="env-muted mb-1 block text-xs">Répéter tous les (jours)</label>
         <input
           id="vac-days"
           type="number"
@@ -42,18 +42,18 @@
         />
       </div>
       <div class="sm:col-span-3">
-        <label for="vac-subject" class="env-muted mb-1 block text-xs">{'Objet de la rÃ©ponse'}</label>
+        <label for="vac-subject" class="env-muted mb-1 block text-xs">Objet de la réponse</label>
         <input
           id="vac-subject"
           type="text"
           bind:value={vacation.subject}
           oninput={onChange}
-          placeholder={'Absence du bureau'}
+          placeholder="Absence du bureau"
           class="env-input w-full rounded-xl border px-3 py-2 text-xs"
         />
       </div>
       <div class="sm:col-span-4">
-        <label for="vac-reason" class="env-muted mb-1 block text-xs">{'Message d\'absence'}</label>
+        <label for="vac-reason" class="env-muted mb-1 block text-xs">Message d'absence</label>
         <textarea
           id="vac-reason"
           rows="3"

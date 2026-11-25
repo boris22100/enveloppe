@@ -16,7 +16,7 @@
 
 {#if templates.length > 0}
   <div class="mb-3 flex flex-wrap items-center gap-2">
-    <span class="env-muted text-xs font-semibold uppercase tracking-wider">{'ModÃ¨les :'}</span>
+    <span class="env-muted text-xs font-semibold uppercase tracking-wider">Modèles :</span>
     {#each templates as tpl}
       <button
         type="button"
