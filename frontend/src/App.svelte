@@ -29,15 +29,20 @@
     themeMode = themeMode === 'bowiz' ? 'dark' : themeMode === 'dark' ? 'light' : 'bowiz';
   }
 
+  let lang = $state<Locale>(getLocale());
+  function switchLang(next: Locale) { lang = next; setLocale(next); }
+
   let themeLabel = $derived(
-    themeMode === 'bowiz' ? 'Thème : BoWiz' : themeMode === 'dark' ? 'Thème : Sombre' : 'Thème : Clair'
+    themeMode === 'bowiz'
+      ? t('nav.themeBowiz', undefined, lang)
+      : themeMode === 'dark'
+        ? t('nav.themeDark', undefined, lang)
+        : t('nav.themeLight', undefined, lang)
   );
   let themeIcon = $derived(
     themeMode === 'bowiz' ? '💠' : themeMode === 'dark' ? '🌙' : '☀️'
   );
 
-  let lang = $state<Locale>(getLocale());
-  function switchLang(next: Locale) { lang = next; setLocale(next); }
   let appVersion = $state(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.8.3');
   let accounts = $state<Account[]>([]);
   let loaded = $state(false);
@@ -784,17 +789,17 @@
             </div>
           {/if}
 
-          <button type="button" onclick={() => (activeTab = 'contacts')} aria-current={activeTab === 'contacts' ? 'page' : undefined} title="Contacts" class="flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-2' : 'h-9 w-9 justify-center'} {activeTab === 'contacts' ? 'env-accent-text env-active font-semibold' : 'env-muted env-hover'}">
-            <span>👤</span>{#if railExpanded}<span>Contacts</span>{/if}
+          <button type="button" onclick={() => (activeTab = 'contacts')} aria-current={activeTab === 'contacts' ? 'page' : undefined} title={t('nav.contacts', undefined, lang)} class="flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-2' : 'h-9 w-9 justify-center'} {activeTab === 'contacts' ? 'env-accent-text env-active font-semibold' : 'env-muted env-hover'}">
+            <span>👤</span>{#if railExpanded}{t('nav.contacts', undefined, lang)}{/if}
           </button>
-          <button type="button" onclick={() => (activeTab = 'calendar')} aria-current={activeTab === 'calendar' ? 'page' : undefined} title="Calendrier" class="flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-2' : 'h-9 w-9 justify-center'} {activeTab === 'calendar' ? 'env-accent-text env-active font-semibold' : 'env-muted env-hover'}">
-            <span>📅</span>{#if railExpanded}<span>Calendrier</span>{/if}
+          <button type="button" onclick={() => (activeTab = 'calendar')} aria-current={activeTab === 'calendar' ? 'page' : undefined} title={t('nav.calendar', undefined, lang)} class="flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-2' : 'h-9 w-9 justify-center'} {activeTab === 'calendar' ? 'env-accent-text env-active font-semibold' : 'env-muted env-hover'}">
+            <span>📅</span>{#if railExpanded}{t('nav.calendar', undefined, lang)}{/if}
           </button>
-          <button type="button" onclick={() => (activeTab = 'sieve')} aria-current={activeTab === 'sieve' ? 'page' : undefined} title="Filtres (Sieve)" class="flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-2' : 'h-9 w-9 justify-center'} {activeTab === 'sieve' ? 'env-accent-text env-active font-semibold' : 'env-muted env-hover'}">
-            <span>⚡</span>{#if railExpanded}<span>Filtres</span>{/if}
+          <button type="button" onclick={() => (activeTab = 'sieve')} aria-current={activeTab === 'sieve' ? 'page' : undefined} title={t('nav.sieve', undefined, lang)} class="flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-2' : 'h-9 w-9 justify-center'} {activeTab === 'sieve' ? 'env-accent-text env-active font-semibold' : 'env-muted env-hover'}">
+            <span>⚡</span>{#if railExpanded}{t('nav.sieve', undefined, lang)}{/if}
           </button>
-          <button type="button" onclick={() => (activeTab = 'security')} aria-current={activeTab === 'security' ? 'page' : undefined} title="Sécurité & Signatures" class="flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-2' : 'h-9 w-9 justify-center'} {activeTab === 'security' ? 'env-accent-text env-active font-semibold' : 'env-muted env-hover'}">
-            <span>🛡️</span>{#if railExpanded}<span>Sécurité</span>{/if}
+          <button type="button" onclick={() => (activeTab = 'security')} aria-current={activeTab === 'security' ? 'page' : undefined} title={t('nav.security', undefined, lang)} class="flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-2' : 'h-9 w-9 justify-center'} {activeTab === 'security' ? 'env-accent-text env-active font-semibold' : 'env-muted env-hover'}">
+            <span>🛡️</span>{#if railExpanded}{t('nav.security', undefined, lang)}{/if}
           </button>
         </nav>
       </div>
@@ -804,7 +809,7 @@
         {#if quota && railExpanded}
           <div class="env-card mb-2 rounded-lg border p-2.5">
             <div class="env-muted mb-1 flex items-center justify-between text-[11px]">
-              <span>Stockage</span>
+              {lang === 'fr' ? 'Stockage' : 'Storage'}
               <span class="env-text font-semibold">{quota.percent} %</span>
             </div>
             <div class="env-subtle h-1.5 w-full overflow-hidden rounded-full">
@@ -820,22 +825,22 @@
           class="env-muted flex items-center rounded-lg text-xs font-medium {railExpanded ? 'w-full justify-between px-3 py-1.5' : 'h-9 w-9 justify-center'}"
         >
           {#if railExpanded}
-            <span class="truncate">🌐 Langue</span>
-            <div class="inline-flex items-center gap-1">
+            <span class="truncate">🌐 {t('common.language', undefined, lang)}</span>
+            <div class="inline-flex items-center gap-1 rounded-md border border-white/10 p-0.5">
               <button
                 type="button"
                 onclick={() => switchLang('fr')}
                 aria-pressed={lang === 'fr'}
-                class={lang === 'fr' ? 'env-text rounded px-1.5 py-0.5 font-semibold underline' : 'rounded px-1.5 py-0.5 opacity-70 hover:opacity-100'}
+                class={lang === 'fr' ? 'env-text rounded bg-white/15 px-1.5 py-0.5 font-bold underline decoration-2 underline-offset-2' : 'rounded px-1.5 py-0.5 opacity-60 hover:opacity-100'}
               >
                 FR
               </button>
-              <span class="opacity-40">|</span>
+              <span class="opacity-30">|</span>
               <button
                 type="button"
                 onclick={() => switchLang('en')}
                 aria-pressed={lang === 'en'}
-                class={lang === 'en' ? 'env-text rounded px-1.5 py-0.5 font-semibold underline' : 'rounded px-1.5 py-0.5 opacity-70 hover:opacity-100'}
+                class={lang === 'en' ? 'env-text rounded bg-white/15 px-1.5 py-0.5 font-bold underline decoration-2 underline-offset-2' : 'rounded px-1.5 py-0.5 opacity-60 hover:opacity-100'}
               >
                 EN
               </button>
@@ -856,11 +861,11 @@
         <button type="button" onclick={cycleTheme} title={themeLabel} aria-label={themeLabel} class="env-muted env-hover flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
           <span>{themeIcon}</span>{#if railExpanded}<span class="truncate">{themeLabel}</span>{/if}
         </button>
-        <button type="button" onclick={handleEnablePush} title="Notifications" class="env-muted env-hover flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
-          <span>🔔</span>{#if railExpanded}<span>Notifications</span>{/if}
+        <button type="button" onclick={handleEnablePush} title={lang === 'fr' ? 'Notifications' : 'Notifications'} class="env-muted env-hover flex items-center gap-3 rounded-lg text-sm {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
+          <span>🔔</span>{#if railExpanded}{lang === 'fr' ? 'Notifications' : 'Notifications'}{/if}
         </button>
-        <button type="button" onclick={handleLogout} title="Déconnexion" class="env-muted flex items-center gap-3 rounded-lg text-sm hover:bg-red-500/10 hover:text-red-500 {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
-          <span>🚪</span>{#if railExpanded}<span>Déconnexion</span>{/if}
+        <button type="button" onclick={handleLogout} title={t('nav.logout', undefined, lang)} class="env-muted flex items-center gap-3 rounded-lg text-sm hover:bg-red-500/10 hover:text-red-500 {railExpanded ? 'w-full px-3 py-1.5' : 'h-9 w-9 justify-center'}">
+          <span>🚪</span>{#if railExpanded}{t('nav.logout', undefined, lang)}{/if}
         </button>
       </div>
     </aside>
@@ -898,7 +903,7 @@
               </button>
             {/if}
             <button type="button" onclick={openNewComposer} class="env-accent-bg rounded-lg px-4 py-1.5 text-xs font-semibold shadow-2xs hover:opacity-95">
-              Nouveau message (C)
+              {t('mail.compose', undefined, lang)} (C)
             </button>
           </div>
         </header>
@@ -1040,7 +1045,7 @@
   >
     <div role="presentation" onclick={(e) => e.stopPropagation()} class="w-full max-w-lg">
       <form onsubmit={handleSend} class="env-card space-y-3.5 rounded-xl border p-7 shadow-2xl">
-        <h3 id="composer-title" class="env-text text-lg font-semibold">Nouveau message</h3>
+        <h3 id="composer-title" class="env-text text-lg font-semibold">{t('mail.compose', undefined, lang)}</h3>
         <input bind:value={composeTo} type="text" aria-label="Destinataire" placeholder="Destinataire(s)" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
         <input bind:value={composeSubject} aria-label="Objet" placeholder="Objet" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
         <textarea bind:value={composeText} rows="9" aria-label="Message" placeholder="Message..." required class="env-input w-full rounded-lg border p-3.5 text-sm"></textarea>
