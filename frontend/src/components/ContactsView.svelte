@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { t } from '../lib/i18n';
+  import { onDestroy } from 'svelte';
+  import { getLocale, subscribeLocale, t, type Locale } from '../lib/i18n';
+  let activeLocale = $state<Locale>(getLocale());
+  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
+  onDestroy(_unsubLocale);
   let editingContact = $state<any>(null);
   let editName = $state('');
   let editEmail = $state('');
