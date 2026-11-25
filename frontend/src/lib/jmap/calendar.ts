@@ -244,9 +244,18 @@ export function parseIcsInvitation(icsText: string): ParsedIcsInvitation | null 
   const veventMatch = unfolded.match(/BEGIN:VEVENT([\s\S]*?)END:VEVENT/i);
   if (!veventMatch) return null;
   const block = veventMatch[1];
+  const lines = block.split(/\r?\n/);
   const getField = (name: string) => {
-    const m = block.match(new RegExp(`^${name}(?:;[^:]*)?:(.*)$`, 'mi'));
-    return m ? m[1].trim().replace(/\\n/g, '\n').replace(/\\,/g, ',') : '';
+    const prefix = name.toUpperCase();
+    for (const line of lines) {
+      const colonIdx = line.indexOf(':');
+      if (colonIdx === -1) continue;
+      const propName = line.slice(0, colonIdx).split(';')[0].trim().toUpperCase();
+      if (propName === prefix) {
+        return line.slice(colonIdx + 1).trim().replace(/\\n/gi, '\n').replace(/\\,/g, ',');
+      }
+    }
+    return '';
   };
   const title = getField('SUMMARY') || 'Invitation';
   const dtstart = getField('DTSTART');

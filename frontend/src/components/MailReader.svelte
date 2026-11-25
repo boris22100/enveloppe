@@ -240,6 +240,11 @@
           {new Date(icsInvite.start).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })}
           {#if icsInvite.location} · {icsInvite.location}{/if}
         </p>
+        {#if icsStatus === 'accepted' || icsStatus === 'tentative'}
+          <p class="env-accent-text text-xs font-medium">✓ Rendez-vous intégré au calendrier ({icsStatus === 'accepted' ? 'confirmé' : 'provisoire'})</p>
+        {:else if icsStatus === 'declined'}
+          <p class="env-muted text-xs">Invitation marquée comme refusée</p>
+        {/if}
         {#if icsError}
           <p class="text-xs text-red-400">{icsError}</p>
         {/if}

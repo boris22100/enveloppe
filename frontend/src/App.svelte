@@ -73,6 +73,14 @@
   let draftStatus = $state('');
   let draftTimer: ReturnType<typeof setTimeout> | null = null;
   let selectedIds = $state<string[]>([]);
+  let draftsMailboxId = $derived(mailboxes.find((m) => m.role === 'drafts')?.id ?? '');
+  let draftsCount = $derived.by(() => {
+    const box = mailboxes.find((m) => m.role === 'drafts');
+    if (activeMailboxId && draftsMailboxId && activeMailboxId === draftsMailboxId) {
+      return emails.length;
+    }
+    return box?.unreadEmails ?? 0;
+  });
   let bulkMoveTarget = $state('');
   let uploading = $state(false);
   let statusToast = $state('');
@@ -634,6 +642,7 @@
     composeDraftId = null;
     draftStatus = '';
     showComposer = false;
+    if (activeAccountId) mailboxes = await fetchMailboxes(activeAccountId);
     showToast('Brouillon supprimé.');
   }
 
@@ -656,7 +665,7 @@
           textBody: body,
           attachments: files
         });
-        if (savedId) composeDraftId = savedId;
+        if (savedId) { composeDraftId = savedId; mailboxes = await fetchMailboxes(acc); }
         draftStatus = 'Brouillon enregistré';
       } catch {
         draftStatus = '';
@@ -677,6 +686,7 @@
     composeDraftId = null;
     draftStatus = '';
     showComposer = false;
+    if (activeAccountId) mailboxes = await fetchMailboxes(activeAccountId);
     showToast('Message envoyé.');
   }
 
