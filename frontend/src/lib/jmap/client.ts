@@ -21,6 +21,8 @@ export interface Attachment {
   name: string;
   type: string;
   size: number;
+  cid?: string;
+  disposition?: string;
 }
 
 export interface EmailSummary {
@@ -213,7 +215,86 @@ export async function archiveEmail(accountId: string, emailId: string, currentMa
   await jmapCall(accountId, [['Email/set', { accountId: accId, update: { [emailId]: update } }, 'a0']]);
 }
 
-export async function sendEmail(accountId: string, toEmail: string, subject: string, textBody: string, attachments: Attachment[] = []) {
+function buildEmailPayload(
+  draftsMailboxId: string,
+  identity: { name?: string; email: string },
+  toEmail: string,
+  subject: string,
+  textBody: string,
+  attachments: Attachment[] = []
+) {
+  const inlineAtts = attachments.filter((a) => a.disposition === 'inline' && a.cid);
+  const hasInline = inlineAtts.length > 0;
+  const escaped = textBody
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+  const inlineHtml = inlineAtts
+    .map((a) => `<div style="margin-top:12px"><img src="cid:${a.cid}" alt="${(a.name || 'image').replace(/"/g, '&quot;')}" style="max-width:100%;height:auto;" /></div>`)
+    .join('');
+
+  return {
+    mailboxIds: { [draftsMailboxId]: true },
+    from: [{ name: identity.name, email: identity.email }],
+    to: toEmail.trim() ? [{ email: toEmail.trim() }] : [],
+    subject,
+    keywords: { $draft: true, $seen: true },
+    bodyValues: hasInline
+      ? { text: { value: textBody }, html: { value: `<div>${escaped}</div>${inlineHtml}` } }
+      : { body: { value: textBody } },
+    textBody: [{ partId: hasInline ? 'text' : 'body', type: 'text/plain' }],
+    ...(hasInline ? { htmlBody: [{ partId: 'html', type: 'text/html' }] } : {}),
+    ...(attachments.length
+      ? {
+          attachments: attachments.map((a) => ({
+            blobId: a.blobId,
+            name: a.name,
+            type: a.type,
+            ...(a.cid ? { cid: a.cid } : {}),
+            ...(a.disposition ? { disposition: a.disposition } : {})
+          }))
+        }
+      : {})
+  };
+}
+
+export async function saveDraftEmail(
+  accountId: string,
+  opts: { draftId?: string | null; toEmail: string; subject: string; textBody: string; attachments?: Attachment[] }
+): Promise<string | null> {
+  const accId = await getPrimaryAccountId(accountId);
+  const meta = await jmapCall(accountId, [
+    ['Identity/get', { accountId: accId }, 'i0'],
+    ['Mailbox/get', { accountId: accId, properties: ['id', 'role'] }, 'm0']
+  ]);
+  const identity = meta.methodResponses[0][1].list[0];
+  const mailboxes = meta.methodResponses[1][1].list as { id: string; role?: string }[];
+  const drafts = mailboxes.find((m) => m.role === 'drafts') ?? mailboxes[0];
+  if (!identity || !drafts) return null;
+
+  const res = await jmapCall(accountId, [[
+    'Email/set',
+    {
+      accountId: accId,
+      create: {
+        draft1: buildEmailPayload(drafts.id, identity, opts.toEmail, opts.subject, opts.textBody, opts.attachments ?? [])
+      },
+      ...(opts.draftId ? { destroy: [opts.draftId] } : {})
+    },
+    'd0'
+  ]]);
+  return res.methodResponses?.[0]?.[1]?.created?.draft1?.id ?? null;
+}
+
+export async function sendEmail(
+  accountId: string,
+  toEmail: string,
+  subject: string,
+  textBody: string,
+  attachments: Attachment[] = [],
+  existingDraftId?: string | null
+) {
   const accId = await getPrimaryAccountId(accountId);
   const meta = await jmapCall(accountId, [
     ['Identity/get', { accountId: accId }, 'i0'],
@@ -230,17 +311,9 @@ export async function sendEmail(accountId: string, toEmail: string, subject: str
       {
         accountId: accId,
         create: {
-          draft1: {
-            mailboxIds: { [drafts.id]: true },
-            from: [{ name: identity.name, email: identity.email }],
-            to: [{ email: toEmail }],
-            subject,
-            keywords: { $draft: true, $seen: true },
-            bodyValues: { body: { value: textBody } },
-            textBody: [{ partId: 'body', type: 'text/plain' }],
-            ...(attachments.length ? { attachments: attachments.map((a) => ({ blobId: a.blobId, name: a.name, type: a.type })) } : {})
-          }
-        }
+          draft1: buildEmailPayload(drafts.id, identity, toEmail, subject, textBody, attachments)
+        },
+        ...(existingDraftId ? { destroy: [existingDraftId] } : {})
       },
       's0'
     ],
@@ -256,6 +329,38 @@ export async function sendEmail(accountId: string, toEmail: string, subject: str
       's1'
     ]
   ]);
+}
+
+export async function bulkSetEmailKeyword(accountId: string, emailIds: string[], keyword: string, value: boolean) {
+  if (!emailIds.length) return;
+  const accId = await getPrimaryAccountId(accountId);
+  const update: Record<string, Record<string, any>> = {};
+  for (const id of emailIds) update[id] = { [`keywords/${keyword}`]: value ? true : null };
+  await jmapCall(accountId, [['Email/set', { accountId: accId, update }, 'bkw0']]);
+}
+
+export async function bulkArchiveEmails(accountId: string, emailIds: string[], currentMailboxId: string, archiveId?: string) {
+  if (!emailIds.length) return;
+  const accId = await getPrimaryAccountId(accountId);
+  const patch: Record<string, any> = { [`mailboxIds/${currentMailboxId}`]: null };
+  if (archiveId) patch[`mailboxIds/${archiveId}`] = true;
+  const update: Record<string, Record<string, any>> = {};
+  for (const id of emailIds) update[id] = patch;
+  await jmapCall(accountId, [['Email/set', { accountId: accId, update }, 'bar0']]);
+}
+
+export async function bulkMoveEmails(accountId: string, emailIds: string[], targetMailboxId: string) {
+  if (!emailIds.length) return;
+  const accId = await getPrimaryAccountId(accountId);
+  const update: Record<string, Record<string, any>> = {};
+  for (const id of emailIds) update[id] = { mailboxIds: { [targetMailboxId]: true } };
+  await jmapCall(accountId, [['Email/set', { accountId: accId, update }, 'bmv0']]);
+}
+
+export async function bulkDestroyEmails(accountId: string, emailIds: string[]) {
+  if (!emailIds.length) return;
+  const accId = await getPrimaryAccountId(accountId);
+  await jmapCall(accountId, [['Email/set', { accountId: accId, destroy: emailIds }, 'brm0']]);
 }
 
 export interface DiskQuota {

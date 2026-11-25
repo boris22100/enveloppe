@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { db, type CachedEmail } from './lib/db/cache';
   import {
-    archiveEmail, createMailbox, deleteMailbox, destroyEmail, emptyMailboxes, fetchEmailBody, fetchMailboxes, fetchMailboxEmails, fetchQuota, getMailboxSubtreeIds, getPrimaryAccountId, markMailboxesAsRead, renameMailbox, ROLE_META, setEmailKeyword, updateEmailMailbox,
+    archiveEmail, bulkArchiveEmails, bulkDestroyEmails, bulkMoveEmails, bulkSetEmailKeyword, createMailbox, deleteMailbox, destroyEmail, emptyMailboxes, fetchEmailBody, fetchMailboxes, fetchMailboxEmails, fetchQuota, getMailboxSubtreeIds, getPrimaryAccountId, markMailboxesAsRead, renameMailbox, ROLE_META, saveDraftEmail, setEmailKeyword, updateEmailMailbox,
     searchEmails, sendEmail, uploadAttachment, type Account, type Attachment, type DiskQuota, type Mailbox
   } from './lib/jmap/client';
   import { enableWebPush } from './lib/jmap/push';
@@ -35,7 +35,7 @@
     themeMode === 'bowiz' ? '💠' : themeMode === 'dark' ? '🌙' : '☀️'
   );
 
-  let appVersion = $state(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.8.4');
+  let appVersion = $state(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.8.5');
   let accounts = $state<Account[]>([]);
   let loaded = $state(false);
   let activeAccountId = $state<string | null>(null);
@@ -69,6 +69,11 @@
   let composeSubject = $state('');
   let composeText = $state('');
   let composeFiles = $state<Attachment[]>([]);
+  let composeDraftId = $state<string | null>(null);
+  let draftStatus = $state('');
+  let draftTimer: ReturnType<typeof setTimeout> | null = null;
+  let selectedIds = $state<string[]>([]);
+  let bulkMoveTarget = $state('');
   let uploading = $state(false);
   let statusToast = $state('');
   let batchBusy = $state(false);
@@ -564,14 +569,161 @@
     } finally { uploading = false; }
   }
 
+  async function uploadInlineImage(file: File) {
+    if (!activeAccountId) return;
+    uploading = true;
+    try {
+      const uploaded = await uploadAttachment(activeAccountId, file);
+      const cid = `inline-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@enveloppe`;
+      composeFiles = [...composeFiles, { ...uploaded, cid, disposition: 'inline' }];
+      showToast('Image inline ajoutée.');
+    } finally { uploading = false; }
+  }
+
+  async function handleInlineImageUpload(e: Event) {
+    const files = (e.target as HTMLInputElement).files;
+    if (!files) return;
+    for (const f of Array.from(files)) {
+      if (f.type.startsWith('image/')) await uploadInlineImage(f);
+    }
+    (e.target as HTMLInputElement).value = '';
+  }
+
+  async function handleComposePaste(e: ClipboardEvent) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          await uploadInlineImage(file);
+        }
+      }
+    }
+  }
+
+  function closeComposer() {
+    if (draftTimer) { clearTimeout(draftTimer); draftTimer = null; }
+    showComposer = false;
+    composeDraftId = null;
+    draftStatus = '';
+  }
+
+  $effect(() => {
+    const open = showComposer;
+    const acc = activeAccountId;
+    const to = composeTo;
+    const subj = composeSubject;
+    const body = composeText;
+    const files = composeFiles;
+    if (draftTimer) { clearTimeout(draftTimer); draftTimer = null; }
+    if (!open || !acc || (!to.trim() && !subj.trim() && !body.trim() && files.length === 0)) return;
+    draftTimer = setTimeout(async () => {
+      try {
+        draftStatus = 'Enregistrement...';
+        const savedId = await saveDraftEmail(acc, {
+          draftId: composeDraftId,
+          toEmail: to,
+          subject: subj,
+          textBody: body,
+          attachments: files
+        });
+        if (savedId) composeDraftId = savedId;
+        draftStatus = 'Brouillon enregistré';
+      } catch {
+        draftStatus = '';
+      }
+    }, 3500);
+    return () => {
+      if (draftTimer) { clearTimeout(draftTimer); draftTimer = null; }
+    };
+  });
+
   async function handleSend(e: Event) {
     e.preventDefault();
     if (!activeAccountId) return;
-    await sendEmail(activeAccountId, composeTo, composeSubject, composeText, composeFiles);
+    if (draftTimer) { clearTimeout(draftTimer); draftTimer = null; }
+    await sendEmail(activeAccountId, composeTo, composeSubject, composeText, composeFiles, composeDraftId);
     composeTo = composeSubject = composeText = '';
     composeFiles = [];
+    composeDraftId = null;
+    draftStatus = '';
     showComposer = false;
     showToast('Message envoyé.');
+  }
+
+  function toggleSelectMail(id: string) {
+    selectedIds = selectedIds.includes(id)
+      ? selectedIds.filter((x) => x !== id)
+      : [...selectedIds, id];
+  }
+
+  function toggleSelectAll() {
+    const visibleIds = displayedEntries.map((e) => e.lead.id);
+    if (visibleIds.length && visibleIds.every((id) => selectedIds.includes(id))) {
+      selectedIds = [];
+    } else {
+      selectedIds = visibleIds;
+    }
+  }
+
+  async function handleBulkRead() {
+    if (!activeAccountId || !selectedIds.length || batchBusy) return;
+    batchBusy = true;
+    try {
+      await bulkSetEmailKeyword(activeAccountId, selectedIds, '$seen', true);
+      for (const id of selectedIds) await db.emails.update(id, { isUnread: false });
+      emails = emails.map((m) => (selectedIds.includes(m.id) ? { ...m, isUnread: false } : m));
+      showToast(`${selectedIds.length} message(s) marqué(s) lu(s).`);
+      selectedIds = [];
+    } finally { batchBusy = false; }
+  }
+
+  async function handleBulkArchive() {
+    if (!activeAccountId || !activeMailboxId || !selectedIds.length || batchBusy) return;
+    batchBusy = true;
+    try {
+      const archiveBox = mailboxes.find((m) => m.role === 'archive');
+      await bulkArchiveEmails(activeAccountId, selectedIds, activeMailboxId, archiveBox?.id);
+      await db.emails.bulkDelete(selectedIds);
+      emails = emails.filter((m) => !selectedIds.includes(m.id));
+      if (selectedEmail && selectedIds.includes(selectedEmail.id)) selectedEmail = null;
+      showToast(`${selectedIds.length} message(s) archivé(s).`);
+      selectedIds = [];
+    } finally { batchBusy = false; }
+  }
+
+  async function handleBulkMove() {
+    if (!activeAccountId || !bulkMoveTarget || !selectedIds.length || batchBusy) return;
+    batchBusy = true;
+    try {
+      await bulkMoveEmails(activeAccountId, selectedIds, bulkMoveTarget);
+      await db.emails.bulkDelete(selectedIds);
+      emails = emails.filter((m) => !selectedIds.includes(m.id));
+      if (selectedEmail && selectedIds.includes(selectedEmail.id)) selectedEmail = null;
+      showToast(`${selectedIds.length} message(s) déplacé(s).`);
+      selectedIds = [];
+      bulkMoveTarget = '';
+    } finally { batchBusy = false; }
+  }
+
+  async function handleBulkDelete() {
+    if (!activeAccountId || !selectedIds.length || batchBusy) return;
+    batchBusy = true;
+    try {
+      const trashBox = mailboxes.find((m) => m.role === 'trash');
+      if (trashBox && activeMailboxId !== trashBox.id) {
+        await bulkMoveEmails(activeAccountId, selectedIds, trashBox.id);
+      } else {
+        await bulkDestroyEmails(activeAccountId, selectedIds);
+      }
+      await db.emails.bulkDelete(selectedIds);
+      emails = emails.filter((m) => !selectedIds.includes(m.id));
+      if (selectedEmail && selectedIds.includes(selectedEmail.id)) selectedEmail = null;
+      showToast(`${selectedIds.length} message(s) supprimé(s).`);
+      selectedIds = [];
+    } finally { batchBusy = false; }
   }
 
   function handleKeydown(e: KeyboardEvent) {
@@ -899,7 +1051,33 @@
                   onclick={() => (groupThreads = !groupThreads)}
                   class="rounded-md border px-2.5 py-1 font-medium {groupThreads ? 'env-accent-soft border-[var(--env-accent)]/50 font-semibold' : 'env-input env-muted'}"
                 >Fils</button>
+                <button
+                  type="button"
+                  onclick={toggleSelectAll}
+                  class="ml-auto rounded-md border px-2.5 py-1 font-medium {selectedIds.length > 0 ? 'env-accent-soft border-[var(--env-accent)]/50 font-semibold' : 'env-input env-muted'}"
+                >{selectedIds.length > 0 ? `${selectedIds.length} sél.` : 'Sélection'}</button>
               </div>
+
+              {#if selectedIds.length > 0}
+                <div class="env-subtle env-border mt-2 flex flex-wrap items-center gap-1.5 rounded-lg border p-2 text-xs">
+                  <button type="button" disabled={batchBusy} onclick={handleBulkRead} class="env-input env-hover rounded-md border px-2 py-1 font-medium">✓ Lu</button>
+                  <button type="button" disabled={batchBusy} onclick={handleBulkArchive} class="env-input env-hover rounded-md border px-2 py-1 font-medium">Archiver</button>
+                  <select
+                    aria-label="Déplacer la sélection vers"
+                    bind:value={bulkMoveTarget}
+                    onchange={handleBulkMove}
+                    disabled={batchBusy}
+                    class="env-input max-w-32 rounded-md border px-2 py-1 text-xs"
+                  >
+                    <option value="">Déplacer…</option>
+                    {#each mailboxes as box}
+                      <option value={box.id}>{box.name}</option>
+                    {/each}
+                  </select>
+                  <button type="button" disabled={batchBusy} onclick={handleBulkDelete} class="rounded-md border border-red-500/40 px-2 py-1 font-medium text-red-400 hover:bg-red-500/10">Supprimer</button>
+                  <button type="button" onclick={() => (selectedIds = [])} aria-label="Annuler la sélection" class="env-faint hover:env-text ml-auto px-1">✕</button>
+                </div>
+              {/if}
             </div>
 
             <div class="env-divider flex-1 divide-y overflow-y-auto">
@@ -915,6 +1093,14 @@
                   oncontextmenu={(e) => { e.preventDefault(); ctxMenu = { x: e.clientX, y: e.clientY, type: 'mail', mail }; }}
                   class="env-hover flex w-full items-center gap-3 px-4 py-3 text-left transition-colors {selectedEmail?.id === mail.id ? 'env-active' : ''} {draggedMail?.id === mail.id ? 'opacity-60' : ''}"
                 >
+                  <input
+                    type="checkbox"
+                    aria-label="Sélectionner {mail.subject || 'ce message'}"
+                    checked={selectedIds.includes(mail.id)}
+                    onclick={(e) => e.stopPropagation()}
+                    onchange={() => toggleSelectMail(mail.id)}
+                    class="h-4 w-4 shrink-0 cursor-pointer accent-[var(--env-accent)]"
+                  />
                   <SenderAvatar name={mail.from[0]?.name} email={mail.from[0]?.email} />
                   <div class="min-w-0 flex-1">
                     <div class="flex items-center justify-between gap-2">
@@ -992,23 +1178,34 @@
     aria-modal="true"
     aria-labelledby="composer-title"
     tabindex="-1"
-    onclick={() => !uploading && (showComposer = false)}
-    onkeydown={(e) => e.key === 'Escape' && !uploading && (showComposer = false)}
+    onclick={() => !uploading && closeComposer()}
+    onkeydown={(e) => e.key === 'Escape' && !uploading && closeComposer()}
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
   >
     <div role="presentation" onclick={(e) => e.stopPropagation()} class="w-full max-w-lg">
       <form onsubmit={handleSend} class="env-card space-y-3.5 rounded-xl border p-7 shadow-2xl">
-        <h3 id="composer-title" class="env-text text-lg font-semibold">Nouveau message</h3>
+        <div class="flex items-center justify-between gap-2">
+          <h3 id="composer-title" class="env-text text-lg font-semibold">Nouveau message</h3>
+          {#if draftStatus}
+            <span class="env-faint text-xs">{draftStatus}</span>
+          {/if}
+        </div>
         <input bind:value={composeTo} type="text" aria-label="Destinataire" placeholder="Destinataire(s)" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
         <input bind:value={composeSubject} aria-label="Objet" placeholder="Objet" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
-        <textarea bind:value={composeText} rows="9" aria-label="Message" placeholder="Message..." required class="env-input w-full rounded-lg border p-3.5 text-sm"></textarea>
-        <div class="flex items-center justify-between gap-2 pt-1">
-          <label class="env-input env-hover env-muted cursor-pointer rounded-xl border px-3.5 py-2 text-xs font-medium">
-            {uploading ? 'Upload...' : '📎 Joindre un fichier'}
-            <input type="file" multiple onchange={handleFileUpload} class="hidden" aria-label="Joindre des fichiers" />
-          </label>
+        <textarea bind:value={composeText} onpaste={handleComposePaste} rows="9" aria-label="Message" placeholder="Message... (collez une image pour l'insérer inline)" required class="env-input w-full rounded-lg border p-3.5 text-sm"></textarea>
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div class="flex items-center gap-2">
+            <label class="env-input env-hover env-muted cursor-pointer rounded-xl border px-3 py-2 text-xs font-medium">
+              {uploading ? 'Upload...' : '📎 Fichier'}
+              <input type="file" multiple onchange={handleFileUpload} class="hidden" aria-label="Joindre des fichiers" />
+            </label>
+            <label class="env-input env-hover env-muted cursor-pointer rounded-xl border px-3 py-2 text-xs font-medium">
+              🖼️ Image
+              <input type="file" accept="image/*" multiple onchange={handleInlineImageUpload} class="hidden" aria-label="Insérer une image inline" />
+            </label>
+          </div>
           <div class="flex gap-2">
-            <button type="button" onclick={() => (showComposer = false)} class="env-muted env-hover rounded-xl px-4 py-2 text-sm">Annuler</button>
+            <button type="button" onclick={closeComposer} class="env-muted env-hover rounded-xl px-4 py-2 text-sm">Annuler</button>
             <button disabled={uploading} class="env-accent-bg rounded-xl px-5 py-2 text-sm font-semibold hover:opacity-95 disabled:opacity-50">Envoyer</button>
           </div>
         </div>
@@ -1016,7 +1213,7 @@
           <div class="flex flex-wrap gap-1.5 pt-1">
             {#each composeFiles as f, idx}
               <span class="env-subtle env-muted inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs">
-                <span>{f.name}</span>
+                <span>{f.disposition === 'inline' ? '🖼️' : '📎'} {f.name}</span>
                 <button
                   type="button"
                   onclick={() => removeComposeFile(idx)}

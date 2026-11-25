@@ -47,7 +47,58 @@
   } = $props();
 
   let allowImages = $state(false);
-  let srcdoc = $derived(html ? buildSandboxedEmailDoc(html, allowImages) : '');
+  let cidDataUrls = $state<Record<string, string>>({});
+
+  let visibleAttachments = $derived(
+    attachments.filter((att) => !(att.disposition === 'inline' && att.cid))
+  );
+
+  $effect(() => {
+    const inlineAtts = attachments.filter((att) => att.cid && att.type?.startsWith('image/'));
+    if (!html || inlineAtts.length === 0) {
+      cidDataUrls = {};
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const resolved: Record<string, string> = {};
+      for (const att of inlineAtts) {
+        if (!att.cid) continue;
+        try {
+          const res = await fetch(getDownloadUrl(accountId, jmapAccountId, att));
+          if (!res.ok) continue;
+          const blob = await res.blob();
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ''));
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(blob);
+          });
+          const cleanCid = att.cid.replace(/^<|>$/g, '');
+          resolved[cleanCid] = dataUrl;
+        } catch {
+          // ignore broken inline cid
+        }
+      }
+      if (!cancelled) cidDataUrls = resolved;
+    })();
+    return () => {
+      cancelled = true;
+    };
+  });
+
+  let resolvedHtml = $derived.by(() => {
+    if (!html) return null;
+    const keys = Object.keys(cidDataUrls);
+    if (!keys.length) return html;
+    return html.replace(/(src=["'])cid:([^"']+)(["'])/gi, (match, p1, cidRaw, p3) => {
+      const clean = cidRaw.replace(/^<|>$/g, '');
+      const url = cidDataUrls[clean];
+      return url ? `${p1}${url}${p3}` : match;
+    });
+  });
+
+  let srcdoc = $derived(resolvedHtml ? buildSandboxedEmailDoc(resolvedHtml, allowImages) : '');
 </script>
 
 <div class="env-card flex h-full flex-col rounded-xl border shadow-sm">
@@ -132,9 +183,9 @@
     </div>
   {/if}
 
-  {#if attachments.length > 0}
+  {#if visibleAttachments.length > 0}
     <div class="env-subtle env-border flex flex-wrap gap-2 border-b px-6 py-3">
-      {#each attachments as att}
+      {#each visibleAttachments as att}
         <a
           href={getDownloadUrl(accountId, jmapAccountId, att)}
           download={att.name}
