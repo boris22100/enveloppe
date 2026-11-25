@@ -38,7 +38,7 @@
 
   let lang = $state<Locale>(getLocale());
   function switchLang(next: Locale) { lang = next; setLocale(next); }
-  let appVersion = $state(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.8.2');
+  let appVersion = $state(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.8.3');
   let accounts = $state<Account[]>([]);
   let loaded = $state(false);
   let activeAccountId = $state<string | null>(null);

@@ -26,4 +26,15 @@ describe('JSCalendar recurrence expansion', () => {
     const items = expandEventOccurrences(ev, '2026-11-01T00:00:00', '2026-11-10T23:59:59');
     expect(items.map((x) => x.start.slice(0, 10))).toEqual(['2026-11-02', '2026-11-03', '2026-11-05']);
   });
+
+  it('expands weekly recurrence with custom interval', () => {
+    const ev: JSCalendarEvent = {
+      id: 'biweekly-1',
+      title: 'Revue bi-hebdo',
+      start: '2026-11-02T14:00:00',
+      recurrenceRules: [{ frequency: 'weekly', interval: 2, count: 3 }]
+    };
+    const items = expandEventOccurrences(ev, '2026-11-01T00:00:00', '2026-12-15T23:59:59');
+    expect(items.map((x) => x.start.slice(0, 10))).toEqual(['2026-11-02', '2026-11-16', '2026-11-30']);
+  });
 });
