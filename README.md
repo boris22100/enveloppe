@@ -1,11 +1,12 @@
 # ✉️ Enveloppe
 
-Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContact, Calendrier JSCalendar*), conçu pour **Stalwart Mail Server** et compatible multi-serveurs.
+Webmail **PWA** ultraléger, moderne, **100 % français** et **100 % JMAP** (*Mail, Contacts JSContact, Calendrier JSCalendar*), conçu pour **Stalwart Mail Server** et compatible multi-serveurs.
 
 ![Version](https://img.shields.io/badge/version-v0.8.4-48B17F?style=flat-square)
 ![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)
 ![Image Size](https://img.shields.io/badge/image-9.99%20Mo-48B17F?style=flat-square)
-![Tests](https://img.shields.io/badge/vitest-15%20passed-48B17F?style=flat-square)
+![Langue](https://img.shields.io/badge/langue-100%25%20Fran%C3%A7ais-0D3A4D?style=flat-square)
+![Tests](https://img.shields.io/badge/vitest-13%20passed-48B17F?style=flat-square)
 ![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)
 ![OWASP ZAP](https://img.shields.io/badge/OWASP%20ZAP-0%20FAIL%20%7C%2063%20PASS-48B17F?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)
