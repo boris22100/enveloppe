@@ -294,13 +294,14 @@
   }
 
   function handleEditorKeydown(e: KeyboardEvent) {
-    if (e.key === 'Tab' && textareaEl) {
+    const el = e.currentTarget as HTMLTextAreaElement | null;
+    if (e.key === 'Tab' && el) {
       e.preventDefault();
-      const start = textareaEl.selectionStart;
-      const end = textareaEl.selectionEnd;
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
       rawCode = rawCode.slice(0, start) + '    ' + rawCode.slice(end);
       requestAnimationFrame(() => {
-        if (textareaEl) textareaEl.selectionStart = textareaEl.selectionEnd = start + 4;
+        el.selectionStart = el.selectionEnd = start + 4;
       });
     }
   }

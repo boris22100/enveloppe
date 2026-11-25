@@ -409,7 +409,7 @@
     if (!mail || !activeAccountId) return;
     if (activeMailboxId && activeMailboxId === targetBox.id) return;
     try {
-      await updateEmailMailbox(activeAccountId, mail.id, targetBox.id, activeMailboxId ?? undefined);
+      await updateEmailMailbox(activeAccountId, mail.id, targetBox.id);
       emails = emails.filter((item) => item.id !== mail.id);
       if (selectedEmail?.id === mail.id) {
         selectedEmail = null;
