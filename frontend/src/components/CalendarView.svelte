@@ -719,7 +719,18 @@ interface ContactEntry { name: string; email: string; }
         {:else}
           <div></div>
         {/if}
-        <button type="button" onclick={() => (selectedEvent = null)} class="env-input env-hover rounded-xl border px-4 py-2 text-xs font-medium">Fermer</button>
+        <div class="flex items-center gap-2">
+          {#if selectedEvent.id}
+            <button
+              type="button"
+              onclick={() => openEditModal(selectedEvent!)}
+              class="env-input env-hover rounded-xl border px-4 py-2 text-xs font-medium"
+            >
+              ✏️ Modifier
+            </button>
+          {/if}
+          <button type="button" onclick={() => (selectedEvent = null)} class="env-input env-hover rounded-xl border px-4 py-2 text-xs font-medium">Fermer</button>
+        </div>
       </div>
     </div>
   </div>
