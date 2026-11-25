@@ -94,7 +94,20 @@ interface ContactEntry { name: string; email: string; }
 
   let defaultCalId = $state('');
   let events = $state<JSCalendarEvent[]>([]);
-  let view = $state<'month' | 'week' | 'day'>('month');
+  const VIEW_STORAGE_KEY = 'enveloppe_calendar_view_v1';
+  function loadSavedView(): 'month' | 'week' | 'day' {
+    try {
+      const saved = localStorage.getItem(VIEW_STORAGE_KEY);
+      if (saved === 'month' || saved === 'week' || saved === 'day') return saved;
+    } catch {}
+    return 'month';
+  }
+  let view = $state<'month' | 'week' | 'day'>(loadSavedView());
+  $effect(() => {
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, view);
+    } catch {}
+  });
   let cursor = $state(new Date());
 
   let showModal = $state(false);
@@ -709,6 +722,15 @@ interface ContactEntry { name: string; email: string; }
                     <div class="flex items-center gap-2">
                       <span class="font-mono text-xs">{formatTime(ev.start)}</span>
                       {#if ev.id}
+                        <button
+                          type="button"
+                          title="Modifier"
+                          aria-label="Modifier {ev.title}"
+                          onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
+                          class="rounded-lg px-1.5 py-0.5 text-xs hover:bg-white/10"
+                        >
+                          ✏️
+                        </button>
                         <button
                           type="button"
                           title="Supprimer"
