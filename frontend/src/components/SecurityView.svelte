@@ -1,9 +1,4 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { getLocale, subscribeLocale, t, type Locale } from '../lib/i18n';
-  let activeLocale = $state<Locale>(getLocale());
-  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
-  onDestroy(_unsubLocale);
   import type { Account } from '../lib/jmap/client';
   import { getAccountSignature, setAccountSignature } from '../lib/signatures';
   import {
@@ -34,7 +29,7 @@
     try {
       appPasswords = await fetchAppPasswords(account.id);
     } catch (err: any) {
-      appError = err.message || t('security.appPasswordsLoadError', undefined, activeLocale);
+      appError = err.message || 'Impossible de charger les mots de passe dâapplication.';
     }
   }
 
@@ -62,11 +57,11 @@
     }
     try {
       await updateAccountPassword(account.id, currentPassword, newPassword);
-      pwdMessage = t('security.passwordUpdatedLogout', undefined, activeLocale);
+      pwdMessage = 'Mot de passe mis Ã  jour. DÃ©connexion en cours...';
       currentPassword = newPassword = confirmPassword = '';
       setTimeout(() => onLogout(), 1200);
     } catch (err: any) {
-      pwdError = err.message || t('security.passwordUpdateError', undefined, activeLocale);
+      pwdError = err.message || 'Impossible de modifier le mot de passe.';
     }
   }
 
@@ -100,7 +95,7 @@
 <div class="flex h-full flex-col space-y-6 overflow-y-auto p-6">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
-      <h2 class="env-text text-xl font-bold">{t('security.title', undefined, activeLocale)} — {account.label}</h2>
+      <h2 class="env-text text-xl font-bold">{'SÃ©curitÃ© & Signatures'} — {account.label}</h2>
       <p class="env-muted text-sm">{account.username} ({account.host})</p>
     </div>
     <a
@@ -114,19 +109,19 @@
   </div>
 
   <section class="env-card max-w-xl space-y-4 rounded-xl border p-6 shadow-xs">
-    <h3 class="env-text text-base font-semibold">{t('security.changePassword', undefined, activeLocale)}</h3>
+    <h3 class="env-text text-base font-semibold">{'Changer le mot de passe du compte'}</h3>
     {#if pwdMessage}<p role="status" class="env-accent-soft rounded-lg p-3 text-xs font-medium">{pwdMessage}</p>{/if}
     {#if pwdError}<p role="alert" class="rounded-lg bg-red-500/15 p-3 text-xs font-medium text-red-400">{pwdError}</p>{/if}
     <form onsubmit={changePassword} class="space-y-3">
-      <input type="password" bind:value={currentPassword} aria-label={t('security.currentPassword', undefined, activeLocale)} placeholder={t('security.currentPassword', undefined, activeLocale)} required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
-      <input type="password" bind:value={newPassword} aria-label={t('security.newPassword', undefined, activeLocale)} placeholder={t('security.newPassword', undefined, activeLocale)} required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
-      <input type="password" bind:value={confirmPassword} aria-label={t('security.confirmNewPassword', undefined, activeLocale)} placeholder={t('security.confirmNewPassword', undefined, activeLocale)} required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
-      <button class="env-accent-bg rounded-xl px-4 py-2.5 text-sm font-semibold hover:opacity-95">{t('common.update', undefined, activeLocale)}</button>
+      <input type="password" bind:value={currentPassword} aria-label={'Mot de passe actuel'} placeholder={'Mot de passe actuel'} required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+      <input type="password" bind:value={newPassword} aria-label={'Nouveau mot de passe'} placeholder={'Nouveau mot de passe'} required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+      <input type="password" bind:value={confirmPassword} aria-label={'Confirmer le nouveau mot de passe'} placeholder={'Confirmer le nouveau mot de passe'} required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+      <button class="env-accent-bg rounded-xl px-4 py-2.5 text-sm font-semibold hover:opacity-95">{'Mettre Ã  jour'}</button>
     </form>
   </section>
 
   <section class="env-card max-w-xl space-y-4 rounded-xl border p-6 shadow-xs">
-    <h3 class="env-text text-base font-semibold">{t('security.appPasswords', undefined, activeLocale)}</h3>
+    <h3 class="env-text text-base font-semibold">{'Mots de passe d\'application'}</h3>
 
     {#if appError}
       <p role="alert" class="rounded-lg bg-red-500/15 p-3 text-xs font-medium text-red-400">{appError}</p>
@@ -134,7 +129,7 @@
 
     {#if generatedSecret}
       <div class="env-accent-soft rounded-lg border border-[#48B17F] p-4 text-xs">
-        <p class="env-text mb-1.5 font-medium">{t('security.copyPasswordNow', undefined, activeLocale)}</p>
+        <p class="env-text mb-1.5 font-medium">{'Copie ce mot de passe maintenant (il ne sera plus affichÃ©) :'}</p>
         <code class="env-card env-accent-text block select-all break-all rounded-xl border px-3 py-2 font-mono text-sm">{generatedSecret}</code>
       </div>
     {/if}
@@ -170,22 +165,22 @@
           </button>
         </div>
       {:else}
-        <p class="env-faint py-2 text-xs">{t('security.noAppPasswords', undefined, activeLocale)}</p>
+        <p class="env-faint py-2 text-xs">{'Aucun mot de passe d\'application configurÃ©.'}</p>
       {/each}
     </div>
   </section>
 
   <section class="env-card max-w-xl space-y-4 rounded-xl border p-6 shadow-xs">
-    <h3 class="env-text text-base font-semibold">{t('security.signatureTitle', undefined, activeLocale)}</h3>
-    <p class="env-muted text-xs">{t('security.signatureHint', undefined, activeLocale)}</p>
+    <h3 class="env-text text-base font-semibold">{'Signature de messagerie'}</h3>
+    <p class="env-muted text-xs">{'AjoutÃ©e automatiquement Ã  la fin de vos nouveaux messages pour ce compte.'}</p>
     {#if sigSaved}
-      <p role="status" class="env-accent-soft rounded-lg p-3 text-xs font-medium">{t('security.signatureSaved', undefined, activeLocale)}</p>
+      <p role="status" class="env-accent-soft rounded-lg p-3 text-xs font-medium">{'Signature enregistrÃ©e pour ce compte.'}</p>
     {/if}
     <form onsubmit={saveSignature} class="space-y-3">
       <textarea
         bind:value={signature}
         rows="4"
-        aria-label={t('security.signatureTitle', undefined, activeLocale)}
+        aria-label={'Signature de messagerie'}
         placeholder={'-- \nPrénom Nom — Fonction\nhttps://exemple.fr'}
         class="env-input w-full rounded-lg border p-3.5 text-sm"
       ></textarea>

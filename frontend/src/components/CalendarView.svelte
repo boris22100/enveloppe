@@ -1,9 +1,4 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { getLocale, subscribeLocale, t, type Locale } from '../lib/i18n';
-  let activeLocale = $state<Locale>(getLocale());
-  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
-  onDestroy(_unsubLocale);
   import { CALENDAR_VIEW_STORAGE_KEY, loadCalendarView, saveCalendarView, type CalendarViewMode } from '../lib/calendarViewStorage';
   import { jmapCall, sendEmail, uploadAttachment } from '../lib/jmap/client';
   import { buildIcsInvitation, createIcsFile } from '../lib/ics';
@@ -424,7 +419,7 @@ interface ContactEntry { name: string; email: string; }
       formattedDate ? `Date : ${formattedDate}` : '',
       evDescription ? `\nNotes :\n${evDescription}` : '',
       '',
-      t('calendar.icsAttached', undefined, activeLocale)
+      'Le fichier invitation.ics est joint Ã  cet e-mail.'
     ].filter((line, idx, arr) => !(line === '' && arr[idx - 1] === '')).join('\n');
 
     await sendEmail(
@@ -486,7 +481,7 @@ interface ContactEntry { name: string; email: string; }
       whenTxt ? `Nouvelle date : ${whenTxt}` : '',
       ev.description ? `\nNotes :\n${ev.description}` : '',
       '',
-      t('calendar.icsUpdatedAttached', undefined, activeLocale)
+      'Le fichier invitation.ics mis Ã  jour est joint Ã  cet e-mail.'
     ].filter((l, idx, arr) => !(l === '' && arr[idx - 1] === '')).join('\n');
 
     await sendEmail(
@@ -530,7 +525,7 @@ interface ContactEntry { name: string; email: string; }
       uid: ev.uid || ev.id || undefined,
       title: evTitle,
       start: evStart,
-      description: ev.description ? `Annulé : ${ev.description}` : t('calendar.eventCancelled', undefined, activeLocale),
+      description: ev.description ? `Annulé : ${ev.description}` : 'ÃvÃ©nement annulÃ©.',
       sequence: typeof ev?.sequence === 'number' ? ev.sequence + 1 : 1,
       organizerEmail: sender || (localStorage.getItem('enveloppe_calendar_organizer_v1')?.trim() || ''),
       attendees: recipients,
@@ -546,7 +541,7 @@ interface ContactEntry { name: string; email: string; }
       `L\'événement suivant a été annulé : ${evTitle}`,
       whenTxt ? `Date prévue : ${whenTxt}` : '',
       '',
-      t('calendar.icsCancelledAttached', undefined, activeLocale)
+      'Le fichier invitation.ics (annulation) est joint Ã  cet e-mail.'
     ].filter((l, idx, arr) => !(l === '' && arr[idx - 1] === '')).join('\n');
 
     await sendEmail(
@@ -565,25 +560,25 @@ interface ContactEntry { name: string; email: string; }
   <header class="env-border flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
     <div class="flex items-center gap-3">
       <div class="env-input flex items-center overflow-hidden rounded-xl border">
-        <button type="button" onclick={() => shift(-1)} aria-label={t('calendar.prevPeriod', undefined, activeLocale)} class="env-hover px-3 py-1.5 text-sm font-medium">‹</button>
-        <button type="button" onclick={() => (cursor = new Date())} class="env-border env-hover border-x px-3.5 py-1.5 text-xs font-semibold">{t('calendar.today', undefined, activeLocale)}</button>
-        <button type="button" onclick={() => shift(1)} aria-label={t('calendar.nextPeriod', undefined, activeLocale)} class="env-hover px-3 py-1.5 text-sm font-medium">›</button>
+        <button type="button" onclick={() => shift(-1)} aria-label={'PÃ©riode prÃ©cÃ©dente'} class="env-hover px-3 py-1.5 text-sm font-medium">‹</button>
+        <button type="button" onclick={() => (cursor = new Date())} class="env-border env-hover border-x px-3.5 py-1.5 text-xs font-semibold">{'Aujourd\'hui'}</button>
+        <button type="button" onclick={() => shift(1)} aria-label={'PÃ©riode suivante'} class="env-hover px-3 py-1.5 text-sm font-medium">›</button>
       </div>
       <h2 class="env-text text-lg font-bold capitalize">{headerLabel}</h2>
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
       <div class="env-subtle env-border flex rounded-xl border p-0.5 text-xs">
-        <button type="button" onclick={() => (view = 'month')} class="rounded-lg px-3 py-1.5 {view === 'month' ? 'env-accent-soft font-semibold' : 'env-muted'}">{t('calendar.month', undefined, activeLocale)}</button>
-        <button type="button" onclick={() => (view = 'week')} class="rounded-lg px-3 py-1.5 {view === 'week' ? 'env-accent-soft font-semibold' : 'env-muted'}">{t('calendar.week', undefined, activeLocale)}</button>
-        <button type="button" onclick={() => (view = 'day')} class="rounded-lg px-3 py-1.5 {view === 'day' ? 'env-accent-soft font-semibold' : 'env-muted'}">{t('calendar.day', undefined, activeLocale)}</button>
+        <button type="button" onclick={() => (view = 'month')} class="rounded-lg px-3 py-1.5 {view === 'month' ? 'env-accent-soft font-semibold' : 'env-muted'}">{'Mois'}</button>
+        <button type="button" onclick={() => (view = 'week')} class="rounded-lg px-3 py-1.5 {view === 'week' ? 'env-accent-soft font-semibold' : 'env-muted'}">{'Semaine'}</button>
+        <button type="button" onclick={() => (view = 'day')} class="rounded-lg px-3 py-1.5 {view === 'day' ? 'env-accent-soft font-semibold' : 'env-muted'}">{'Jour'}</button>
       </div>
 
-      <button type="button" onclick={() => openCreateModal(toYMD(cursor))} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">{t('calendar.newShort', undefined, activeLocale)}</button>
+      <button type="button" onclick={() => openCreateModal(toYMD(cursor))} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">{'+ Nouveau'}</button>
       <button type="button" onclick={() => downloadFile(eventsToIcs(events), 'calendrier.ics', 'text/calendar')} class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium">.ics</button>
       <label class="env-input env-hover cursor-pointer rounded-xl border px-3 py-2 text-xs font-medium">
         Importer
-        <input type="file" accept=".ics,.json" onchange={handleImport} class="hidden" aria-label={t('calendar.importAria', undefined, activeLocale)} />
+        <input type="file" accept=".ics,.json" onchange={handleImport} class="hidden" aria-label={'Importer un calendrier (.ics ou .json)'} />
       </label>
     </div>
   </header>
@@ -611,7 +606,7 @@ interface ContactEntry { name: string; email: string; }
         >
           <button
             type="button"
-            title={t('calendar.viewDay', undefined, activeLocale)}
+            title={'Voir cette journÃ©e'}
             onclick={(e) => { e.stopPropagation(); cursor = cell.date; view = 'day'; }}
             class="mb-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs {cell.ymd === todayYMD ? 'env-accent-bg font-bold' : 'env-muted hover:ring-1 hover:ring-[var(--env-accent)]'}"
           >
@@ -634,8 +629,8 @@ interface ContactEntry { name: string; email: string; }
                   <div class="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover/ev:opacity-100">
                     <button
                       type="button"
-                      title={t('common.edit', undefined, activeLocale)}
-                      aria-label={`${t('common.editAriaPrefix', undefined, activeLocale)} ${ev.title}`}
+                      title={'Modifier'}
+                      aria-label={`${'Modifier'} ${ev.title}`}
                       onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                       class="text-xs hover:opacity-100"
                     >
@@ -643,8 +638,8 @@ interface ContactEntry { name: string; email: string; }
                     </button>
                     <button
                       type="button"
-                      title={t('common.delete', undefined, activeLocale)}
-                      aria-label={`${t('common.deleteAriaPrefix', undefined, activeLocale)} ${ev.title}`}
+                      title={'Supprimer'}
+                      aria-label={`${'Supprimer'} ${ev.title}`}
                       onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
                       class="text-xs hover:text-red-400"
                     >
@@ -698,8 +693,8 @@ interface ContactEntry { name: string; email: string; }
                     {#if ev.id}
                       <button
                         type="button"
-                        title={t('common.edit', undefined, activeLocale)}
-                        aria-label={`${t('common.editAriaPrefix', undefined, activeLocale)} ${ev.title}`}
+                        title={'Modifier'}
+                        aria-label={`${'Modifier'} ${ev.title}`}
                         onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                         class="rounded px-1.5 py-0.5 text-xs opacity-75 hover:opacity-100 group-hover/ev:opacity-100"
                       >
@@ -709,8 +704,8 @@ interface ContactEntry { name: string; email: string; }
                     {#if ev.id}
                     <button
                       type="button"
-                      title={t('common.delete', undefined, activeLocale)}
-                      aria-label={`${t('common.deleteAriaPrefix', undefined, activeLocale)} ${ev.title}`}
+                      title={'Supprimer'}
+                      aria-label={`${'Supprimer'} ${ev.title}`}
                       onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
                       class="rounded px-1.5 py-0.5 text-xs opacity-75 hover:bg-red-500/15 hover:text-red-400 group-hover/ev:opacity-100"
                     >
@@ -759,8 +754,8 @@ interface ContactEntry { name: string; email: string; }
                       {#if ev.id}
                         <button
                           type="button"
-                          title={t('common.edit', undefined, activeLocale)}
-                          aria-label={`${t('common.editAriaPrefix', undefined, activeLocale)} ${ev.title}`}
+                          title={'Modifier'}
+                          aria-label={`${'Modifier'} ${ev.title}`}
                           onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                           class="rounded-lg px-1.5 py-0.5 text-xs hover:bg-white/10"
                         >
@@ -768,8 +763,8 @@ interface ContactEntry { name: string; email: string; }
                         </button>
                         <button
                           type="button"
-                          title={t('common.delete', undefined, activeLocale)}
-                          aria-label={`${t('common.deleteAriaPrefix', undefined, activeLocale)} ${ev.title}`}
+                          title={'Supprimer'}
+                          aria-label={`${'Supprimer'} ${ev.title}`}
                           onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
                           class="rounded-lg px-1.5 py-0.5 text-xs hover:bg-red-500/15 hover:text-red-400"
                         >
@@ -816,7 +811,7 @@ interface ContactEntry { name: string; email: string; }
             {selectedEvent.start ? new Date(selectedEvent.start).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: selectedEvent.showWithoutTime ? undefined : 'short' }) : ''}
           </p>
         </div>
-        <button type="button" onclick={() => (selectedEvent = null)} aria-label={t('common.close', undefined, activeLocale)} class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
+        <button type="button" onclick={() => (selectedEvent = null)} aria-label={'Fermer'} class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
       </div>
       {#if selectedEvent.description}
         <p class="env-subtle env-text whitespace-pre-wrap rounded-lg border p-3.5 text-sm">{selectedEvent.description}</p>
@@ -848,7 +843,7 @@ interface ContactEntry { name: string; email: string; }
               ✏️ Modifier
             </button>
           {/if}
-          <button type="button" onclick={() => (selectedEvent = null)} class="env-input env-hover rounded-xl border px-4 py-2 text-xs font-medium">{t('common.close', undefined, activeLocale)}</button>
+          <button type="button" onclick={() => (selectedEvent = null)} class="env-input env-hover rounded-xl border px-4 py-2 text-xs font-medium">{'Fermer'}</button>
         </div>
       </div>
     </div>
@@ -868,8 +863,8 @@ interface ContactEntry { name: string; email: string; }
     <div role="presentation" onclick={(e) => e.stopPropagation()} class="w-full max-w-md">
       <form onsubmit={handleSave} class="env-card space-y-4 rounded-xl border p-7 shadow-2xl">
         <div class="flex items-center justify-between">
-          <h3 id="cal-create-title" class="env-text text-lg font-semibold">{t('calendar.newItem', undefined, activeLocale)}</h3>
-      <button type="button" onclick={() => (showModal = false)} aria-label={t('common.close', undefined, activeLocale)} class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
+          <h3 id="cal-create-title" class="env-text text-lg font-semibold">{'Nouvel Ã©lÃ©ment'}</h3>
+      <button type="button" onclick={() => (showModal = false)} aria-label={'Fermer'} class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
         </div>
 
         <div class="env-subtle env-border grid grid-cols-3 gap-1.5 rounded-lg border p-1 text-xs">
@@ -887,8 +882,8 @@ interface ContactEntry { name: string; email: string; }
         <div class="space-y-3">
           <input
             bind:value={title}
-            aria-label={t('calendar.titleAria', undefined, activeLocale)}
-            placeholder={kind === 'birthday' ? 'Nom de la personne' : kind === 'task' ? t('calendar.taskTitlePlaceholder', undefined, activeLocale) : "Titre de l'événement"}
+            aria-label={'Titre'}
+            placeholder={kind === 'birthday' ? 'Nom de la personne' : kind === 'task' ? 'Titre de la tÃ¢che' : "Titre de l'événement"}
             required
             class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
           />
@@ -901,7 +896,7 @@ interface ContactEntry { name: string; email: string; }
           />
           {#if kind === 'event'}
             <div>
-              <label for="cal-invitees" class="env-muted mb-1.5 block text-xs">{t('calendar.inviteesLabel', undefined, activeLocale)}</label>
+              <label for="cal-invitees" class="env-muted mb-1.5 block text-xs">{'Inviter des participants (emails sÃ©parÃ©s par des virgules)'}</label>
               <div class="relative">
                 <input
                   id="cal-invitees"
@@ -923,9 +918,9 @@ interface ContactEntry { name: string; email: string; }
         </div>
 
         <div class="flex justify-end gap-2 pt-1">
-          <button type="button" onclick={() => (showModal = false)} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">{t('common.cancel', undefined, activeLocale)}</button>
+          <button type="button" onclick={() => (showModal = false)} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">{'Annuler'}</button>
           <button disabled={saving} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold disabled:opacity-50">
-            {saving ? t('common.saving', undefined, activeLocale) : 'Enregistrer'}
+            {saving ? 'Enregistrement...' : 'Enregistrer'}
           </button>
         </div>
       </form>
@@ -950,14 +945,14 @@ interface ContactEntry { name: string; email: string; }
     <div role="presentation" onclick={(e) => e.stopPropagation()} class="w-full max-w-md">
       <form onsubmit={handleUpdateSave} class="env-card space-y-4 rounded-xl border p-7 shadow-2xl">
         <div class="flex items-center justify-between">
-          <h3 id="cal-edit-title" class="env-text text-lg font-semibold">{t('calendar.editEvent', undefined, activeLocale)}</h3>
-          <button type="button" onclick={() => (editingEvent = null)} aria-label={t('common.close', undefined, activeLocale)} class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
+          <h3 id="cal-edit-title" class="env-text text-lg font-semibold">{'Modifier l\'Ã©vÃ©nement'}</h3>
+          <button type="button" onclick={() => (editingEvent = null)} aria-label={'Fermer'} class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
         </div>
 
         <div class="space-y-3">
           <input
             bind:value={editTitle}
-            aria-label={t('calendar.titleAria', undefined, activeLocale)}
+            aria-label={'Titre'}
             placeholder="Titre de l'événement"
             required
             class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
@@ -1023,9 +1018,9 @@ interface ContactEntry { name: string; email: string; }
         {/if}
 
         <div class="flex justify-end gap-2 pt-1">
-          <button type="button" onclick={() => (editingEvent = null)} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">{t('common.cancel', undefined, activeLocale)}</button>
+          <button type="button" onclick={() => (editingEvent = null)} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">{'Annuler'}</button>
           <button disabled={updating} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold disabled:opacity-50">
-            {updating ? t('common.updating', undefined, activeLocale) : t('common.save', undefined, activeLocale)}
+            {updating ? 'Mise Ã  jour...' : 'Enregistrer'}
           </button>
         </div>
       </form>
@@ -1036,8 +1031,8 @@ interface ContactEntry { name: string; email: string; }
 {#if eventToDelete}
   <ConfirmModal
     title="Supprimer l'élément du calendrier"
-    message={`${t('calendar.confirmDeleteItemPrefix', undefined, activeLocale)} ` + eventToDelete.title + ` ${t('calendar.definitiveSuffix', undefined, activeLocale)}`}
-    confirmLabel={t('common.delete', undefined, activeLocale)}
+    message={`${'Voulez-vous vraiment supprimer Â«'} ` + eventToDelete.title + ` ${'Â» ? Cette action est dÃ©finitive.'}`}
+    confirmLabel={'Supprimer'}
     onConfirm={confirmDeleteEvent}
     onCancel={() => (eventToDelete = null)}
   />

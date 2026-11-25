@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { t } from '../../lib/i18n';
   export interface SieveScriptItem {
     id?: string;
     name: string;
@@ -25,11 +24,11 @@
     <button
       type="button"
       onclick={onNew}
-      title={t('sieve.newScriptModalTitle', undefined, activeLocale)}
-      aria-label={t('sieve.newScriptModalTitle', undefined, activeLocale)}
+      title={'Nouveau script Sieve'}
+      aria-label={'Nouveau script Sieve'}
       class="env-accent-soft rounded-lg px-2.5 py-1 text-xs font-semibold"
     >
-      {t('calendar.newShort', undefined, activeLocale)}
+      {'+ Nouveau'}
     </button>
   </div>
   <div class="flex-1 space-y-1 overflow-y-auto p-2">

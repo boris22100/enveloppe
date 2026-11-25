@@ -1,9 +1,4 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { getLocale, subscribeLocale, t, type Locale } from '../lib/i18n';
-  let activeLocale = $state<Locale>(getLocale());
-  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
-  onDestroy(_unsubLocale);
   import { buildSandboxedEmailDoc } from '../lib/utils/sanitize';
   import { getDownloadUrl, type Attachment } from '../lib/jmap/client';
 
@@ -68,7 +63,7 @@
       </div>
       <p class="env-muted truncate text-sm">{from}</p>
       {#if to}
-        <p class="env-faint truncate text-xs">{t('mail.toPrefix', undefined, activeLocale)} : {to}</p>
+        <p class="env-faint truncate text-xs">{'Ã'} : {to}</p>
       {/if}
       {#if receivedAt}
         <p class="env-faint text-xs">{new Date(receivedAt).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}</p>
@@ -79,7 +74,7 @@
       <button
         type="button"
         onclick={onReply}
-        title={`${t('mail.reply', undefined, activeLocale)} (R)`}
+        title={`${'RÃ©pondre'} (R)`}
         class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium"
       >
         ↩️ Répondre
@@ -87,7 +82,7 @@
       <button
         type="button"
         onclick={onReplyAll}
-        title={`${t('mail.replyAll', undefined, activeLocale)} (A)`}
+        title={`${'RÃ©pondre Ã  tous'} (A)`}
         class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium"
       >
         ↩️↩️ Tous
@@ -95,7 +90,7 @@
       <button
         type="button"
         onclick={onForward}
-        title={`${t('mail.forward', undefined, activeLocale)} (F)`}
+        title={`${'TransfÃ©rer'} (F)`}
         class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium"
       >
         ↪️ Transférer
@@ -155,7 +150,7 @@
   <div class="flex-1 overflow-auto p-6">
     {#if html}
       <iframe
-        title={t('mail.messageBody', undefined, activeLocale)}
+        title={'Contenu du message'}
         sandbox="allow-popups allow-popups-to-escape-sandbox"
         {srcdoc}
         class="h-full w-full rounded-lg border-0"

@@ -1,9 +1,4 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { getLocale, subscribeLocale, t, type Locale } from '../../lib/i18n';
-  let activeLocale = $state<Locale>(getLocale());
-  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
-  onDestroy(_unsubLocale);
   import { ROLE_META, type Mailbox } from '../../lib/jmap/client';
   import type { SieveActionType, SieveRule } from '../../lib/utils/sieveGenerator';
 
@@ -37,24 +32,24 @@
         type="checkbox"
         bind:checked={rule.enabled}
         onchange={onSync}
-        aria-label={t('sieve.toggleRuleAria', undefined, activeLocale)}
+        aria-label={'Activer la rÃ¨gle'}
         class="h-4 w-4 accent-[#48B17F]"
       />
       <input
         bind:value={rule.name}
         oninput={onSync}
-        aria-label={t('sieve.ruleName', undefined, activeLocale)}
-        placeholder={t('sieve.ruleName', undefined, activeLocale)}
+        aria-label={'Nom de la rÃ¨gle'}
+        placeholder={'Nom de la rÃ¨gle'}
         class="env-input rounded-xl border px-3 py-1.5 text-xs font-semibold"
       />
       <select
         bind:value={rule.matchType}
         onchange={onSync}
-        aria-label={t('sieve.conditionLogicAria', undefined, activeLocale)}
+        aria-label={'Logique des conditions'}
         class="env-input rounded-xl border px-3 py-1.5 text-xs"
       >
-        <option value="allof">{t('sieve.allConditions', undefined, activeLocale)}</option>
-        <option value="anyof">{t('sieve.anyConditions', undefined, activeLocale)}</option>
+        <option value="allof">{'Si TOUTES les conditions sont vraies'}</option>
+        <option value="anyof">{'Si AU MOINS UNE condition est vraie'}</option>
       </select>
     </div>
 
@@ -78,14 +73,14 @@
         <select
           bind:value={cond.field}
           onchange={onSync}
-          aria-label={t('sieve.fieldAria', undefined, activeLocale)}
+          aria-label={'Champ du message'}
           class="env-input rounded-xl border px-3 py-2 text-xs"
         >
           <option value="from">De (From)</option>
-          <option value="to">{t('sieve.toCcHeader', undefined, activeLocale)}</option>
+          <option value="to">{'Ã / Cc (To, Cc)'}</option>
           <option value="subject">Objet (Subject)</option>
-          <option value="header">{t('sieve.customHeader', undefined, activeLocale)}</option>
-          <option value="size">{t('sieve.messageSize', undefined, activeLocale)}</option>
+          <option value="header">{'En-tÃªte personnalisÃ©'}</option>
+          <option value="size">{'Taille du message'}</option>
         </select>
 
         {#if cond.field === 'header'}
@@ -102,16 +97,16 @@
           <select
             bind:value={cond.operator}
             onchange={onSync}
-            aria-label={t('sieve.sizeComparatorAria', undefined, activeLocale)}
+            aria-label={'Comparateur de taille'}
             class="env-input rounded-xl border px-3 py-2 text-xs"
           >
-            <option value="over">{t('sieve.over', undefined, activeLocale)}</option>
-            <option value="under">{t('sieve.under', undefined, activeLocale)}</option>
+            <option value="over">{'dÃ©passe'}</option>
+            <option value="under">{'est infÃ©rieur Ã '}</option>
           </select>
           <input
             bind:value={cond.value}
             oninput={onSync}
-            aria-label={t('sieve.sizeValueAria', undefined, activeLocale)}
+            aria-label={'Valeur de taille'}
             placeholder="Ex: 5M ou 500K"
             class="env-input min-w-44 flex-1 rounded-xl border px-3.5 py-2 text-xs"
           />
@@ -119,18 +114,18 @@
           <select
             bind:value={cond.operator}
             onchange={onSync}
-            aria-label={t('sieve.operatorAria', undefined, activeLocale)}
+            aria-label={'OpÃ©rateur'}
             class="env-input rounded-xl border px-3 py-2 text-xs"
           >
             <option value="contains">contient</option>
-            <option value="is">{t('sieve.exactMatch', undefined, activeLocale)}</option>
-            <option value="matches">{t('sieve.matches', undefined, activeLocale)}</option>
+            <option value="is">{'est exactement'}</option>
+            <option value="matches">{'correspond Ã  (* ?)'}</option>
           </select>
           <input
             bind:value={cond.value}
             oninput={onSync}
-            aria-label={t('sieve.conditionValueAria', undefined, activeLocale)}
-            placeholder={cond.field === 'from' ? t('sieve.emailPlaceholder', undefined, activeLocale) : t('sieve.searchTextPlaceholder', undefined, activeLocale)}
+            aria-label={'Valeur de condition'}
+            placeholder={cond.field === 'from' ? 'ex: newsletter@domaine.fr' : 'Texte Ã  rechercher...'}
             class="env-input min-w-48 flex-1 rounded-xl border px-3.5 py-2 text-xs"
           />
         {/if}
@@ -139,7 +134,7 @@
           <button
             type="button"
             onclick={() => onRemoveCondition(rule, cond.id)}
-            aria-label={t('sieve.deleteConditionAria', undefined, activeLocale)}
+            aria-label={'Supprimer la condition'}
             class="env-faint rounded-xl px-2 py-1.5 text-xs hover:text-red-400"
           >
             ✕
@@ -163,19 +158,19 @@
           aria-label="Type d'action"
           class="env-input rounded-xl border px-3 py-2 text-xs"
         >
-          <option value="fileinto">📁 {t('sieve.moveToFolder', undefined, activeLocale)}</option>
-          <option value="markRead">📭 {t('sieve.markAsReadAction', undefined, activeLocale)}</option>
-          <option value="star">★ {t('sieve.flagAction', undefined, activeLocale)}</option>
-          <option value="redirect">↪️ {t('sieve.redirectTo', undefined, activeLocale)}</option>
-          <option value="reject">🚫 {t('sieve.rejectAction', undefined, activeLocale)}</option>
-          <option value="stop">🛑 {t('sieve.stopProcessing', undefined, activeLocale)}</option>
+          <option value="fileinto">📁 {'DÃ©placer vers le dossier'}</option>
+          <option value="markRead">📭 {'Marquer comme lu'}</option>
+          <option value="star">★ {'Ajouter aux favoris'}</option>
+          <option value="redirect">↪️ {'TransfÃ©rer Ã  l\'adresse'}</option>
+          <option value="reject">🚫 {'Rejeter avec message'}</option>
+          <option value="stop">🛑 {'ArrÃªter les rÃ¨gles suivantes'}</option>
         </select>
 
         {#if act.type === 'fileinto'}
           <select
             bind:value={act.value}
             onchange={onSync}
-            aria-label={t('sieve.destinationFolderAria', undefined, activeLocale)}
+            aria-label={'Dossier de destination'}
             class="env-input min-w-48 flex-1 rounded-xl border px-3 py-2 text-xs"
           >
             {#each mailboxes as box}
@@ -192,7 +187,7 @@
             type="email"
             bind:value={act.value}
             oninput={onSync}
-            aria-label={t('sieve.redirectAddressAria', undefined, activeLocale)}
+            aria-label={'Adresse de transfert'}
             placeholder="destinataire@domaine.fr"
             class="env-input min-w-48 flex-1 rounded-xl border px-3.5 py-2 text-xs"
           />
@@ -200,8 +195,8 @@
           <input
             bind:value={act.value}
             oninput={onSync}
-            aria-label={t('sieve.rejectReasonAria', undefined, activeLocale)}
-            placeholder={t('sieve.rejectReasonPlaceholder', undefined, activeLocale)}
+            aria-label={'Motif du rejet'}
+            placeholder={'Motif du rejet...'}
             class="env-input min-w-48 flex-1 rounded-xl border px-3.5 py-2 text-xs"
           />
         {/if}
@@ -210,7 +205,7 @@
           <button
             type="button"
             onclick={() => onRemoveAction(rule, act.id)}
-            aria-label={t('sieve.deleteAction', undefined, activeLocale)}
+            aria-label={'Supprimer l\'action'}
             class="env-faint rounded-xl px-2 py-1.5 text-xs hover:text-red-400"
           >
             ✕

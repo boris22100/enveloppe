@@ -8,8 +8,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   define: {
-    __APP_VERSION__: JSON.stringify(pkg.version || '0.7.10'),
-  },
+    __APP_VERSION__: JSON.stringify(pkg.version || '0.7.10') },
   plugins: [
     svelte(),
     tailwindcss(),

@@ -1,10 +1,4 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { getLocale, subscribeLocale, t, type Locale } from '../lib/i18n';
-  let activeLocale = $state<Locale>(getLocale());
-  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
-  onDestroy(_unsubLocale);
-
   import SieveRuleCard from './sieve/SieveRuleCard.svelte';
   import SieveCodeEditor from './sieve/SieveCodeEditor.svelte';
   import SieveVacationCard from './sieve/SieveVacationCard.svelte';
@@ -138,7 +132,7 @@
         rawCode = compileSieveScript(rules, vacation);
       }
     } catch (err: any) {
-      notify('err', err.message || t('sieve.loadError', undefined, activeLocale));
+      notify('err', err.message || 'Impossible de charger les scripts Sieve.');
     } finally {
       loading = false;
     }
@@ -155,7 +149,7 @@
       rules = [...rules, newRule];
       mode = 'visual';
       syncVisualToCode();
-      notify('ok', t('sieve.prefilledRuleHint', undefined, activeLocale));
+      notify('ok', 'RÃ¨gle prÃ©-remplie depuis le message. Pense Ã  enregistrer.');
       onPrefillConsumed?.();
     }
   });
@@ -211,7 +205,7 @@
   async function handleValidate() {
     const codeToTest = mode === 'visual' && !hasAdvancedCode ? compileSieveScript(rules, vacation) : rawCode;
     if (!codeToTest.trim()) {
-      notify('err', t('sieve.scriptEmpty', undefined, activeLocale));
+      notify('err', 'Le script Sieve est vide.');
       return;
     }
     validating = true;
@@ -221,7 +215,7 @@
       if (res.valid) {
         notify('ok', 'Syntaxe Sieve valide selon Stalwart.');
       } else {
-        notify('err', `${t('sieve.syntaxErrorPrefix', undefined, activeLocale)} ` + (res.error || 'inconnue'));
+        notify('err', `${'Erreur Sieve :'} ` + (res.error || 'inconnue'));
       }
     } catch (err: any) {
       notify('err', err.message);
@@ -233,7 +227,7 @@
   async function handleSave(activateAfter = false) {
     const codeToSave = mode === 'visual' && !hasAdvancedCode ? compileSieveScript(rules, vacation) : rawCode;
     if (!codeToSave.trim()) {
-      notify('err', t('sieve.addRuleOrCodeHint', undefined, activeLocale));
+      notify('err', 'Ajoute au moins une rÃ¨gle ou du code Sieve avant de pousser sur le serveur.');
       return;
     }
     rawCode = codeToSave;
@@ -248,7 +242,7 @@
         activate: shouldActivate
       });
       await loadAll(savedId);
-      notify('ok', shouldActivate ? t('sieve.savedAndActivated', undefined, activeLocale) : t('sieve.savedOnServer', undefined, activeLocale));
+      notify('ok', shouldActivate ? 'Script Sieve enregistrÃ© et activÃ© sur Stalwart.' : 'Script Sieve enregistrÃ© sur Stalwart.');
     } catch (err: any) {
       notify('err', err.message);
     } finally {
@@ -315,7 +309,7 @@
 </script>
 
 <div class="flex h-full overflow-hidden">
-  <aside aria-label={t('sieve.scripts', undefined, activeLocale)} class="env-subtle env-border flex w-72 shrink-0 flex-col border-r p-4">
+  <aside aria-label={'Scripts Sieve'} class="env-subtle env-border flex w-72 shrink-0 flex-col border-r p-4">
     <div class="mb-3.5 flex items-center justify-between">
       <span class="env-muted text-xs font-semibold uppercase tracking-wider">Scripts Sieve</span>
       <button
@@ -323,7 +317,7 @@
         onclick={() => (showNewModal = true)}
         class="env-accent-bg rounded-xl px-3 py-1.5 text-xs font-semibold hover:opacity-95"
       >
-        {t('sieve.newScript', undefined, activeLocale)}
+        {'+ Script'}
       </button>
     </div>
 
@@ -346,7 +340,7 @@
           <div class="flex shrink-0 items-center gap-1">
             <button
               type="button"
-              title={sc.isActive ? t('sieve.deactivateScript', undefined, activeLocale) : t('sieve.activateScript', undefined, activeLocale)}
+              title={sc.isActive ? 'DÃ©sactiver ce script' : 'Activer ce script'}
               aria-label={sc.isActive ? 'Désactiver ' + sc.name : 'Activer ' + sc.name}
               onclick={() => handleToggleActive(sc)}
               class="env-hover rounded-xl px-2 py-1.5 text-xs {sc.isActive ? 'env-accent-text' : 'env-muted'}"
@@ -355,8 +349,8 @@
             </button>
             <button
               type="button"
-              title={t('sieve.deleteScript', undefined, activeLocale)}
-              aria-label={`${t('common.deleteAriaPrefix', undefined, activeLocale)} ${sc.name}`}
+              title={'Supprimer ce script'}
+              aria-label={`${'Supprimer'} ${sc.name}`}
               onclick={() => (scriptToDelete = sc)}
               class="env-muted rounded-xl px-2 py-1.5 text-xs hover:bg-red-500/15 hover:text-red-400"
             >
@@ -369,7 +363,7 @@
       {#if isNewDraft}
         <div class="env-accent-soft rounded-lg border border-dashed border-[#48B17F]/60 px-3.5 py-2.5 text-xs">
           <div class="env-text text-sm font-semibold">{scriptName}</div>
-          <div class="env-accent-text mt-0.5 text-[11px]">{t('sieve.unsavedServer', undefined, activeLocale)}</div>
+          <div class="env-accent-text mt-0.5 text-[11px]">{'Non enregistrÃ© sur le serveur'}</div>
         </div>
       {/if}
     </div>
@@ -383,14 +377,14 @@
     <header class="env-border flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
       <div class="flex flex-wrap items-center gap-3">
         <div>
-          <h2 class="env-text text-lg font-bold">{t('sieve.title', undefined, activeLocale)}</h2>
-          <p class="env-muted text-xs">{t('sieve.subtitle', undefined, activeLocale)}</p>
+          <h2 class="env-text text-lg font-bold">{'Filtres serveur (Sieve)'}</h2>
+          <p class="env-muted text-xs">{'Ãditeur visuel & code Sieve synchronisÃ© avec Stalwart'}</p>
         </div>
 
         <input
           bind:value={scriptName}
-          aria-label={t('sieve.scriptNameAria', undefined, activeLocale)}
-          placeholder={t('sieve.scriptNamePlaceholder', undefined, activeLocale)}
+          aria-label={'Nom du script Sieve'}
+          placeholder={'Nom du script'}
           class="env-input w-44 rounded-xl border px-3 py-2 text-xs font-medium"
         />
 
@@ -400,14 +394,14 @@
             onclick={() => switchMode('visual')}
             class="rounded-lg px-3 py-1.5 {mode === 'visual' ? 'env-accent-soft font-semibold' : 'env-muted'}"
           >
-            🧩 {t('sieve.visualRules', undefined, activeLocale)}
+            🧩 {'RÃ¨gles visuelles'}
           </button>
           <button
             type="button"
             onclick={() => switchMode('code')}
             class="rounded-lg px-3 py-1.5 {mode === 'code' ? 'env-accent-soft font-semibold' : 'env-muted'}"
           >
-            &lt;/&gt; {t('sieve.sieveCode', undefined, activeLocale)}
+            &lt;/&gt; {'Code Sieve'}
           </button>
         </div>
       </div>
@@ -419,7 +413,7 @@
           onclick={handleValidate}
           class="env-input env-hover rounded-xl border px-3.5 py-2 text-xs font-medium disabled:opacity-50"
         >
-          {validating ? t('common.loading', undefined, activeLocale) : `✓ ${t('sieve.validateSyntax', undefined, activeLocale)}`}
+          {validating ? 'Chargement...' : `✓ ${'Valider la syntaxe'}`}
         </button>
 
         {#if selectedScript && !selectedScript.isActive && !isNewDraft}
@@ -429,7 +423,7 @@
             onclick={() => handleSave(true)}
             class="env-accent-soft rounded-xl border border-[#48B17F]/40 px-3.5 py-2 text-xs font-semibold hover:opacity-90"
           >
-            💾 {t('sieve.saveAndActivate', undefined, activeLocale)}
+            💾 {'Enregistrer & Activer'}
           </button>
         {/if}
 
@@ -439,7 +433,7 @@
           onclick={() => handleSave(false)}
           class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95 disabled:opacity-50"
         >
-          {saving ? t('common.loading', undefined, activeLocale) : `💾 ${t('sieve.saveToServer', undefined, activeLocale)}`}
+          {saving ? 'Chargement...' : `💾 ${'Enregistrer sur Stalwart'}`}
         </button>
       </div>
     </header>
@@ -451,14 +445,14 @@
     {/if}
 
     {#if loading}
-      <div class="env-muted flex flex-1 items-center justify-center text-sm">{t('sieve.loadingScripts', undefined, activeLocale)}</div>
+      <div class="env-muted flex flex-1 items-center justify-center text-sm">{'Chargement des scripts Sieve...'}</div>
 
     {:else if mode === 'visual'}
       <div class="flex-1 space-y-5 overflow-y-auto p-6">
         <div class="mx-auto max-w-4xl space-y-5">
           {#if hasAdvancedCode}
             <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-300">
-              <span>{t('sieve.advancedInstructionsPrefix', undefined, activeLocale)} (<code>elsif</code>, <code>envelope</code>, <code>regex</code>...) non affichables en blocs. Utilise l'onglet <strong>Code Sieve</strong> {t('sieve.avoidOverwriteHint', undefined, activeLocale)}</span>
+              <span>{'Ce script contient des instructions Sieve avancÃ©es ('} (<code>elsif</code>, <code>envelope</code>, <code>regex</code>...) non affichables en blocs. Utilise l'onglet <strong>Code Sieve</strong> {'pour Ã©viter de les Ã©craser.'}</span>
               <button
                 type="button"
                 onclick={() => switchMode('code')}
@@ -470,13 +464,13 @@
           {/if}
 
           <div class="flex items-center justify-between">
-            <h3 class="env-text text-sm font-semibold">{t('sieve.rules', undefined, activeLocale)} ({rules.length})</h3>
+            <h3 class="env-text text-sm font-semibold">{'RÃ¨gles de filtrage'} ({rules.length})</h3>
             <button
               type="button"
               onclick={addRule}
               class="env-accent-soft rounded-xl border border-[#48B17F]/40 px-3.5 py-2 text-xs font-semibold hover:opacity-90"
             >
-              {t('sieve.addRule', undefined, activeLocale)}
+              {'+ Ajouter une rÃ¨gle'}
             </button>
           </div>
 
@@ -494,7 +488,7 @@
             />
           {:else}
             <div class="env-card env-muted rounded-xl border border-dashed p-8 text-center text-xs">
-              {t('sieve.noVisualRulesPrefix', undefined, activeLocale)} <strong>+ Ajouter une règle</strong> {t('sieve.orUseTemplateInTab', undefined, activeLocale)} <strong>Code Sieve</strong>.
+              {'Aucune rÃ¨gle visuelle configurÃ©e. Clique sur'} <strong>+ Ajouter une règle</strong> {'ou utilise un modÃ¨le dans l\'onglet'} <strong>Code Sieve</strong>.
             </div>
           {/each}
 
@@ -527,9 +521,9 @@
 
 {#if scriptToDelete}
   <ConfirmModal
-    title={t('sieve.deleteScript', undefined, activeLocale)}
-    message={`${t('sieve.confirmDeleteScriptPrefix', undefined, activeLocale)} ` + scriptToDelete.name + ` ${t('sieve.confirmDeleteScriptSuffix', undefined, activeLocale)}`}
-    confirmLabel={t('sieve.deleteScriptConfirm', undefined, activeLocale)}
+    title={'Supprimer ce script'}
+    message={`${'Voulez-vous vraiment supprimer le script Â«'} ` + scriptToDelete.name + ` ${'Â» du serveur Stalwart ? Cette action est irrÃ©versible.'}`}
+    confirmLabel={'Supprimer le script'}
     onConfirm={confirmDeleteScript}
     onCancel={() => (scriptToDelete = null)}
   />

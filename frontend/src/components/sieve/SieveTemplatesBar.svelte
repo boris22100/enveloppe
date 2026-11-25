@@ -1,9 +1,4 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { getLocale, subscribeLocale, t, type Locale } from '../../lib/i18n';
-  let activeLocale = $state<Locale>(getLocale());
-  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
-  onDestroy(_unsubLocale);
   export interface SieveTemplateEntry {
     label: string;
     description?: string;
@@ -21,7 +16,7 @@
 
 {#if templates.length > 0}
   <div class="mb-3 flex flex-wrap items-center gap-2">
-    <span class="env-muted text-xs font-semibold uppercase tracking-wider">{t('sieve.templates', undefined, activeLocale)}</span>
+    <span class="env-muted text-xs font-semibold uppercase tracking-wider">{'ModÃ¨les :'}</span>
     {#each templates as tpl}
       <button
         type="button"

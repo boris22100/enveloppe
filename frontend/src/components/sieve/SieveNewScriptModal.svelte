@@ -1,9 +1,4 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { getLocale, subscribeLocale, t, type Locale } from '../../lib/i18n';
-  let activeLocale = $state<Locale>(getLocale());
-  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
-  onDestroy(_unsubLocale);
   let {
     open = false,
     title = $bindable(''),
@@ -37,17 +32,17 @@
         onsubmit={onSubmit}
         class="env-card space-y-4 rounded-xl border p-7 shadow-2xl"
       >
-        <h3 id="new-sieve-title" class="env-text text-lg font-semibold">{t('sieve.newScriptModalTitle', undefined, activeLocale)}</h3>
+        <h3 id="new-sieve-title" class="env-text text-lg font-semibold">{'Nouveau script Sieve'}</h3>
         <input
           bind:value={title}
-          aria-label={t('sieve.newScriptNameAria', undefined, activeLocale)}
+          aria-label={'Nom du nouveau script'}
           placeholder="Ex : vacances, tri-pro, enveloppe"
           required
           class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
         />
         <div class="flex justify-end gap-2">
-          <button type="button" onclick={onClose} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">{t('common.cancel', undefined, activeLocale)}</button>
-          <button class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold">{t('common.create', undefined, activeLocale)}</button>
+          <button type="button" onclick={onClose} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">{'Annuler'}</button>
+          <button class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold">{'CrÃ©er'}</button>
         </div>
       </form>
     </div>
