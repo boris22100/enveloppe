@@ -144,9 +144,3 @@ ghcr.io/boris22100/enveloppe:latest
 ## 📄 Licence
 
 Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
-
-## Nouveautés v0.8.2
-* **Mises à jour calendrier (.ics)** : envoi automatique des e-mails de modification (`METHOD:REQUEST` avec `SEQUENCE` incrémentée) en complément des invitations (`METHOD:REQUEST`) et annulations (`METHOD:CANCEL`), avec retour visuel d'état dans la modale d'édition.
-* **Édition participants & ergonomie des vues** : édition directe des participants (badges avec retrait rapide et persistance sur l'événement), bouton d'édition (`✏️`) en vue journalière, et persistance de la vue (`month` / `week` / `day`) dans `localStorage` (`enveloppe_calendar_view_v1`) au rechargement (`F5`).
-* **Page de connexion** : affichage de la version dynamique (`v0.8.2` via `/api/version`) à côté d'**Enveloppe JMAP** et remplacement de l'icône enveloppe par `/pwa-192.png`.
-* **Tests & qualité** : tests Vitest étendus sur les mises à jour/annulations `.ics` (`ics.spec.ts`) et la persistance de la vue calendrier (`calendarViewStorage.spec.ts`), plus correction des alertes `svelte-check` (`0 error`).
