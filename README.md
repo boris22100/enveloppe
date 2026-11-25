@@ -7,6 +7,7 @@ Webmail **PWA** ultraléger, moderne, **100 % français** et **100 % JMAP** (*Ma
 ![Image Size](https://img.shields.io/badge/image-9.99%20Mo-48B17F?style=flat-square)
 ![Langue](https://img.shields.io/badge/langue-100%25%20Fran%C3%A7ais-0D3A4D?style=flat-square)
 ![Tests](https://img.shields.io/badge/vitest-13%20passed-48B17F?style=flat-square)
+![Lighthouse](https://img.shields.io/badge/Lighthouse-99%20Perf%20%7C%2095%20A11y%20%7C%20100%20BP-48B17F?style=flat-square)
 ![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)
 ![OWASP ZAP](https://img.shields.io/badge/OWASP%20ZAP-0%20FAIL%20%7C%2063%20PASS-48B17F?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)
@@ -38,7 +39,7 @@ Webmail **PWA** ultraléger, moderne, **100 % français** et **100 % JMAP** (*Ma
 ## 🌱 Sobriété & Green-IT
 
 * **Taille de l'image Docker** : `9,99 Mo` (binaire Go statique sur `distroless/static-debian12:nonroot`, multi-arch `linux/amd64` & `linux/arm64`).
-* **Empreinte mémoire** : `~6,66 MiB` de RAM (`0,02 %` sur 31,09 GiB, `0,00 %` CPU au repos) et `412 Ko` d'assets `dist/`.
+* **Empreinte mémoire** : `~9,67 MiB` de RAM (`0,03 %` sur 31,09 GiB, `0,00 %` CPU au repos) et `412 Ko` d'assets `dist/`.
 * **Réseau optimisé** : compression **Gzip** native, cache immuable (`max-age=31536000, immutable`) sur les assets statiques et requêtes JMAP groupées.
 
 ---
@@ -133,6 +134,7 @@ docker compose pull && docker compose up -d
 | **npm audit** | Dépendances de production Frontend | **0** vulnérabilité |
 | **Gitleaks** | Historique Git complet | **0** secret exposé |
 | **OWASP ZAP** | Scan passif en production (HTTPS) | **0 FAIL** / **63 PASS** *(5 WARN informatifs attendus pour une PWA webmail)* |
+| **Lighthouse** | Performance, Accessibilité, Bonnes pratiques | **99** Perf / **95** Accessibilité / **100** Bonnes pratiques |
 
 ---
 
