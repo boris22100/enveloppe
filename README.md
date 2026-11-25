@@ -4,7 +4,8 @@ Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContac
 
 ![Version](https://img.shields.io/badge/version-v0.8.2-48B17F?style=flat-square)
 ![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)
-![Image Size](https://img.shields.io/badge/image-9.95%20Mo-48B17F?style=flat-square)
+![Image Size](https://img.shields.io/badge/image-9.99%20Mo-48B17F?style=flat-square)
+![Tests](https://img.shields.io/badge/vitest-15%20passed-48B17F?style=flat-square)
 ![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)
 ![OWASP ZAP](https://img.shields.io/badge/OWASP%20ZAP-0%20FAIL%20%7C%2063%20PASS-48B17F?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)
@@ -35,8 +36,8 @@ Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContac
 
 ## 🌱 Sobriété & Green-IT
 
-* **Taille de l'image Docker** : `9,95 Mo` (binaire Go statique sur `distroless/static-debian12:nonroot`, multi-arch `linux/amd64` & `linux/arm64`).
-* **Empreinte mémoire** : `8,04 Mio` de RAM (`0,00 %` CPU au repos).
+* **Taille de l'image Docker** : `9,99 Mo` (binaire Go statique sur `distroless/static-debian12:nonroot`, multi-arch `linux/amd64` & `linux/arm64`).
+* **Empreinte mémoire** : `~6,66 MiB` de RAM (`0,02 %` sur 31,09 GiB, `0,00 %` CPU au repos) et `412 Ko` d'assets `dist/`.
 * **Réseau optimisé** : compression **Gzip** native, cache immuable (`max-age=31536000, immutable`) sur les assets statiques et requêtes JMAP groupées.
 
 ---
@@ -127,7 +128,7 @@ docker compose pull && docker compose up -d
 | Outil | Périmètre analysé | Résultat |
 | :--- | :--- | :--- |
 | **Trivy** | Image Docker finale (`debian 12.15` + binaire Go) | **0** vulnérabilité (`HIGH` / `CRITICAL`) |
-| **govulncheck** | Code source et dépendances Go | **0** vulnérabilité |
+| **govulncheck** | Code source et dépendances Go (`go1.24.13`) | **26** avis stdlib Go (`>= 1.25.8`–`1.26.11`), **0** appel vulnérable dans les libs tierces |
 | **npm audit** | Dépendances de production Frontend | **0** vulnérabilité |
 | **Gitleaks** | Historique Git complet | **0** secret exposé |
 | **OWASP ZAP** | Scan passif en production (HTTPS) | **0 FAIL** / **63 PASS** *(5 WARN informatifs attendus pour une PWA webmail)* |
@@ -144,22 +145,15 @@ ghcr.io/boris22100/enveloppe:latest
 
 Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
 
-### Nouveautés & garanties v0.8.0
-
-* **Navigation & ergonomie** : barre latérale ouverte par défaut après connexion (avec mémorisation du choix utilisateur), thèmes **BoWiz**, **Sombre** et **Clair**, et page de connexion sobre avec mentions légales et politique de confidentialité.
-* **Contacts** : clic direct sur une adresse e-mail pour ouvrir la fenêtre *Nouveau message* pré-remplie, et édition d'un contact existant via l'icône crayon (`✏️`) alignée sur chaque ligne.
-* **Calendrier (.ics)** : envoi automatique d'une invitation `invitation.ics` (`METHOD:REQUEST`) à la création d'un événement avec participants, et d'un mail d'annulation (`METHOD:CANCEL`) lors de la suppression d'un événement comportant des participants.
-* **Sobriété, sécurité & accessibilité vérifiées** : image Docker finale `distroless` de **9,52 Mo** (< 10 Mo), **~1,48 MiB** de RAM au repos en fonctionnement *stateless*, **412 Ko** d'assets `dist/`, **0** vulnérabilité `HIGH`/`CRITICAL` (Trivy), **0** secret (Gitleaks), **0** alerte `govulncheck` / `npm audit`, et **0** anomalie sur le contrôle statique A11y Svelte.
-
 ## Nouveautés v0.8.2
-- **Mises à jour calendrier (.ics)** : restauration de l'envoi automatique des e-mails de modification (`METHOD:REQUEST` avec `SEQUENCE` incrémentée) en complément des invitations (`METHOD:REQUEST`) et annulations (`METHOD:CANCEL`), avec retour visuel d'état dans la modale d'édition.
-- **Édition participants & ergonomie des vues** : édition directe des participants (badges avec retrait rapide et persistance sur l'événement), ajout du bouton d'édition (`✏️`) en vue journalière, et persistance de la vue sélectionnée (`month` / `week` / `day`) dans `localStorage` (`enveloppe_calendar_view_v1`) au rechargement (`F5`).
-- **Page de connexion** : affichage de la version dynamique (`v0.8.2` via `/api/version`) à côté d'**Enveloppe JMAP** et remplacement de l'icône enveloppe par l'image `/pwa-192.png`.
-- **Couverture de tests unitaires** : enrichissement des tests Vitest sur les mises à jour/annulations `.ics` (`ics.spec.ts`) et ajout d'une suite dédiée à la persistance de la vue calendrier (`calendarViewStorage.spec.ts`).
+* **Mises à jour calendrier (.ics)** : envoi automatique des e-mails de modification (`METHOD:REQUEST` avec `SEQUENCE` incrémentée) en complément des invitations (`METHOD:REQUEST`) et annulations (`METHOD:CANCEL`), avec retour visuel d'état dans la modale d'édition.
+* **Édition participants & ergonomie des vues** : édition directe des participants (badges avec retrait rapide et persistance sur l'événement), bouton d'édition (`✏️`) en vue journalière, et persistance de la vue (`month` / `week` / `day`) dans `localStorage` (`enveloppe_calendar_view_v1`) au rechargement (`F5`).
+* **Page de connexion** : affichage de la version dynamique (`v0.8.2` via `/api/version`) à côté d'**Enveloppe JMAP** et remplacement de l'icône enveloppe par `/pwa-192.png`.
+* **Tests & qualité** : tests Vitest étendus sur les mises à jour/annulations `.ics` (`ics.spec.ts`) et la persistance de la vue calendrier (`calendarViewStorage.spec.ts`), plus correction des alertes `svelte-check` (`0 error`).
 
 ## Nouveautés v0.8.0
-* **Récurrences JSCalendar** : expansion des règles de récurrence (`daily`, `weekly`, `monthly`, `yearly`, `interval`, `count`, `until`) et prise en compte de `recurrenceOverrides` dans `calendar.ts` et `CalendarView.svelte` (avec tests `recurrence.spec.ts`).
-* **Recherche serveur JMAP (`Email/query`)** : requête `Email/query` + `Email/get` côté serveur (`searchEmails`) combinant texte, dossier, non-lus et pièces jointes en complément du cache local.
-* **Glisser-déposer (Drag & Drop)** : déplacement d'e-mails vers les dossiers de la barre latérale (`updateEmailMailbox`) et déplacement d'événements vers un autre jour dans la vue mois (`updateEvent`).
-* **Pièces jointes, images externes & bilingue FR/EN** : retrait individuel des pièces jointes dans le composeur, bandeau *« Images externes bloquées — Afficher les images »* dans `MailReader.svelte`, module maison `i18n` FR/EN sans dépendance avec sélecteur `FR | EN`, et récupération dynamique de la version via `/api/version`.
-* **Industrialisation backend** : découpage de `backend/main.go` vers le package `backend/internal/httpapi` (`middleware.go`, `oidc.go`, `handlers.go`, `router.go`).
+* **Navigation, thèmes & contacts** : barre latérale ouverte par défaut (mémorisée), thèmes **BoWiz**, **Sombre** et **Clair**, clic direct sur une adresse e-mail pour composer un message pré-rempli, et édition rapide des contacts (`✏️`).
+* **Récurrences JSCalendar & .ics** : expansion des règles de récurrence (`daily`, `weekly`, `monthly`, `yearly`, `interval`, `count`, `until`) avec `recurrenceOverrides`, invitations `.ics` à la création et annulations `.ics` à la suppression.
+* **Recherche serveur JMAP & Drag & Drop** : recherche `Email/query` + `Email/get` côté serveur (`searchEmails`), glisser-déposer d'e-mails vers les dossiers et d'événements vers un autre jour en vue mois.
+* **Composeur, lecture & bilingue FR/EN** : retrait individuel des pièces jointes, blocage/affichage des images externes dans `MailReader.svelte`, sélecteur `FR | EN`, et version dynamique `/api/version`.
+* **Industrialisation backend** : découpage de `backend/main.go` vers `backend/internal/httpapi` (`middleware.go`, `oidc.go`, `handlers.go`, `router.go`).
