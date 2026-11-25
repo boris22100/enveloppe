@@ -665,7 +665,8 @@
           textBody: body,
           attachments: files
         });
-        if (savedId) { composeDraftId = savedId; mailboxes = await fetchMailboxes(acc); }
+        if (savedId) composeDraftId = savedId;
+        mailboxes = await fetchMailboxes(acc);
         draftStatus = 'Brouillon enregistré';
       } catch {
         draftStatus = '';
@@ -934,6 +935,9 @@
                   >
                     <span class="shrink-0 opacity-80">{box.depth ? '📁' : (box.role && ROLE_META[box.role]?.icon) || '📁'}</span>
                     <span class="truncate">{folderDisplayName(box)}</span>
+                    {#if box.role === 'drafts' && draftsCount > 0}
+                      <span class="env-accent-soft ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums">{draftsCount}</span>
+                    {/if}
                   </button>
                   <div class="flex shrink-0 items-center gap-1">
                     <button
