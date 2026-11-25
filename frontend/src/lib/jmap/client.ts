@@ -142,6 +142,37 @@ export async function fetchMailboxEmails(accountId: string, mailboxId: string): 
   return (mailRes.methodResponses[1][1].list ?? []) as EmailSummary[];
 }
 
+
+export interface EmailSearchOptions {
+  query?: string;
+  mailboxId?: string | null;
+  unreadOnly?: boolean;
+  hasAttachment?: boolean;
+  limit?: number;
+}
+
+export async function searchEmails(accountId: string, opts: EmailSearchOptions): Promise<EmailSummary[]> {
+  const accId = await getPrimaryAccountId(accountId);
+  const conditions: Record<string, any>[] = [];
+  if (opts.mailboxId) conditions.push({ inMailbox: opts.mailboxId });
+  if (opts.query && opts.query.trim()) conditions.push({ text: opts.query.trim() });
+  if (opts.unreadOnly) conditions.push({ notKeyword: '$seen' });
+  if (opts.hasAttachment) conditions.push({ hasAttachment: true });
+
+  const filter: Record<string, any> =
+    conditions.length === 0
+      ? {}
+      : conditions.length === 1
+        ? conditions[0]
+        : { operator: 'AND', conditions };
+
+  const res = await jmapCall(accountId, [
+    ['Email/query', { accountId: accId, filter, sort: [{ property: 'receivedAt', isAscending: false }], limit: opts.limit ?? 100 }, 'q0'],
+    ['Email/get', { accountId: accId, '#ids': { resultOf: 'q0', name: 'Email/query', path: '/ids' }, properties: ['id', 'blobId', 'subject', 'from', 'receivedAt', 'preview', 'keywords', 'mailboxIds'] }, 'g0']
+  ]);
+  return (res.methodResponses[1][1].list ?? []) as EmailSummary[];
+}
+
 export async function fetchEmailBody(accountId: string, emailId: string) {
   const accId = await getPrimaryAccountId(accountId);
   const res = await jmapCall(accountId, [

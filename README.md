@@ -2,7 +2,7 @@
 
 Webmail **PWA** ultraléger, moderne et 100 % **JMAP** (*Mail, Contacts JSContact, Calendrier JSCalendar*), conçu pour **Stalwart Mail Server** et compatible multi-serveurs.
 
-![Version](https://img.shields.io/badge/version-v0.7.10-48B17F?style=flat-square)
+![Version](https://img.shields.io/badge/version-v0.8.0-48B17F?style=flat-square)
 ![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)
 ![Image Size](https://img.shields.io/badge/image-9.95%20Mo-48B17F?style=flat-square)
 ![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)
@@ -144,15 +144,16 @@ ghcr.io/boris22100/enveloppe:latest
 
 Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
 
-### Nouveautés & garanties v0.7.10
+### Nouveautés & garanties v0.8.0
 
 * **Navigation & ergonomie** : barre latérale ouverte par défaut après connexion (avec mémorisation du choix utilisateur), thèmes **BoWiz**, **Sombre** et **Clair**, et page de connexion sobre avec mentions légales et politique de confidentialité.
 * **Contacts** : clic direct sur une adresse e-mail pour ouvrir la fenêtre *Nouveau message* pré-remplie, et édition d'un contact existant via l'icône crayon (`✏️`) alignée sur chaque ligne.
 * **Calendrier (.ics)** : envoi automatique d'une invitation `invitation.ics` (`METHOD:REQUEST`) à la création d'un événement avec participants, et d'un mail d'annulation (`METHOD:CANCEL`) lors de la suppression d'un événement comportant des participants.
 * **Sobriété, sécurité & accessibilité vérifiées** : image Docker finale `distroless` de **9,52 Mo** (< 10 Mo), **~1,48 MiB** de RAM au repos en fonctionnement *stateless*, **412 Ko** d'assets `dist/`, **0** vulnérabilité `HIGH`/`CRITICAL` (Trivy), **0** secret (Gitleaks), **0** alerte `govulncheck` / `npm audit`, et **0** anomalie sur le contrôle statique A11y Svelte.
 
-## Nouveautés v0.7.10
-* **Sécurité & durcissement** : blocage des plages privées RFC1918 (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) et des adresses privées IPv6 (`IsPrivate()`) dans `IsSafeExternalURL`, CSP stricte (`script-src 'self'`), exécution en UID `65532` (`nonroot`) avec `ReadOnlyRootfs: true`, et 0 fuite ou vulnérabilité (Gitleaks, `govulncheck`, `npm audit`, Trivy `CRITICAL`/`HIGH`).
-* **Tests & CI** : suite Vitest (`npm test` : `ics.spec.ts`, `sieveGenerator.spec.ts`), contrôle TypeScript (`tsc --noEmit`), tests Go (`TestIsSafeExternalURL` et `backend/internal/crypto/vault_test.go` sur `SealJSON`/`OpenJSON`, cookies corrompus et secrets courts) intégrés au workflow GitHub Actions.
-* **Calendrier (.ics) & filtres Sieve** : suppression du code mort et du double envoi dans `CalendarView.svelte`, transmission dynamique de `SEQUENCE` sur `CANCEL`, message d'erreur visible côté utilisateur lors d'un échec d'envoi d'annulation `.ics`, et restitution visuelle des scripts Sieve Stalwart (`# Rule:`, `fileinto :mailboxid`, `@metadata`).
-* **Ergonomie, Green IT & accessibilité** : badge discret `v0.7.10` en haut de la barre latérale (`__APP_VERSION__`), attributs `aria-label` explicites sur les champs fichiers masqués, image finale `distroless` de **9,97 Mo** et consommation mesurée au repos à **6,63 MiB** de RAM (`0,00 %` CPU).
+## Nouveautés v0.8.0
+* **Récurrences JSCalendar** : expansion des règles de récurrence (`daily`, `weekly`, `monthly`, `yearly`, `interval`, `count`, `until`) et prise en compte de `recurrenceOverrides` dans `calendar.ts` et `CalendarView.svelte` (avec tests `recurrence.spec.ts`).
+* **Recherche serveur JMAP (`Email/query`)** : requête `Email/query` + `Email/get` côté serveur (`searchEmails`) combinant texte, dossier, non-lus et pièces jointes en complément du cache local.
+* **Glisser-déposer (Drag & Drop)** : déplacement d'e-mails vers les dossiers de la barre latérale (`updateEmailMailbox`) et déplacement d'événements vers un autre jour dans la vue mois (`updateEvent`).
+* **Pièces jointes, images externes & bilingue FR/EN** : retrait individuel des pièces jointes dans le composeur, bandeau *« Images externes bloquées — Afficher les images »* dans `MailReader.svelte`, module maison `i18n` FR/EN sans dépendance avec sélecteur `FR | EN`, et récupération dynamique de la version via `/api/version`.
+* **Industrialisation backend** : découpage de `backend/main.go` vers le package `backend/internal/httpapi` (`middleware.go`, `oidc.go`, `handlers.go`, `router.go`).

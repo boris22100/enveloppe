@@ -4,6 +4,15 @@ const CAP = 'urn:ietf:params:jmap:calendars';
 
 export type CalendarItemKind = 'event' | 'task' | 'birthday';
 
+export interface JSCalendarRecurrenceRule {
+  '@type'?: 'RecurrenceRule';
+  frequency: 'yearly' | 'monthly' | 'weekly' | 'daily';
+  interval?: number;
+  count?: number;
+  until?: string;
+  byDay?: string[];
+}
+
 export interface JSCalendarEvent {
   id?: string;
   title: string;
@@ -14,6 +23,10 @@ export interface JSCalendarEvent {
   categories?: Record<string, boolean>;
   participants?: Record<string, { email?: string; name?: string }>;
   calendarIds?: Record<string, boolean>;
+  recurrenceRules?: JSCalendarRecurrenceRule[];
+  recurrenceOverrides?: Record<string, Partial<JSCalendarEvent> & { excluded?: boolean }>;
+  recurrenceId?: string;
+  isOccurrence?: boolean;
 }
 
 export async function fetchEvents(accountId: string): Promise<{ defaultCalId: string; events: JSCalendarEvent[] }> {
@@ -102,4 +115,96 @@ export async function importEventsJSON(accountId: string, calendarId: string, js
     create[`ev_${idx}`] = { '@type': 'Event', calendarIds: { [calendarId]: true }, ...clean };
   });
   await jmapCall(accountId, [['CalendarEvent/set', { accountId: accId, create }, 'imp0']], [CAP]);
+}
+
+export async function updateEvent(
+  accountId: string,
+  eventId: string,
+  patch: Partial<Pick<JSCalendarEvent, 'title' | 'start' | 'description' | 'showWithoutTime' | 'categories'>> & { end?: string }
+) {
+  const accId = await getPrimaryAccountId(accountId);
+  await jmapCall(accountId, [
+    ['CalendarEvent/set', { accountId: accId, update: { [eventId]: patch } }, 'u0']
+  ]);
+}
+
+
+function formatLocalDateTime(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function addFrequencyStep(base: Date, freq: JSCalendarRecurrenceRule['frequency'], interval: number, stepIndex: number): Date {
+  const d = new Date(base.getTime());
+  const total = stepIndex * Math.max(1, interval);
+  if (freq === 'daily') {
+    d.setDate(d.getDate() + total);
+  } else if (freq === 'weekly') {
+    d.setDate(d.getDate() + total * 7);
+  } else if (freq === 'monthly') {
+    d.setMonth(d.getMonth() + total);
+  } else {
+    d.setFullYear(d.getFullYear() + total);
+  }
+  return d;
+}
+
+export function expandEventOccurrences(
+  ev: JSCalendarEvent,
+  windowStartIso: string,
+  windowEndIso: string
+): JSCalendarEvent[] {
+  if (!ev.start) return [];
+  const startDate = new Date(ev.start);
+  if (Number.isNaN(startDate.getTime())) return [ev];
+
+  const rules = ev.recurrenceRules ?? [];
+  if (rules.length === 0) {
+    return [ev];
+  }
+
+  const winStart = new Date(windowStartIso);
+  const winEnd = new Date(windowEndIso);
+  const rule = rules[0];
+  const interval = Math.max(1, rule.interval ?? 1);
+  const maxCount = rule.count && rule.count > 0 ? rule.count : 366;
+  const untilDate = rule.until ? new Date(rule.until) : null;
+  const overrides = ev.recurrenceOverrides ?? {};
+
+  const out: JSCalendarEvent[] = [];
+  let emitted = 0;
+
+  for (let step = 0; step < 1000 && emitted < maxCount; step++) {
+    const occDate = addFrequencyStep(startDate, rule.frequency, interval, step);
+    if (untilDate && !Number.isNaN(untilDate.getTime()) && occDate.getTime() > untilDate.getTime()) {
+      break;
+    }
+    emitted++;
+
+    const occIso = formatLocalDateTime(occDate);
+    const occKeyDate = occIso.slice(0, 10);
+    const override = overrides[occIso] ?? overrides[occKeyDate];
+    if (override?.excluded) {
+      continue;
+    }
+
+    const merged: JSCalendarEvent = {
+      ...ev,
+      ...(override ?? {}),
+      id: ev.id,
+      start: override?.start ?? occIso,
+      recurrenceId: occIso,
+      isOccurrence: step > 0 || Boolean(override)
+    };
+
+    const mergedDate = new Date(merged.start);
+    if (
+      (Number.isNaN(winStart.getTime()) || mergedDate.getTime() >= winStart.getTime()) &&
+      (Number.isNaN(winEnd.getTime()) || mergedDate.getTime() <= winEnd.getTime())
+    ) {
+      out.push(merged);
+    }
+  }
+
+  return out;
 }

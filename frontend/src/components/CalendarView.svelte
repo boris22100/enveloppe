@@ -81,7 +81,9 @@
     createEvent,
     deleteEvent,
     fetchEvents,
+    expandEventOccurrences,
     importEventsJSON,
+    updateEvent,
     type CalendarItemKind,
     type JSCalendarEvent
   } from '../lib/jmap/calendar';
@@ -103,6 +105,8 @@
   let description = $state('');
   let inviteesText = $state('');
   let saving = $state(false);
+  let draggedEvent = $state<JSCalendarEvent | null>(null);
+  let dragOverYmd = $state<string | null>(null);
 
   let selectedEvent = $state<JSCalendarEvent | null>(null);
   let eventToDelete = $state<JSCalendarEvent | null>(null);
@@ -141,9 +145,17 @@
   }
 
   function eventsForDate(ymd: string): JSCalendarEvent[] {
-    return events
-      .filter((e) => (e.start || '').startsWith(ymd))
-      .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+    const dayStart = `${ymd}T00:00:00`;
+    const dayEnd = `${ymd}T23:59:59`;
+    const expanded: JSCalendarEvent[] = [];
+    for (const ev of events) {
+      if (ev.recurrenceRules?.length) {
+        expanded.push(...expandEventOccurrences(ev, dayStart, dayEnd));
+      } else if ((ev.start || '').startsWith(ymd)) {
+        expanded.push(ev);
+      }
+    }
+    return expanded.sort((a, b) => (a.start || '').localeCompare(b.start || ''));
   }
 
   function formatTime(iso: string): string {
@@ -196,6 +208,50 @@
     else if (view === 'week') d.setDate(d.getDate() + delta * 7);
     else d.setDate(d.getDate() + delta);
     cursor = d;
+  }
+
+  function shiftIsoDateKeepingDuration(isoStr: string, deltaDays: number): string {
+    const parsed = new Date(isoStr);
+    if (Number.isNaN(parsed.getTime())) return isoStr;
+    parsed.setDate(parsed.getDate() + deltaDays);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}T${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`;
+  }
+
+  function handleEventDragStart(e: DragEvent, ev: JSCalendarEvent) {
+    e.stopPropagation();
+    draggedEvent = ev;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', ev.id || ev.title);
+    }
+  }
+
+  function handleEventDragEnd() {
+    draggedEvent = null;
+    dragOverYmd = null;
+  }
+
+  async function handleDropEventOnDate(e: DragEvent, targetYmd: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    const ev = draggedEvent;
+    draggedEvent = null;
+    dragOverYmd = null;
+    if (!ev || !ev.id || !ev.start) return;
+    const srcYmd = ev.start.slice(0, 10);
+    if (srcYmd === targetYmd) return;
+    const srcDate = new Date(srcYmd + 'T00:00:00');
+    const dstDate = new Date(targetYmd + 'T00:00:00');
+    const deltaDays = Math.round((dstDate.getTime() - srcDate.getTime()) / 86400000);
+    const nextStart = shiftIsoDateKeepingDuration(ev.start, deltaDays);
+    const nextEnd = ev.end ? shiftIsoDateKeepingDuration(ev.end, deltaDays) : undefined;
+    try {
+      await updateEvent(accountId, ev.id, { start: nextStart, ...(nextEnd ? { end: nextEnd } : {}) });
+      await load();
+    } catch (err: any) {
+      console.error('Déplacement événement:', err);
+    }
   }
 
   async function handleSave(e: Event) {
@@ -397,9 +453,12 @@
         <div
           role="button"
           tabindex="0"
+          ondragover={(e) => { if (draggedEvent) { e.preventDefault(); dragOverYmd = cell.ymd; } }}
+          ondragleave={() => { if (dragOverYmd === cell.ymd) dragOverYmd = null; }}
+          ondrop={(e) => handleDropEventOnDate(e, cell.ymd)}
           onclick={() => openCreateModal(cell.ymd)}
           onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && openCreateModal(cell.ymd)}
-          class="env-card env-hover flex cursor-pointer flex-col overflow-hidden rounded-lg border p-2 text-left transition-colors {cell.inMonth ? '' : 'opacity-45'}"
+          class="env-card env-hover flex cursor-pointer flex-col overflow-hidden rounded-lg border p-2 text-left transition-colors {cell.inMonth ? '' : 'opacity-45'} {dragOverYmd === cell.ymd ? 'ring-2 ring-[var(--env-accent)]' : ''}"
         >
           <button
             type="button"
@@ -414,9 +473,12 @@
               <div
                 role="button"
                 tabindex="0"
+                draggable={true}
+                ondragstart={(e) => handleEventDragStart(e, ev)}
+                ondragend={handleEventDragEnd}
                 onclick={(e) => { e.stopPropagation(); selectedEvent = ev; }}
                 onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); selectedEvent = ev; } }}
-                class="env-accent-soft group/ev flex items-center justify-between gap-1 rounded-lg px-2 py-0.5 text-xs font-medium"
+                class="env-accent-soft group/ev flex cursor-grab items-center justify-between gap-1 rounded-lg px-2 py-0.5 text-xs font-medium active:cursor-grabbing {draggedEvent?.id === ev.id ? 'opacity-60' : ''}"
               >
                 <span class="truncate">
                   {badgeFor(ev)}{#if !ev.showWithoutTime}<span class="font-mono text-[11px] opacity-80">{formatTime(ev.start)} </span>{/if}{ev.title}

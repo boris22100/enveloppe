@@ -1,5 +1,6 @@
 <script lang="ts">
   import { buildSandboxedEmailDoc } from '../lib/utils/sanitize';
+  import { getLocale, t } from '../lib/i18n';
   import { getDownloadUrl, type Attachment } from '../lib/jmap/client';
 
   export interface ThreadMessageItem {

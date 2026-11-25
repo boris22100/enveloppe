@@ -3,11 +3,12 @@
   import { db, type CachedEmail } from './lib/db/cache';
   import {
     archiveEmail, createMailbox, deleteMailbox, destroyEmail, emptyMailboxes, fetchEmailBody, fetchMailboxes, fetchMailboxEmails, fetchQuota, getMailboxSubtreeIds, getPrimaryAccountId, markMailboxesAsRead, renameMailbox, ROLE_META, setEmailKeyword, updateEmailMailbox,
-    sendEmail, uploadAttachment, type Account, type Attachment, type DiskQuota, type Mailbox
+    searchEmails, sendEmail, uploadAttachment, type Account, type Attachment, type DiskQuota, type Mailbox
   } from './lib/jmap/client';
   import { enableWebPush } from './lib/jmap/push';
   import { applyTheme, getSavedTheme, type ThemeMode } from './lib/theme';
   import { getAccountSignature } from './lib/signatures';
+  import { getLocale, setLocale, t, type Locale } from './lib/i18n';
   import LoginPage from './components/LoginPage.svelte';
   import AccountModal from './components/AccountModal.svelte';
   import MailReader, { type ThreadMessageItem } from './components/MailReader.svelte';
@@ -35,6 +36,9 @@
     themeMode === 'bowiz' ? '💠' : themeMode === 'dark' ? '🌙' : '☀️'
   );
 
+  let lang = $state<Locale>(getLocale());
+  function switchLang(next: Locale) { lang = next; setLocale(next); }
+  let appVersion = $state(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.8.0');
   let accounts = $state<Account[]>([]);
   let loaded = $state(false);
   let activeAccountId = $state<string | null>(null);
@@ -52,6 +56,8 @@
   let quota = $state<DiskQuota | null>(null);
 
   let emails = $state<CachedEmail[]>([]);
+  let serverSearchResults = $state<CachedEmail[] | null>(null);
+  let searchingServer = $state(false);
   let searchQuery = $state('');
   let filterUnreadOnly = $state(false);
   let filterAttachmentsOnly = $state(false);
@@ -69,6 +75,8 @@
   let uploading = $state(false);
   let statusToast = $state('');
   let batchBusy = $state(false);
+  let draggedMail = $state<CachedEmail | null>(null);
+  let dropTargetMailboxId = $state<string | null>(null);
   let sse: EventSource | null = null;
 
   let confirmDialog = $state<{
@@ -81,9 +89,70 @@
   let activeAccount = $derived(accounts.find((a) => a.id === activeAccountId) ?? null);
   let activeMailbox = $derived(mailboxes.find((m) => m.id === activeMailboxId) ?? null);
 
+  let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+  async function runServerSearch() {
+    if (!activeAccountId) return;
+    const q = searchQuery.trim();
+    if (!q && !filterUnreadOnly && !filterAttachmentsOnly) {
+      serverSearchResults = null;
+      searchingServer = false;
+      return;
+    }
+    searchingServer = true;
+    try {
+      const list = await searchEmails(activeAccountId, {
+        query: q || undefined,
+        mailboxId: activeMailboxId,
+        unreadOnly: filterUnreadOnly,
+        hasAttachment: filterAttachmentsOnly,
+        limit: 100
+      });
+      serverSearchResults = list.map((e: any) => ({
+        uid: activeAccountId + ':' + e.id,
+        accountId: activeAccountId,
+        id: e.id,
+        blobId: e.blobId,
+        subject: e.subject || '(Sans objet)',
+        from: e.from || [],
+        receivedAt: e.receivedAt || '',
+        preview: e.preview || '',
+        isUnread: !(e.keywords && e.keywords['$seen']),
+        isFlagged: Boolean(e.keywords && e.keywords['$flagged']),
+        mailboxIds: e.mailboxIds || {}
+      }));
+    } catch {
+      serverSearchResults = null;
+    } finally {
+      searchingServer = false;
+    }
+  }
+
+  $effect(() => {
+    const _q = searchQuery;
+    const _u = filterUnreadOnly;
+    const _a = filterAttachmentsOnly;
+    const _m = activeMailboxId;
+    const _acc = activeAccountId;
+    if (searchTimer) clearTimeout(searchTimer);
+    if (!_acc || (!_q.trim() && !_u && !_a)) {
+      serverSearchResults = null;
+      searchingServer = false;
+      return;
+    }
+    searchTimer = setTimeout(() => {
+      void runServerSearch();
+    }, 280);
+    return () => {
+      if (searchTimer) clearTimeout(searchTimer);
+    };
+  });
+
   let filteredEmails = $derived.by(() => {
+    const source = serverSearchResults ?? emails;
     const q = searchQuery.trim().toLowerCase();
-    return emails.filter((m) => {
+    if (serverSearchResults) return source;
+    return source.filter((m) => {
       if (filterUnreadOnly && !m.isUnread) return false;
       if (filterAttachmentsOnly && !m.hasAttachment) return false;
       if (!q) return true;
@@ -168,7 +237,20 @@
     if (activeMailboxId) localStorage.setItem('enveloppe_mailbox', activeMailboxId);
   });
 
+  async function loadVersion() {
+    try {
+      const res = await fetch('/api/version');
+      if (res.ok) {
+        const data = await res.json();
+        if (typeof data?.version === 'string' && data.version.trim()) {
+          appVersion = data.version.trim();
+        }
+      }
+    } catch {}
+  }
+
   async function loadAccounts() {
+    await loadVersion();
     const res = await fetch('/api/accounts');
     accounts = await res.json();
     loaded = true;
@@ -306,6 +388,40 @@
     showComposer = true;
   }
 
+  function handleMailDragStart(e: DragEvent, mail: CachedEmail) {
+    draggedMail = mail;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', mail.id);
+    }
+  }
+
+  function handleMailDragEnd() {
+    draggedMail = null;
+    dropTargetMailboxId = null;
+  }
+
+  async function handleDropOnMailbox(e: DragEvent, targetBox: Mailbox) {
+    e.preventDefault();
+    const mail = draggedMail;
+    draggedMail = null;
+    dropTargetMailboxId = null;
+    if (!mail || !activeAccountId) return;
+    if (activeMailboxId && activeMailboxId === targetBox.id) return;
+    try {
+      await updateEmailMailbox(activeAccountId, mail.id, targetBox.id, activeMailboxId ?? undefined);
+      emails = emails.filter((item) => item.id !== mail.id);
+      if (selectedEmail?.id === mail.id) {
+        selectedEmail = null;
+        activeBody = null;
+      }
+      mailboxes = await fetchMailboxes(activeAccountId);
+      showToast('Déplacé vers « ' + folderDisplayName(targetBox) + ' ».');
+    } catch (err: any) {
+      showToast(err?.message || 'Échec du déplacement du message.');
+    }
+  }
+
   async function handleArchive(mail: CachedEmail) {
     if (!activeMailboxId || !activeAccountId) return;
     const archiveBox = mailboxes.find((m) => m.role === 'archive');
@@ -435,6 +551,10 @@
     }
   }
 
+  function removeComposeFile(index: number) {
+    composeFiles = composeFiles.filter((_, idx) => idx !== index);
+  }
+
   async function handleFileUpload(e: Event) {
     const files = (e.target as HTMLInputElement).files;
     if (!files || !activeAccountId) return;
@@ -443,6 +563,7 @@
       for (const f of Array.from(files)) {
         composeFiles = [...composeFiles, await uploadAttachment(activeAccountId, f)];
       }
+      (e.target as HTMLInputElement).value = '';
     } finally { uploading = false; }
   }
 
@@ -557,7 +678,7 @@
               <div class="flex items-baseline gap-1.5 leading-tight">
                 <span class="env-text text-sm font-bold tracking-tight">enveloppe</span>
                 <span class="env-faint text-xs font-normal">jmap</span>
-                <span class="env-faint text-[11px] font-mono opacity-75">v{__APP_VERSION__}</span>
+                <span class="env-faint text-[11px] font-mono opacity-75">v{appVersion}</span>
               </div>
             </div>
           {/if}
@@ -613,9 +734,12 @@
               {#each mailboxes as box}
                 <div
                   role="group"
+                  ondragover={(e) => { if (draggedMail && activeMailboxId !== box.id) { e.preventDefault(); dropTargetMailboxId = box.id; } }}
+                  ondragleave={() => { if (dropTargetMailboxId === box.id) dropTargetMailboxId = null; }}
+                  ondrop={(e) => handleDropOnMailbox(e, box)}
                   oncontextmenu={(e) => { e.preventDefault(); ctxMenu = { x: e.clientX, y: e.clientY, type: 'mailbox', mailbox: box }; }}
                   style="padding-left: {8 + (box.depth ?? 0) * 12}px"
-                  class="group flex items-center justify-between gap-1 rounded-lg pr-1.5 text-xs transition-colors {activeMailboxId === box.id ? 'env-active env-accent-text font-semibold' : 'env-muted env-hover'}"
+                  class="group flex items-center justify-between gap-1 rounded-lg pr-1.5 text-xs transition-colors {dropTargetMailboxId === box.id ? 'ring-2 ring-[var(--env-accent)] env-active font-semibold' : ''} {activeMailboxId === box.id ? 'env-active env-accent-text font-semibold' : 'env-muted env-hover'}"
                 >
                   <button
                     type="button"
@@ -787,9 +911,12 @@
                 {@const isRowUnread = entry.unreadCount > 0 || mail.isUnread}
                 <button
                   type="button"
+                  draggable={true}
+                  ondragstart={(e) => handleMailDragStart(e, mail)}
+                  ondragend={handleMailDragEnd}
                   onclick={() => openEmail(mail)}
                   oncontextmenu={(e) => { e.preventDefault(); ctxMenu = { x: e.clientX, y: e.clientY, type: 'mail', mail }; }}
-                  class="env-hover flex w-full items-center gap-3 px-4 py-3 text-left transition-colors {selectedEmail?.id === mail.id ? 'env-active' : ''}"
+                  class="env-hover flex w-full items-center gap-3 px-4 py-3 text-left transition-colors {selectedEmail?.id === mail.id ? 'env-active' : ''} {draggedMail?.id === mail.id ? 'opacity-60' : ''}"
                 >
                   <SenderAvatar name={mail.from[0]?.name} email={mail.from[0]?.email} />
                   <div class="min-w-0 flex-1">
@@ -890,8 +1017,18 @@
         </div>
         {#if composeFiles.length}
           <div class="flex flex-wrap gap-1.5 pt-1">
-            {#each composeFiles as f}
-              <span class="env-subtle env-muted rounded-xl border px-2.5 py-1 text-xs">{f.name}</span>
+            {#each composeFiles as f, idx}
+              <span class="env-subtle env-muted inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs">
+                <span>{f.name}</span>
+                <button
+                  type="button"
+                  onclick={() => removeComposeFile(idx)}
+                  aria-label="Retirer {f.name}"
+                  class="hover:opacity-75"
+                >
+                  ✕
+                </button>
+              </span>
             {/each}
           </div>
         {/if}
