@@ -1,6 +1,20 @@
 <script lang="ts">
+  import { jmapCall, sendEmail, uploadAttachment } from '../lib/jmap/client';
+  import { buildIcsInvitation, createIcsFile } from '../lib/ics';
+  import {
+    createEvent,
+    deleteEvent,
+    fetchEvents,
+    expandEventOccurrences,
+    importEventsJSON,
+    updateEvent,
+    type CalendarItemKind,
+    type JSCalendarEvent
+  } from '../lib/jmap/calendar';
+  import { eventsToIcs, icsToEvents } from '../lib/utils/formats';
+  import ConfirmModal from './ConfirmModal.svelte';
 
-  interface ContactEntry { name: string; email: string; }
+interface ContactEntry { name: string; email: string; }
   let contactList = $state<ContactEntry[]>([]);
   let showSuggestions = $state(false);
 
@@ -74,21 +88,7 @@
     }
   });
 
-  import { jmapCall, sendEmail, uploadAttachment } from '../lib/jmap/client';
-  import { buildIcsInvitation, createIcsFile } from '../lib/ics';
 
-  import {
-    createEvent,
-    deleteEvent,
-    fetchEvents,
-    expandEventOccurrences,
-    importEventsJSON,
-    updateEvent,
-    type CalendarItemKind,
-    type JSCalendarEvent
-  } from '../lib/jmap/calendar';
-  import { eventsToIcs, icsToEvents } from '../lib/utils/formats';
-  import ConfirmModal from './ConfirmModal.svelte';
 
   let { accountId, organizerEmail = '' }: { accountId: string; organizerEmail?: string } = $props();
 
@@ -417,7 +417,6 @@
     inviteSendStatus = `Annulation (.ics) envoyée à ${recipients.join(', ')}.`;
     setTimeout(() => (inviteSendStatus = ''), 5000);
   }
-
 </script>
 
 <div class="flex h-full flex-col overflow-hidden">
