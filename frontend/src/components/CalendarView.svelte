@@ -579,7 +579,19 @@ interface ContactEntry { name: string; email: string; }
               >
                 <div class="flex items-start justify-between gap-1">
                   {#if !ev.showWithoutTime}
-                    <div class="font-mono text-xs">{formatTime(ev.start)}</div>
+                    <div class="font-mono text-xs">{formatTime(ev.start)}
+                  {#if ev.id}
+                    <button
+                      type="button"
+                      title="Modifier"
+                      aria-label="Modifier {ev.title}"
+                      onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
+                      class="shrink-0 text-xs opacity-75 hover:opacity-100"
+                    >
+                      ✏️
+                    </button>
+                  {/if}
+                </div>
                   {:else}
                     <div></div>
                   {/if}
@@ -594,7 +606,19 @@ interface ContactEntry { name: string; email: string; }
                       🗑️
                     </button>
                   {/if}
-                </div>
+                
+                      {#if ev.id}
+                        <button
+                          type="button"
+                          title="Modifier"
+                          aria-label="Modifier {ev.title}"
+                          onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
+                          class="shrink-0 text-xs opacity-75 hover:opacity-100"
+                        >
+                          ✏️
+                        </button>
+                      {/if}
+                    </div>
                 <div class="env-text text-xs font-semibold">{badgeFor(ev)}{ev.title}</div>
                 {#if ev.description}<div class="env-muted mt-0.5 truncate text-xs">{ev.description}</div>{/if}
               </div>
