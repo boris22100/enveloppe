@@ -236,6 +236,15 @@ interface ContactEntry { name: string; email: string; }
     dragOverYmd = null;
   }
 
+  function computeDayDelta(srcIso: string, targetYmd: string): number {
+    const [sy, sm, sd] = srcIso.slice(0, 10).split('-').map(Number);
+    const [ty, tm, td] = targetYmd.split('-').map(Number);
+    if (!sy || !sm || !sd || !ty || !tm || !td) return 0;
+    const utcSrc = Date.UTC(sy, sm - 1, sd);
+    const utcDst = Date.UTC(ty, tm - 1, td);
+    return Math.round((utcDst - utcSrc) / 86400000);
+  }
+
   async function handleDropEventOnDate(e: DragEvent, targetYmd: string) {
     e.preventDefault();
     e.stopPropagation();
@@ -243,18 +252,24 @@ interface ContactEntry { name: string; email: string; }
     draggedEvent = null;
     dragOverYmd = null;
     if (!ev || !ev.id || !ev.start) return;
-    const srcYmd = ev.start.slice(0, 10);
-    if (srcYmd === targetYmd) return;
-    const srcDate = new Date(srcYmd + 'T00:00:00');
-    const dstDate = new Date(targetYmd + 'T00:00:00');
-    const deltaDays = Math.round((dstDate.getTime() - srcDate.getTime()) / 86400000);
+    const deltaDays = computeDayDelta(ev.start, targetYmd);
+    if (deltaDays === 0) return;
     const nextStart = shiftIsoDateKeepingDuration(ev.start, deltaDays);
-    const nextEnd = ev.end ? shiftIsoDateKeepingDuration(ev.end, deltaDays) : undefined;
+    const nextEnd = (ev as any).end ? shiftIsoDateKeepingDuration((ev as any).end, deltaDays) : undefined;
     try {
       await updateEvent(accountId, ev.id, { start: nextStart, ...(nextEnd ? { end: nextEnd } : {}) });
+      try {
+        await dispatchEventUpdateIcs(ev, nextStart);
+      } catch (mailErr: any) {
+        console.error('Modification .ics:', mailErr);
+        inviteSendStatus = mailErr?.message || "Échec de l'envoi de la modification (.ics).";
+        setTimeout(() => (inviteSendStatus = ''), 6000);
+      }
       await load();
     } catch (err: any) {
       console.error('Déplacement événement:', err);
+      inviteSendStatus = err?.message || "Échec du déplacement de l'événement.";
+      setTimeout(() => (inviteSendStatus = ''), 6000);
     }
   }
 
