@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { t } from '../lib/i18n';
+  import { onDestroy } from 'svelte';
+  import { getLocale, subscribeLocale, t, type Locale } from '../lib/i18n';
+  let activeLocale = $state<Locale>(getLocale());
+  const _unsubLocale = subscribeLocale((l) => (activeLocale = l));
+  onDestroy(_unsubLocale);
+
   import SieveRuleCard from './sieve/SieveRuleCard.svelte';
   import SieveCodeEditor from './sieve/SieveCodeEditor.svelte';
   import SieveVacationCard from './sieve/SieveVacationCard.svelte';
@@ -318,7 +323,7 @@
         onclick={() => (showNewModal = true)}
         class="env-accent-bg rounded-xl px-3 py-1.5 text-xs font-semibold hover:opacity-95"
       >
-        {t('sieve.newScript')}
+        {t('sieve.newScript', undefined, activeLocale)}
       </button>
     </div>
 
@@ -378,7 +383,7 @@
     <header class="env-border flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
       <div class="flex flex-wrap items-center gap-3">
         <div>
-          <h2 class="env-text text-lg font-bold">{t('sieve.title')}</h2>
+          <h2 class="env-text text-lg font-bold">{t('sieve.title', undefined, activeLocale)}</h2>
           <p class="env-muted text-xs">Éditeur visuel & code Sieve synchronisé avec Stalwart</p>
         </div>
 
@@ -395,14 +400,14 @@
             onclick={() => switchMode('visual')}
             class="rounded-lg px-3 py-1.5 {mode === 'visual' ? 'env-accent-soft font-semibold' : 'env-muted'}"
           >
-            🧩 {t('sieve.visualRules')}
+            🧩 {t('sieve.visualRules', undefined, activeLocale)}
           </button>
           <button
             type="button"
             onclick={() => switchMode('code')}
             class="rounded-lg px-3 py-1.5 {mode === 'code' ? 'env-accent-soft font-semibold' : 'env-muted'}"
           >
-            &lt;/&gt; {t('sieve.sieveCode')}
+            &lt;/&gt; {t('sieve.sieveCode', undefined, activeLocale)}
           </button>
         </div>
       </div>
@@ -414,7 +419,7 @@
           onclick={handleValidate}
           class="env-input env-hover rounded-xl border px-3.5 py-2 text-xs font-medium disabled:opacity-50"
         >
-          {validating ? t('common.loading') : `✓ ${t('sieve.validateSyntax')}`}
+          {validating ? t('common.loading', undefined, activeLocale) : `✓ ${t('sieve.validateSyntax', undefined, activeLocale)}`}
         </button>
 
         {#if selectedScript && !selectedScript.isActive && !isNewDraft}
@@ -434,7 +439,7 @@
           onclick={() => handleSave(false)}
           class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95 disabled:opacity-50"
         >
-          {saving ? t('common.loading') : `💾 ${t('sieve.saveToServer')}`}
+          {saving ? t('common.loading', undefined, activeLocale) : `💾 ${t('sieve.saveToServer', undefined, activeLocale)}`}
         </button>
       </div>
     </header>
@@ -465,13 +470,13 @@
           {/if}
 
           <div class="flex items-center justify-between">
-            <h3 class="env-text text-sm font-semibold">{t('sieve.rules')} ({rules.length})</h3>
+            <h3 class="env-text text-sm font-semibold">{t('sieve.rules', undefined, activeLocale)} ({rules.length})</h3>
             <button
               type="button"
               onclick={addRule}
               class="env-accent-soft rounded-xl border border-[#48B17F]/40 px-3.5 py-2 text-xs font-semibold hover:opacity-90"
             >
-              {t('sieve.addRule')}
+              {t('sieve.addRule', undefined, activeLocale)}
             </button>
           </div>
 

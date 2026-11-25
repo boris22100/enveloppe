@@ -163,14 +163,14 @@
       <input
         bind:value={search}
         aria-label="Rechercher un contact"
-        placeholder={t('contacts.searchPlaceholder')}
+        placeholder={t('contacts.searchPlaceholder', undefined, activeLocale)}
         class="env-input w-64 rounded-xl border px-3.5 py-2 text-sm"
       />
     </div>
     <div class="flex flex-wrap gap-2">
       <div class="flex items-center justify-between gap-2">
-                      <button type="button" onclick={() => (showAdd = !showAdd)} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">{t('contacts.newContact')}</button>
-      <button type="button" onclick={() => downloadFile(contactsToVcf(contacts), 'contacts.vcf', 'text/vcard')} class="env-input env-hover rounded-xl border px-3.5 py-2 text-xs font-medium">{t('contacts.exportVcf')}</button>
+                      <button type="button" onclick={() => (showAdd = !showAdd)} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">{t('contacts.newContact', undefined, activeLocale)}</button>
+      <button type="button" onclick={() => downloadFile(contactsToVcf(contacts), 'contacts.vcf', 'text/vcard')} class="env-input env-hover rounded-xl border px-3.5 py-2 text-xs font-medium">{t('contacts.exportVcf', undefined, activeLocale)}</button>
       <label class="env-input env-hover cursor-pointer rounded-xl border px-3.5 py-2 text-xs font-medium">
         Importer
         <input type="file" accept=".vcf,.json" onchange={handleImport} class="hidden" aria-label="Importer des contacts (.vcf ou .json)" />
