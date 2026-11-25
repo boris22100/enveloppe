@@ -217,3 +217,99 @@ export function expandEventOccurrences(
 
   return out;
 }
+
+export interface ParsedIcsInvitation {
+  uid: string;
+  title: string;
+  start: string;
+  location: string;
+  description: string;
+}
+
+function parseIcsDateToLocal(raw: string): string {
+  const clean = raw.trim().replace(/^.*:/, '');
+  const m = clean.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/);
+  if (!m) return new Date().toISOString().slice(0, 19);
+  const [, y, mo, d, h = '09', mi = '00', s = '00', z] = m;
+  if (z === 'Z') {
+    const dt = new Date(`${y}-${mo}-${d}T${h}:${mi}:${s}Z`);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+  }
+  return `${y}-${mo}-${d}T${h}:${mi}:${s}`;
+}
+
+export function parseIcsInvitation(icsText: string): ParsedIcsInvitation | null {
+  const unfolded = icsText.replace(/\r?\n[ \t]/g, '');
+  const veventMatch = unfolded.match(/BEGIN:VEVENT([\s\S]*?)END:VEVENT/i);
+  if (!veventMatch) return null;
+  const block = veventMatch[1];
+  const getField = (name: string) => {
+    const m = block.match(new RegExp(`^${name}(?:;[^:]*)?:(.*)$`, 'mi'));
+    return m ? m[1].trim().replace(/\\n/g, '\n').replace(/\\,/g, ',') : '';
+  };
+  const title = getField('SUMMARY') || 'Invitation';
+  const dtstart = getField('DTSTART');
+  return {
+    uid: getField('UID') || `ics-${Date.now()}`,
+    title,
+    start: dtstart ? parseIcsDateToLocal(dtstart) : new Date().toISOString().slice(0, 19),
+    location: getField('LOCATION'),
+    description: getField('DESCRIPTION')
+  };
+}
+
+export async function respondToIcsInvitation(
+  accountId: string,
+  icsText: string,
+  response: 'accepted' | 'tentative' | 'declined'
+): Promise<ParsedIcsInvitation> {
+  const inv = parseIcsInvitation(icsText);
+  if (!inv) throw new Error('Invitation .ics invalide');
+
+  const { defaultCalId, events } = await fetchEvents(accountId);
+  if (!defaultCalId) throw new Error('Aucun calendrier disponible');
+
+  const accId = await getPrimaryAccountId(accountId, CAP);
+  const statusMap = { accepted: 'confirmed', tentative: 'tentative', declined: 'cancelled' } as const;
+  const existing = events.find((ev: any) => ev.uid === inv.uid || (ev.title === inv.title && ev.start?.slice(0, 16) === inv.start.slice(0, 16)));
+
+  if (existing?.id) {
+    await jmapCall(accountId, [[
+      'CalendarEvent/set',
+      {
+        accountId: accId,
+        update: {
+          [existing.id]: {
+            status: statusMap[response],
+            freeBusyStatus: response === 'declined' ? 'free' : 'busy'
+          }
+        }
+      },
+      'icsu0'
+    ]], [CAP]);
+  } else {
+    const desc = [inv.location ? `Lieu : ${inv.location}` : '', inv.description].filter(Boolean).join('\n\n');
+    await jmapCall(accountId, [[
+      'CalendarEvent/set',
+      {
+        accountId: accId,
+        create: {
+          ics1: {
+            '@type': 'Event',
+            uid: inv.uid,
+            calendarIds: { [defaultCalId]: true },
+            title: inv.title,
+            start: inv.start,
+            duration: 'PT1H',
+            description: desc,
+            status: statusMap[response],
+            freeBusyStatus: response === 'declined' ? 'free' : 'busy'
+          }
+        }
+      },
+      'icsc0'
+    ]], [CAP]);
+  }
+  return inv;
+}

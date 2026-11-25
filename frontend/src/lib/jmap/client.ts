@@ -178,7 +178,7 @@ export async function searchEmails(accountId: string, opts: EmailSearchOptions):
 export async function fetchEmailBody(accountId: string, emailId: string) {
   const accId = await getPrimaryAccountId(accountId);
   const res = await jmapCall(accountId, [
-    ['Email/get', { accountId: accId, ids: [emailId], properties: ['id', 'htmlBody', 'textBody', 'bodyValues', 'attachments'], fetchHTMLBodyValues: true, fetchTextBodyValues: true }, 'b0'],
+    ['Email/get', { accountId: accId, ids: [emailId], properties: ['id', 'to', 'htmlBody', 'textBody', 'bodyValues', 'attachments'], fetchHTMLBodyValues: true, fetchTextBodyValues: true }, 'b0'],
     ['Email/set', { accountId: accId, update: { [emailId]: { 'keywords/$seen': true } } }, 'b1']
   ]);
   const msg = res.methodResponses[0][1].list[0];
@@ -188,6 +188,7 @@ export async function fetchEmailBody(accountId: string, emailId: string) {
     jmapAccountId: accId,
     html: htmlPartId ? msg.bodyValues[htmlPartId]?.value : null,
     text: textPartId ? msg.bodyValues[textPartId]?.value : '',
+    to: (msg.to ?? []) as { name?: string; email: string }[],
     attachments: (msg.attachments ?? []) as Attachment[]
   };
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { buildSandboxedEmailDoc } from '../lib/utils/sanitize';
   import { getDownloadUrl, type Attachment } from '../lib/jmap/client';
+  import { parseIcsInvitation, respondToIcsInvitation, type ParsedIcsInvitation } from '../lib/jmap/calendar';
 
   export interface ThreadMessageItem {
     id: string;
@@ -99,6 +100,54 @@
   });
 
   let srcdoc = $derived(resolvedHtml ? buildSandboxedEmailDoc(resolvedHtml, allowImages) : '');
+
+  let icsAttachment = $derived(
+    attachments.find((att) => att.type?.toLowerCase().includes('text/calendar') || att.name?.toLowerCase().endsWith('.ics'))
+  );
+  let icsRaw = $state('');
+  let icsInvite = $state<ParsedIcsInvitation | null>(null);
+  let icsStatus = $state<'accepted' | 'tentative' | 'declined' | null>(null);
+  let icsBusy = $state(false);
+  let icsError = $state('');
+
+  $effect(() => {
+    const att = icsAttachment;
+    icsRaw = '';
+    icsInvite = null;
+    icsStatus = null;
+    icsError = '';
+    if (!att) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(getDownloadUrl(accountId, jmapAccountId, att));
+        if (!res.ok) return;
+        const text = await res.text();
+        if (cancelled) return;
+        icsRaw = text;
+        icsInvite = parseIcsInvitation(text);
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  });
+
+  async function handleIcsResponse(choice: 'accepted' | 'tentative' | 'declined') {
+    if (!icsRaw || icsBusy) return;
+    icsBusy = true;
+    icsError = '';
+    try {
+      await respondToIcsInvitation(accountId, icsRaw, choice);
+      icsStatus = choice;
+    } catch (err: any) {
+      icsError = err?.message || 'Impossible de mettre à jour le calendrier';
+    } finally {
+      icsBusy = false;
+    }
+  }
 </script>
 
 <div class="env-card flex h-full flex-col rounded-xl border shadow-sm">
@@ -180,6 +229,41 @@
           <span class="env-muted truncate text-[11px]">{item.preview}</span>
         </button>
       {/each}
+    </div>
+  {/if}
+
+  {#if icsInvite}
+    <div class="env-subtle env-border flex flex-wrap items-center justify-between gap-3 border-b px-6 py-3">
+      <div class="min-w-0">
+        <p class="env-text text-xs font-semibold">📅 Invitation : {icsInvite.title}</p>
+        <p class="env-muted text-xs">
+          {new Date(icsInvite.start).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })}
+          {#if icsInvite.location} · {icsInvite.location}{/if}
+        </p>
+        {#if icsError}
+          <p class="text-xs text-red-400">{icsError}</p>
+        {/if}
+      </div>
+      <div class="flex flex-wrap items-center gap-1.5 text-xs">
+        <button
+          type="button"
+          disabled={icsBusy}
+          onclick={() => handleIcsResponse('accepted')}
+          class="rounded-lg border px-3 py-1.5 font-semibold {icsStatus === 'accepted' ? 'env-accent-bg border-transparent' : 'env-input env-hover'}"
+        >✓ Accepter</button>
+        <button
+          type="button"
+          disabled={icsBusy}
+          onclick={() => handleIcsResponse('tentative')}
+          class="rounded-lg border px-3 py-1.5 font-medium {icsStatus === 'tentative' ? 'env-accent-soft border-[var(--env-accent)]/50' : 'env-input env-hover'}"
+        >? Peut-être</button>
+        <button
+          type="button"
+          disabled={icsBusy}
+          onclick={() => handleIcsResponse('declined')}
+          class="rounded-lg border px-3 py-1.5 font-medium {icsStatus === 'declined' ? 'border-red-500/60 bg-red-500/15 text-red-400' : 'env-input env-hover'}"
+        >✕ Refuser</button>
+      </div>
     </div>
   {/if}
 

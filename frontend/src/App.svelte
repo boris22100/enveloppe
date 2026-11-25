@@ -35,7 +35,7 @@
     themeMode === 'bowiz' ? '💠' : themeMode === 'dark' ? '🌙' : '☀️'
   );
 
-  let appVersion = $state(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.8.5');
+  let appVersion = $state(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.8.6');
   let accounts = $state<Account[]>([]);
   let loaded = $state(false);
   let activeAccountId = $state<string | null>(null);
@@ -313,11 +313,23 @@
   }
 
   async function openEmail(mail: CachedEmail) {
+    const isDraft = Boolean(mail.keywords?.['$draft']) || mailboxes.find((m) => m.id === activeMailboxId)?.role === 'drafts';
+    const body = await fetchEmailBody(mail.accountId, mail.id);
+    if (isDraft) {
+      composeTo = (body.to ?? []).map((a) => (a.name ? `${a.name} <${a.email}>` : a.email)).join(', ');
+      composeSubject = mail.subject || '';
+      composeText = body.text || '';
+      composeFiles = body.attachments ?? [];
+      composeDraftId = mail.id;
+      draftStatus = 'Brouillon ouvert';
+      showComposer = true;
+      return;
+    }
     const wasUnread = mail.isUnread;
     selectedEmail = mail;
     mail.isUnread = false;
     if (mail.keywords) mail.keywords['$seen'] = true;
-    activeBody = await fetchEmailBody(mail.accountId, mail.id);
+    activeBody = body;
     if (wasUnread && activeAccountId) {
       mailboxes = await fetchMailboxes(activeAccountId);
     }
@@ -608,6 +620,21 @@
     showComposer = false;
     composeDraftId = null;
     draftStatus = '';
+  }
+
+  async function handleDeleteDraft() {
+    if (!activeAccountId || !composeDraftId) return;
+    if (draftTimer) { clearTimeout(draftTimer); draftTimer = null; }
+    const idToDelete = composeDraftId;
+    await destroyEmail(activeAccountId, idToDelete);
+    await db.emails.delete(idToDelete);
+    emails = emails.filter((m) => m.id !== idToDelete);
+    composeTo = composeSubject = composeText = '';
+    composeFiles = [];
+    composeDraftId = null;
+    draftStatus = '';
+    showComposer = false;
+    showToast('Brouillon supprimé.');
   }
 
   $effect(() => {
@@ -1205,6 +1232,9 @@
             </label>
           </div>
           <div class="flex gap-2">
+            {#if composeDraftId}
+              <button type="button" disabled={uploading} onclick={handleDeleteDraft} class="rounded-xl border border-red-500/40 px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10">Supprimer le brouillon</button>
+            {/if}
             <button type="button" onclick={closeComposer} class="env-muted env-hover rounded-xl px-4 py-2 text-sm">Annuler</button>
             <button disabled={uploading} class="env-accent-bg rounded-xl px-5 py-2 text-sm font-semibold hover:opacity-95 disabled:opacity-50">Envoyer</button>
           </div>
