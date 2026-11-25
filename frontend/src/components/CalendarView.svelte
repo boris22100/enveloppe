@@ -390,6 +390,68 @@ interface ContactEntry { name: string; email: string; }
     setTimeout(() => (inviteSendStatus = ''), 5000);
   }
 
+  async function dispatchEventUpdateIcs(ev: any, nextStart: string) {
+    if (!ev) return;
+    const rawParticipants = ev.participants && typeof ev.participants === 'object'
+      ? Object.values(ev.participants)
+      : [];
+    const recipients = rawParticipants
+      .map((part: any) => (typeof part === 'string' ? part : (part?.email || part?.address || part?.mail || '')))
+      .map((s: string) => s.trim())
+      .filter((s: string) => s.includes('@'));
+    if (recipients.length === 0) return;
+
+    let sender = organizerEmail && organizerEmail.includes('@') ? organizerEmail : '';
+    if (!sender) {
+      try {
+        const accRes = await fetch('/api/accounts');
+        if (accRes.ok) {
+          const accs = await accRes.json();
+          const cur = accs.find((a: any) => a.id === accountId) || accs[0];
+          sender = cur?.username || '';
+        }
+      } catch {}
+    }
+
+    const evTitle = ev.title || ev.summary || 'Événement';
+    const nextSeq = typeof ev?.sequence === 'number' ? ev.sequence + 1 : 1;
+    const icsStr = buildIcsInvitation({
+      uid: ev.uid || ev.id || undefined,
+      title: evTitle,
+      start: nextStart,
+      description: ev.description || undefined,
+      sequence: nextSeq,
+      organizerEmail: sender || (localStorage.getItem('enveloppe_calendar_organizer_v1')?.trim() || ''),
+      attendees: recipients,
+      method: 'REQUEST'
+    });
+    const icsFile = createIcsFile(icsStr, 'invitation.ics');
+    const uploadedAtt = await uploadAttachment(accountId, icsFile);
+
+    const whenTxt = nextStart
+      ? new Date(nextStart).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })
+      : '';
+    const updateBody = [
+      'Bonjour,',
+      '',
+      `L'événement suivant a été modifié : ${evTitle}`,
+      whenTxt ? `Nouvelle date : ${whenTxt}` : '',
+      ev.description ? `\nNotes :\n${ev.description}` : '',
+      '',
+      'Le fichier invitation.ics mis à jour est joint à cet e-mail.'
+    ].filter((l, idx, arr) => !(l === '' && arr[idx - 1] === '')).join('\n');
+
+    await sendEmail(
+      accountId,
+      recipients.join(', '),
+      `Modification : ${evTitle}`,
+      updateBody,
+      [uploadedAtt]
+    );
+    inviteSendStatus = `Modification (.ics) envoyée à ${recipients.join(', ')}.`;
+    setTimeout(() => (inviteSendStatus = ''), 5000);
+  }
+
 
   async function dispatchEventCancellationIcs(ev: any) {
     if (!ev) return;
