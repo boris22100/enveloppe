@@ -105,6 +105,7 @@ interface ContactEntry { name: string; email: string; }
   let description = $state('');
   let inviteesText = $state('');
   let saving = $state(false);
+  let inviteSendStatus = $state('');
   let draggedEvent = $state<JSCalendarEvent | null>(null);
   let dragOverYmd = $state<string | null>(null);
 
