@@ -53,7 +53,7 @@
         aria-label={t('sieve.conditionLogicAria', undefined, activeLocale)}
         class="env-input rounded-xl border px-3 py-1.5 text-xs"
       >
-        <option value="allof">Si TOUTES les conditions sont vraies</option>
+        <option value="allof">{t('sieve.allConditions', undefined, activeLocale)}</option>
         <option value="anyof">{t('sieve.anyConditions', undefined, activeLocale)}</option>
       </select>
     </div>

@@ -185,7 +185,7 @@
       <input bind:value={phone} aria-label={t('contacts.phone', undefined, activeLocale)} placeholder={t('contacts.phone', undefined, activeLocale)} class="env-input rounded-xl border px-3.5 py-2 text-sm" />
       <div class="flex gap-2">
         <button class="env-accent-bg flex-1 rounded-xl px-3.5 py-2 text-xs font-semibold">{t('common.add', undefined, activeLocale)}</button>
-        <button type="button" onclick={() => (showAdd = false)} class="env-input env-hover env-muted rounded-xl border px-3.5 py-2 text-xs">Annuler</button>
+        <button type="button" onclick={() => (showAdd = false)} class="env-input env-hover env-muted rounded-xl border px-3.5 py-2 text-xs">{t('common.cancel', undefined, activeLocale)}</button>
       </div>
     </form>
   {/if}
@@ -282,7 +282,7 @@
         <p class="text-xs text-red-400">{editError}</p>
       {/if}
       <div class="flex justify-end gap-2 pt-2">
-        <button type="button" onclick={() => (editingContact = null)} class="env-input env-muted rounded-lg border px-3.5 py-1.5 text-xs">Annuler</button>
+        <button type="button" onclick={() => (editingContact = null)} class="env-input env-muted rounded-lg border px-3.5 py-1.5 text-xs">{t('common.cancel', undefined, activeLocale)}</button>
         <button type="submit" disabled={editSaving} class="env-accent-bg rounded-lg px-4 py-1.5 text-xs font-semibold disabled:opacity-50">
           {editSaving ? t('common.saving', undefined, activeLocale) : 'Enregistrer'}
         </button>

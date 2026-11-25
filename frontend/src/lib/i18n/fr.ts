@@ -135,6 +135,7 @@ export const fr = {
     attachFiles: 'Joindre des fichiers'
   },
   calendar: {
+    titleAria: 'Titre',
     title: 'Agenda',
     today: "Aujourd'hui",
     month: 'Mois',
@@ -184,6 +185,10 @@ export const fr = {
     noneFound: 'Aucun contact trouvé.'
   },
   sieve: {
+    orUseTemplateInTab: "ou utilise un modèle dans l'onglet",
+    noVisualRulesPrefix: 'Aucune règle visuelle configurée. Clique sur',
+    avoidOverwriteHint: "pour éviter de les écraser.",
+    advancedInstructionsPrefix: 'Ce script contient des instructions Sieve avancées (',
     defaultScriptName: 'script.siv',
     defaultRuleName: 'Règle',
     disabledRuleComment: '# (Règle désactivée)',

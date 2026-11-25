@@ -1055,7 +1055,7 @@
             <input type="file" multiple onchange={handleFileUpload} class="hidden" aria-label={t('mail.attachFiles', undefined, lang)} />
           </label>
           <div class="flex gap-2">
-            <button type="button" onclick={() => (showComposer = false)} class="env-muted env-hover rounded-xl px-4 py-2 text-sm">Annuler</button>
+            <button type="button" onclick={() => (showComposer = false)} class="env-muted env-hover rounded-xl px-4 py-2 text-sm">{t('common.cancel', undefined, lang)}</button>
             <button disabled={uploading} class="env-accent-bg rounded-xl px-5 py-2 text-sm font-semibold hover:opacity-95 disabled:opacity-50">Envoyer</button>
           </div>
         </div>

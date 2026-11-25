@@ -458,7 +458,7 @@
         <div class="mx-auto max-w-4xl space-y-5">
           {#if hasAdvancedCode}
             <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-300">
-              <span>Ce script contient des instructions Sieve avancées (<code>elsif</code>, <code>envelope</code>, <code>regex</code>...) non affichables en blocs. Utilise l'onglet <strong>Code Sieve</strong> pour éviter de les écraser.</span>
+              <span>{t('sieve.advancedInstructionsPrefix', undefined, activeLocale)} (<code>elsif</code>, <code>envelope</code>, <code>regex</code>...) non affichables en blocs. Utilise l'onglet <strong>Code Sieve</strong> {t('sieve.avoidOverwriteHint', undefined, activeLocale)}</span>
               <button
                 type="button"
                 onclick={() => switchMode('code')}
@@ -494,7 +494,7 @@
             />
           {:else}
             <div class="env-card env-muted rounded-xl border border-dashed p-8 text-center text-xs">
-              Aucune règle visuelle configurée. Clique sur <strong>+ Ajouter une règle</strong> ou utilise un modèle dans l'onglet <strong>Code Sieve</strong>.
+              {t('sieve.noVisualRulesPrefix', undefined, activeLocale)} <strong>+ Ajouter une règle</strong> {t('sieve.orUseTemplateInTab', undefined, activeLocale)} <strong>Code Sieve</strong>.
             </div>
           {/each}
 

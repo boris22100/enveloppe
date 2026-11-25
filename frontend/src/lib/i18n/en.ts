@@ -137,6 +137,7 @@ export const en: TranslationDictionary = {
     attachFiles: 'Attach files'
   },
   calendar: {
+    titleAria: 'Title',
     title: 'Calendar',
     today: 'Today',
     month: 'Month',
@@ -186,6 +187,10 @@ export const en: TranslationDictionary = {
     noneFound: 'No contacts found.'
   },
   sieve: {
+    orUseTemplateInTab: 'or use a template in the',
+    noVisualRulesPrefix: 'No visual rules configured. Click',
+    avoidOverwriteHint: 'to avoid overwriting them.',
+    advancedInstructionsPrefix: 'This script contains advanced Sieve instructions (',
     defaultScriptName: 'script.siv',
     defaultRuleName: 'Rule',
     disabledRuleComment: '# (Disabled rule)',

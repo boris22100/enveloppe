@@ -574,9 +574,9 @@ interface ContactEntry { name: string; email: string; }
 
     <div class="flex flex-wrap items-center gap-2">
       <div class="env-subtle env-border flex rounded-xl border p-0.5 text-xs">
-        <button type="button" onclick={() => (view = 'month')} class="rounded-lg px-3 py-1.5 {view === 'month' ? 'env-accent-soft font-semibold' : 'env-muted'}">Mois</button>
-        <button type="button" onclick={() => (view = 'week')} class="rounded-lg px-3 py-1.5 {view === 'week' ? 'env-accent-soft font-semibold' : 'env-muted'}">Semaine</button>
-        <button type="button" onclick={() => (view = 'day')} class="rounded-lg px-3 py-1.5 {view === 'day' ? 'env-accent-soft font-semibold' : 'env-muted'}">Jour</button>
+        <button type="button" onclick={() => (view = 'month')} class="rounded-lg px-3 py-1.5 {view === 'month' ? 'env-accent-soft font-semibold' : 'env-muted'}">{t('calendar.month', undefined, activeLocale)}</button>
+        <button type="button" onclick={() => (view = 'week')} class="rounded-lg px-3 py-1.5 {view === 'week' ? 'env-accent-soft font-semibold' : 'env-muted'}">{t('calendar.week', undefined, activeLocale)}</button>
+        <button type="button" onclick={() => (view = 'day')} class="rounded-lg px-3 py-1.5 {view === 'day' ? 'env-accent-soft font-semibold' : 'env-muted'}">{t('calendar.day', undefined, activeLocale)}</button>
       </div>
 
       <button type="button" onclick={() => openCreateModal(toYMD(cursor))} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">{t('calendar.newShort', undefined, activeLocale)}</button>
@@ -848,7 +848,7 @@ interface ContactEntry { name: string; email: string; }
               ✏️ Modifier
             </button>
           {/if}
-          <button type="button" onclick={() => (selectedEvent = null)} class="env-input env-hover rounded-xl border px-4 py-2 text-xs font-medium">Fermer</button>
+          <button type="button" onclick={() => (selectedEvent = null)} class="env-input env-hover rounded-xl border px-4 py-2 text-xs font-medium">{t('common.close', undefined, activeLocale)}</button>
         </div>
       </div>
     </div>
@@ -887,7 +887,7 @@ interface ContactEntry { name: string; email: string; }
         <div class="space-y-3">
           <input
             bind:value={title}
-            aria-label="Titre"
+            aria-label={t('calendar.titleAria', undefined, activeLocale)}
             placeholder={kind === 'birthday' ? 'Nom de la personne' : kind === 'task' ? t('calendar.taskTitlePlaceholder', undefined, activeLocale) : "Titre de l'événement"}
             required
             class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
@@ -923,7 +923,7 @@ interface ContactEntry { name: string; email: string; }
         </div>
 
         <div class="flex justify-end gap-2 pt-1">
-          <button type="button" onclick={() => (showModal = false)} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">Annuler</button>
+          <button type="button" onclick={() => (showModal = false)} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">{t('common.cancel', undefined, activeLocale)}</button>
           <button disabled={saving} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold disabled:opacity-50">
             {saving ? t('common.saving', undefined, activeLocale) : 'Enregistrer'}
           </button>
@@ -957,7 +957,7 @@ interface ContactEntry { name: string; email: string; }
         <div class="space-y-3">
           <input
             bind:value={editTitle}
-            aria-label="Titre"
+            aria-label={t('calendar.titleAria', undefined, activeLocale)}
             placeholder="Titre de l'événement"
             required
             class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
@@ -1023,7 +1023,7 @@ interface ContactEntry { name: string; email: string; }
         {/if}
 
         <div class="flex justify-end gap-2 pt-1">
-          <button type="button" onclick={() => (editingEvent = null)} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">Annuler</button>
+          <button type="button" onclick={() => (editingEvent = null)} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">{t('common.cancel', undefined, activeLocale)}</button>
           <button disabled={updating} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold disabled:opacity-50">
             {updating ? t('common.updating', undefined, activeLocale) : t('common.save', undefined, activeLocale)}
           </button>

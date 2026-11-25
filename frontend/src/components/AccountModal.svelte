@@ -119,7 +119,7 @@
       <input bind:value={username} aria-label="Identifiant ou adresse mail" placeholder="Identifiant / Email" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
       <input type="password" bind:value={password} aria-label="Mot de passe d'application" placeholder="Mot de passe d'application" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
       <div class="flex justify-end gap-2 pt-2">
-        <button type="button" onclick={onClose} class="env-muted env-hover rounded-xl px-4 py-2 text-sm">Annuler</button>
+        <button type="button" onclick={onClose} class="env-muted env-hover rounded-xl px-4 py-2 text-sm">{t('common.cancel', undefined, activeLocale)}</button>
         <button disabled={loading} class="rounded-xl {oidcSupported ? 'env-input env-hover border font-medium' : 'env-accent-bg font-semibold'} px-4 py-2 text-sm disabled:opacity-50">
           {loading ? t('account.discoveringJmap', undefined, activeLocale) : 'Connecter'}
         </button>

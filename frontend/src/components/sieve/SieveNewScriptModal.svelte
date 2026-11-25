@@ -46,7 +46,7 @@
           class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm"
         />
         <div class="flex justify-end gap-2">
-          <button type="button" onclick={onClose} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">Annuler</button>
+          <button type="button" onclick={onClose} class="env-muted env-hover rounded-xl px-4 py-2 text-xs">{t('common.cancel', undefined, activeLocale)}</button>
           <button class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold">{t('common.create', undefined, activeLocale)}</button>
         </div>
       </form>
