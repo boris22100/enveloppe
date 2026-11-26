@@ -1,36 +1,129 @@
+name: CI/CD - Quality, A11y, Green IT & Docker
+
 on:
   push:
     branches: ["main"]
     tags: ["v*"]
+  pull_request:
+    branches: ["main"]
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  MAX_DIST_BYTES: 2097152     # 2 MiB max pour frontend/dist (Green IT)
+  MAX_IMAGE_BYTES: 52428800   # 50 MiB max pour l'image finale (Green IT)
 
 jobs:
-  build-and-push:
+  go-checks:
+    name: Go (vet, race tests, govulncheck)
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Set up QEMU (for ARM64)
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.26"
+          cache-dependency-path: backend/go.sum
+
+      - name: Prepare embedded static placeholder
+        run: |
+          mkdir -p backend/static
+          : > backend/static/.keep
+
+      - name: Go vet and race tests
+        working-directory: backend
+        run: |
+          go vet ./...
+          go test -race -v ./...
+
+      - name: Run govulncheck
+        working-directory: backend
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  frontend-green-it-a11y:
+    name: Frontend (check, Vitest, Green IT & A11y)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Go (for A11y server audit)
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.26"
+          cache-dependency-path: backend/go.sum
+
+      - name: Install dependencies, typecheck, and run Vitest
+        working-directory: frontend
+        run: |
+          npm ci --prefer-offline || npm install
+          npx --yes svelte-check --tsconfig ./tsconfig.json
+          npm run check
+          npm test
+
+      - name: Build frontend and enforce Green IT bundle budget
+        working-directory: frontend
+        run: |
+          npm run build
+          DIST_BYTES=$(du -sb dist | awk '{print $1}')
+          echo "frontend/dist size: ${DIST_BYTES} bytes (limit: ${MAX_DIST_BYTES})"
+          if [ "$DIST_BYTES" -gt "$MAX_DIST_BYTES" ]; then
+            echo "Green IT budget exceeded: frontend/dist (${DIST_BYTES}B) > ${MAX_DIST_BYTES}B"
+            exit 1
+          fi
+
+      - name: Accessibility audit with Lighthouse CI
+        run: |
+          rm -rf backend/static
+          cp -r frontend/dist backend/static
+          cd backend
+          go build -o /tmp/jmap-pwa-audit .
+          /tmp/jmap-pwa-audit &
+          SERVER_PID=$!
+          trap "kill $SERVER_PID 2>/dev/null || true" EXIT
+
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8080/api/version >/dev/null 2>&1 || curl -sf http://127.0.0.1:8080/ >/dev/null 2>&1; then
+              break
+            fi
+            sleep 0.5
+          done
+
+          npx --yes @lhci/cli@0.14.x autorun \
+            --collect.url=http://127.0.0.1:8080/ \
+            --collect.numberOfRuns=1 \
+            --collect.chromeFlags="--headless --no-sandbox --disable-dev-shm-usage" \
+            --assert.preset=lighthouse:no-pwa \
+            --assert.assertions.categories:accessibility='["error", {"minScore": 0.95}]'
+
+  docker-trivy-publish:
+    name: Docker Build, Green IT Size, Trivy Scan & Push
+    needs: [go-checks, frontend-green-it-a11y]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels)
         id: meta
@@ -42,34 +135,43 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
-      - name: Set up Go
-        uses: actions/setup-go@v7
+      - name: Build local image for size & Trivy audit
+        uses: docker/build-push-action@v7
         with:
-          go-version: '1.26'
+          context: .
+          load: true
+          tags: enveloppe-ci:audit
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
+      - name: Enforce Green IT Docker image size budget
+        run: |
+          IMG_BYTES=$(docker image inspect enveloppe-ci:audit --format '{{.Size}}')
+          echo "Docker image size: ${IMG_BYTES} bytes (limit: ${MAX_IMAGE_BYTES})"
+          if [ "$IMG_BYTES" -gt "$MAX_IMAGE_BYTES" ]; then
+            echo "Green IT image size exceeded: ${IMG_BYTES}B > ${MAX_IMAGE_BYTES}B"
+            exit 1
+          fi
+
+      - name: Scan image with Trivy (CRITICAL & HIGH)
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          node-version: '22'
+          image-ref: enveloppe-ci:audit
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
 
-      - name: Go vet & unit tests
-        run: |
-          mkdir -p backend/static
-          : > backend/static/.keep
-          trap 'rm -rf backend/static' EXIT
-          cd backend
-          go vet ./...
-          go test ./...
-
-      - name: Frontend build check
-        run: |
-          cd frontend
-          npm ci --prefer-offline || npm install
-          npm run check
-          npm test
-          npm run build
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push multi-arch image
+        if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v7
         with:
           context: .
