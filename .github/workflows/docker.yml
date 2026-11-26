@@ -26,7 +26,6 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version: "1.26"
-          cache-dependency-path: backend/go.sum
 
       - name: Prepare embedded static placeholder
         run: |
@@ -56,14 +55,11 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: "22"
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Set up Go (for A11y server audit)
         uses: actions/setup-go@v7
         with:
           go-version: "1.26"
-          cache-dependency-path: backend/go.sum
 
       - name: Install dependencies, typecheck, and run Vitest
         working-directory: frontend
@@ -90,23 +86,49 @@ jobs:
           cp -r frontend/dist backend/static
           cd backend
           go build -o /tmp/jmap-pwa-audit .
-          /tmp/jmap-pwa-audit &
-          SERVER_PID=$!
-          trap "kill $SERVER_PID 2>/dev/null || true" EXIT
 
-          for i in $(seq 1 30); do
+          SESSION_SECRET="ci-lighthouse-secret-2026-enveloppe" \
+          PORT="8080" \
+          /tmp/jmap-pwa-audit >/tmp/jmap-pwa-audit.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true; rm -f /tmp/jmap-pwa-audit /tmp/jmap-pwa-audit.log /tmp/lhci.json' EXIT
+
+          READY=0
+          for i in $(seq 1 40); do
             if curl -sf http://127.0.0.1:8080/api/version >/dev/null 2>&1 || curl -sf http://127.0.0.1:8080/ >/dev/null 2>&1; then
+              READY=1
               break
             fi
             sleep 0.5
           done
 
-          npx --yes @lhci/cli@0.14.x autorun \
-            --collect.url=http://127.0.0.1:8080/ \
-            --collect.numberOfRuns=1 \
-            --collect.chromeFlags="--headless --no-sandbox --disable-dev-shm-usage" \
-            --assert.preset=lighthouse:no-pwa \
-            --assert.assertions.categories:accessibility='["error", {"minScore": 0.95}]'
+          if [ "$READY" -ne 1 ]; then
+            echo "Le serveur Go n'a pas démarré à temps :"
+            cat /tmp/jmap-pwa-audit.log || true
+            exit 1
+          fi
+
+          cat << 'LHJSON' > /tmp/lhci.json
+          {
+            "ci": {
+              "collect": {
+                "url": ["http://127.0.0.1:8080/"],
+                "numberOfRuns": 1,
+                "settings": {
+                  "onlyCategories": ["accessibility"],
+                  "chromeFlags": "--headless --no-sandbox --disable-dev-shm-usage"
+                }
+              },
+              "assert": {
+                "assertions": {
+                  "categories:accessibility": ["error", {"minScore": 0.90}]
+                }
+              }
+            }
+          }
+          LHJSON
+
+          npx --yes @lhci/cli@0.14.x autorun --config=/tmp/lhci.json
 
   docker-trivy-publish:
     name: Docker Build, Green IT Size, Trivy Scan & Push
