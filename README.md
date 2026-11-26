@@ -1,23 +1,8 @@
-# ✉️ Enveloppe
+# <img src="frontend/public/pwa-192.png" alt="Enveloppe" width="32" align="absmiddle" /> Enveloppe
 
-[![CI/CD](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml/badge.svg)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml)
-[![Version](https://img.shields.io/badge/version-0.8.6-48B17F)](https://github.com/boris22100/enveloppe/releases/tag/v0.8.6)
-[![Accessibility](https://img.shields.io/badge/A11y-Lighthouse%20%E2%89%A590%25-2ea043)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml)
-[![Security](https://img.shields.io/badge/security-Trivy%20%26%20govulncheck-0969da)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml)
-[![Green IT](https://img.shields.io/badge/Green%20IT-budgets%20enforced-1f7a52)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml)
-
+[![CI/CD](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml/badge.svg?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Version](https://img.shields.io/badge/version-v0.8.6-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/releases/tag/v0.8.6) [![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)](https://github.com/boris22100/enveloppe/pkgs/container/enveloppe) [![Vitest](https://img.shields.io/badge/vitest-16%20passed-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Lighthouse A11y](https://img.shields.io/badge/A11y-Lighthouse%20%E2%89%A590%25-2ea043?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Green IT](https://img.shields.io/badge/Green%20IT-budgets%20enforced-1f7a52?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)](LICENSE)
 
 Webmail **PWA** ultraléger, moderne, **100 % français** et **100 % JMAP** (*Mail, Contacts JSContact, Calendrier JSCalendar*), conçu pour **Stalwart Mail Server** et compatible multi-serveurs.
-
-![Version](https://img.shields.io/badge/version-v0.8.6-48B17F?style=flat-square)
-![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)
-![Image Size](https://img.shields.io/badge/image-9.99%20Mo-48B17F?style=flat-square)
-![Langue](https://img.shields.io/badge/langue-100%25%20Fran%C3%A7ais-0D3A4D?style=flat-square)
-![Tests](https://img.shields.io/badge/vitest-13%20passed-48B17F?style=flat-square)
-![Lighthouse](https://img.shields.io/badge/Lighthouse-99%20Perf%20%7C%20100%20A11y%20%7C%20100%20BP-48B17F?style=flat-square)
-![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)
-![OWASP ZAP](https://img.shields.io/badge/OWASP%20ZAP-0%20FAIL%20%7C%2063%20PASS-48B17F?style=flat-square)
-![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)
 
 > 📖 **Documentation complète** : consultez le **[Wiki Enveloppe](https://github.com/boris22100/enveloppe/wiki)** pour les guides détaillés d'[installation](https://github.com/boris22100/enveloppe/wiki/Installation), de [configuration avec ou sans SSO](https://github.com/boris22100/enveloppe/wiki/Configuration) et d'[utilisation](https://github.com/boris22100/enveloppe/wiki/Utilisation).
 
