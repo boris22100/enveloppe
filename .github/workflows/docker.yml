@@ -175,14 +175,15 @@ jobs:
             exit 1
           fi
 
-      - name: Scan image with Trivy (CRITICAL & HIGH)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: enveloppe-ci:audit
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
-          severity: CRITICAL,HIGH
+      - name: Scan image with Trivy CLI (CRITICAL & HIGH)
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image \
+            --severity CRITICAL,HIGH \
+            --ignore-unfixed \
+            --exit-code 1 \
+            enveloppe-ci:audit
 
       - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
