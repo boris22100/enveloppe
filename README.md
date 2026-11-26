@@ -6,12 +6,6 @@ Webmail **PWA** ultraléger, moderne, **100 % français** et **100 % JMAP** (*Ma
 
 > 📖 **Documentation complète** : consultez le **[Wiki Enveloppe](https://github.com/boris22100/enveloppe/wiki)** pour les guides détaillés d'[installation](https://github.com/boris22100/enveloppe/wiki/Installation), de [configuration avec ou sans SSO](https://github.com/boris22100/enveloppe/wiki/Configuration) et d'[utilisation](https://github.com/boris22100/enveloppe/wiki/Utilisation).
 
-| Messagerie | Contacts | Agenda |
-| :---: | :---: | :---: |
-| ![Messagerie](docs/screenshot-mail.png) | ![Contacts](docs/screenshot-contacts.png) | ![Agenda](docs/screenshot-calendar.png) |
-
----
-
 ## ✨ Fonctionnalités
 
 * **Connexion OIDC / SSO automatique (PKCE)** : saisie de l'URL du serveur JMAP, détection automatique de `/.well-known/openid-configuration`, support **Authorization Code + PKCE (`S256`)** avec rafraîchissement transparent des jetons et support **CIMD** (`/oauth-client.json`). La connexion par identifiant/mot de passe d'application reste disponible en secours.
