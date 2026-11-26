@@ -12,6 +12,7 @@ export interface Mailbox {
   role: string | null;
   parentId: string | null;
   unreadEmails: number;
+  totalEmails?: number;
   sortOrder: number;
   depth?: number;
 }
@@ -129,7 +130,7 @@ export async function fetchMailboxes(accountId: string): Promise<Mailbox[]> {
   const accId = await getPrimaryAccountId(accountId);
   const res = await jmapCall(accountId, [[
     'Mailbox/get',
-    { accountId: accId, properties: ['id', 'name', 'role', 'parentId', 'unreadEmails', 'sortOrder'] },
+    { accountId: accId, properties: ['id', 'name', 'role', 'parentId', 'unreadEmails', 'totalEmails', 'sortOrder'] },
     'm0'
   ]]);
   return buildMailboxTree(res.methodResponses[0][1].list ?? []);

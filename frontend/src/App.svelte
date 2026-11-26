@@ -79,7 +79,7 @@
     if (activeMailboxId && draftsMailboxId && activeMailboxId === draftsMailboxId) {
       return emails.length;
     }
-    return box?.unreadEmails ?? 0;
+    return box?.totalEmails ?? box?.unreadEmails ?? 0;
   });
   let bulkMoveTarget = $state('');
   let uploading = $state(false);
@@ -671,7 +671,7 @@
       } catch {
         draftStatus = '';
       }
-    }, 3500);
+    }, 2000);
     return () => {
       if (draftTimer) { clearTimeout(draftTimer); draftTimer = null; }
     };

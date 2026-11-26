@@ -1,5 +1,6 @@
 <script lang="ts">
   import { buildSandboxedEmailDoc } from '../lib/utils/sanitize';
+  import { getSavedTheme } from '../lib/theme';
   import { getDownloadUrl, type Attachment } from '../lib/jmap/client';
   import { parseIcsInvitation, respondToIcsInvitation, type ParsedIcsInvitation } from '../lib/jmap/calendar';
 
@@ -99,7 +100,8 @@
     });
   });
 
-  let srcdoc = $derived(resolvedHtml ? buildSandboxedEmailDoc(resolvedHtml, allowImages) : '');
+  let isDarkTheme = $derived(getSavedTheme() !== 'light');
+  let srcdoc = $derived(resolvedHtml ? buildSandboxedEmailDoc(resolvedHtml, allowImages, isDarkTheme) : '');
 
   let icsAttachment = $derived(
     attachments.find((att) => att.type?.toLowerCase().includes('text/calendar') || att.name?.toLowerCase().endsWith('.ics'))
