@@ -1,5 +1,12 @@
 # ✉️ Enveloppe
 
+[![CI/CD](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml/badge.svg)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml)
+[![Version](https://img.shields.io/badge/version-0.8.6-48B17F)](https://github.com/boris22100/enveloppe/releases/tag/v0.8.6)
+[![Accessibility](https://img.shields.io/badge/A11y-Lighthouse%20%E2%89%A590%25-2ea043)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml)
+[![Security](https://img.shields.io/badge/security-Trivy%20%26%20govulncheck-0969da)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml)
+[![Green IT](https://img.shields.io/badge/Green%20IT-budgets%20enforced-1f7a52)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml)
+
+
 Webmail **PWA** ultraléger, moderne, **100 % français** et **100 % JMAP** (*Mail, Contacts JSContact, Calendrier JSCalendar*), conçu pour **Stalwart Mail Server** et compatible multi-serveurs.
 
 ![Version](https://img.shields.io/badge/version-v0.8.6-48B17F?style=flat-square)
@@ -147,3 +154,10 @@ ghcr.io/boris22100/enveloppe:latest
 ## 📄 Licence
 
 Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
+
+## Qualité, Sécurité, Green IT & Accessibilité (CI/CD)
+
+* **Backend Go** : `go vet ./...`, tests unitaires avec détecteur de *race conditions* (`go test -race ./...`) et audit des vulnérabilités (`govulncheck ./...`).
+* **Frontend & A11y** : `svelte-check`, `tsc --noEmit`, suite Vitest, puis audit d'accessibilité automatisé via Lighthouse CI (`>= 90%`) sur l'application servie en local.
+* **Green IT** : contrôle automatique de la taille du bundle compilé (`frontend/dist`) et de la taille de l'image Docker finale, avec mise en cache des dépendances et couches de build.
+* **Sécurité conteneur** : scan de l'image Docker construite avec Trivy (`CRITICAL` et `HIGH` bloquants, `ignore-unfixed: true`) avant publication multi-architecture (`linux/amd64`, `linux/arm64`) sur `ghcr.io`.
