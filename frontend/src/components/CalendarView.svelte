@@ -1,5 +1,6 @@
 <script lang="ts">
   import { CALENDAR_VIEW_STORAGE_KEY, loadCalendarView, saveCalendarView, type CalendarViewMode } from '../lib/calendarViewStorage';
+  import { computeDropReschedule, DAY_HOURS, filterEventsForHalfHour, filterEventsForHour, HALF_HOUR_SLOTS, normalizeSlotTime } from '../lib/calendarGrid';
   import { jmapCall, sendEmail, uploadAttachment } from '../lib/jmap/client';
   import { buildIcsInvitation, createIcsFile } from '../lib/ics';
   import {
@@ -127,7 +128,8 @@ interface ContactEntry { name: string; email: string; }
   let eventToDelete = $state<JSCalendarEvent | null>(null);
 
   const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-  const HOURS = Array.from({ length: 16 }, (_, i) => i + 7);
+  const HOURS = DAY_HOURS;
+  let dragOverSlotKey = $state<string | null>(null);
 
   async function load() {
     const data = await fetchEvents(accountId);
@@ -153,12 +155,13 @@ interface ContactEntry { name: string; email: string; }
   function openCreateModal(ymd: string, hour = '09') {
     draggedEvent = null;
     dragOverYmd = null;
+    dragOverSlotKey = null;
     selectedEvent = null;
     kind = 'event';
     title = '';
     description = '';
     inviteesText = '';
-    start = `${ymd}T${hour}:00`;
+    start = `${ymd}T${normalizeSlotTime(hour)}:00`;
     showModal = true;
   }
 
@@ -219,6 +222,46 @@ interface ContactEntry { name: string; email: string; }
       return { date: d, ymd: toYMD(d) };
     });
   });
+  function eventsForHour(ymd: string, hourStr: string): JSCalendarEvent[] {
+    return filterEventsForHour(eventsForDate(ymd), hourStr);
+  }
+  function eventsForHalfHour(ymd: string, slot: string): JSCalendarEvent[] {
+    return filterEventsForHalfHour(eventsForDate(ymd), slot);
+  }
+
+  function handleDragStart(e: DragEvent, ev: JSCalendarEvent) {
+    if (!ev.id) return;
+    draggedEvent = ev;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', ev.id);
+    }
+  }
+
+  function handleDragEnd() {
+    draggedEvent = null;
+    dragOverYmd = null;
+    dragOverSlotKey = null;
+  }
+
+  async function handleDropOnTarget(e: DragEvent, targetYmd: string, targetSlot?: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    const ev = draggedEvent;
+    dragOverYmd = null;
+    dragOverSlotKey = null;
+    draggedEvent = null;
+    if (!ev?.id) return;
+
+    const plan = computeDropReschedule(ev, targetYmd, targetSlot);
+    if (!plan.changed) return;
+
+    await updateEvent(accountId, ev.id, {
+      start: plan.nextStartJmap,
+      sequence: plan.nextSequence
+    });
+    await load();
+  }
 
   function shift(delta: number) {
     const d = new Date(cursor);
@@ -592,6 +635,9 @@ interface ContactEntry { name: string; email: string; }
         <div
           role="button"
           tabindex="0"
+          ondragover={(e) => { e.preventDefault(); dragOverYmd = cell.ymd; }}
+          ondragleave={() => { if (dragOverYmd === cell.ymd) dragOverYmd = null; }}
+          ondrop={(e) => handleDropOnTarget(e, cell.ymd)}
           onclick={(e) => {
             if (e.target instanceof Element && e.target.closest('button')) return;
             openCreateModal(cell.ymd);
@@ -617,9 +663,12 @@ interface ContactEntry { name: string; email: string; }
               <div
                 role="button"
                 tabindex="0"
+                draggable={Boolean(ev.id)}
+                ondragstart={(e) => handleDragStart(e, ev)}
+                ondragend={handleDragEnd}
                 onclick={(e) => { e.stopPropagation(); selectedEvent = ev; }}
                 onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); selectedEvent = ev; } }}
-                class="env-accent-soft group/ev flex items-center justify-between gap-1 rounded-lg px-2 py-0.5 text-xs font-medium"
+                class="env-accent-soft group/ev flex items-center justify-between gap-1 rounded-lg px-2 py-0.5 text-xs font-medium {ev.id ? 'cursor-grab active:cursor-grabbing' : ''}"
               >
                 <span class="truncate">
                   {badgeFor(ev)}{#if !ev.showWithoutTime}<span class="font-mono text-[11px] opacity-80">{formatTime(ev.start)} </span>{/if}{ev.title}
@@ -655,109 +704,133 @@ interface ContactEntry { name: string; email: string; }
     </div>
 
   {:else if view === 'week'}
-    <div class="env-divider grid flex-1 grid-cols-7 gap-2 overflow-y-auto p-3">
-      {#each weekDays as day, idx}
-        <div class="env-card flex flex-col overflow-hidden rounded-lg border">
-          <button
-            type="button"
-            onclick={() => { cursor = day.date; view = 'day'; }}
-            class="env-subtle env-border env-hover border-b py-3 text-center"
-          >
-            <div class="env-muted text-xs uppercase">{DAYS[idx]}</div>
-            <div class="mx-auto mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold {day.ymd === todayYMD ? 'env-accent-bg font-bold' : 'env-text'}">
-              {day.date.getDate()}
-            </div>
-          </button>
-          <div
-            role="button"
-            tabindex="0"
-            onclick={() => openCreateModal(day.ymd)}
-            onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && openCreateModal(day.ymd)}
-            class="flex-1 cursor-pointer space-y-2 p-2.5"
-          >
-            {#each eventsForDate(day.ymd) as ev}
-              <div
-                role="button"
-                tabindex="0"
-                onclick={(e) => { e.stopPropagation(); selectedEvent = ev; }}
-                onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); selectedEvent = ev; } }}
-                class="env-accent-soft group/ev rounded-xl border border-[#48B17F]/30 p-2.5"
-              >
-                <div class="flex items-start justify-between gap-1">
-                  {#if !ev.showWithoutTime}
-                    <div class="font-mono text-xs">{formatTime(ev.start)}</div>
-                  {:else}
-                    <div></div>
-                  {/if}
-                  <div class="flex shrink-0 items-center gap-1">
-                    {#if ev.id}
-                      <button
-                        type="button"
-                        title="Modifier"
-                        aria-label="Modifier {ev.title}"
-                        onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
-                        class="rounded px-1.5 py-0.5 text-xs opacity-75 hover:opacity-100 group-hover/ev:opacity-100"
+    <div class="flex-1 overflow-auto p-3">
+      <div class="env-card env-border min-w-[760px] overflow-hidden rounded-xl border">
+        <div class="env-subtle env-border grid grid-cols-[68px_repeat(7,minmax(0,1fr))] border-b text-center text-xs">
+          <div class="env-faint flex items-center justify-center border-r py-2 font-mono text-[11px]">Heure</div>
+          {#each weekDays as day, idx}
+            <button
+              type="button"
+              onclick={() => { cursor = day.date; view = 'day'; }}
+              class="env-border env-hover border-r py-2.5 last:border-r-0"
+            >
+              <div class="env-muted text-[11px] uppercase">{DAYS[idx]}</div>
+              <div class="mx-auto mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold {day.ymd === todayYMD ? 'env-accent-bg font-bold' : 'env-text'}">
+                {day.date.getDate()}
+              </div>
+            </button>
+          {/each}
+        </div>
+
+        <div class="divide-y env-divider">
+          {#each HOURS as h}
+            {@const hourStr = String(h).padStart(2, '0')}
+            {@const slotLabel = `${hourStr}:00`}
+            <div class="grid grid-cols-[68px_repeat(7,minmax(0,1fr))]">
+              <div class="env-faint border-r px-2 py-2 text-right font-mono text-[11px]">{slotLabel}</div>
+              {#each weekDays as day}
+                {@const cellKey = `${day.ymd}T${slotLabel}`}
+                {@const slotEvents = eventsForHour(day.ymd, hourStr)}
+                <div
+                  role="button"
+                  tabindex="0"
+                  ondragover={(e) => { e.preventDefault(); dragOverSlotKey = cellKey; }}
+                  ondragleave={() => { if (dragOverSlotKey === cellKey) dragOverSlotKey = null; }}
+                  ondrop={(e) => handleDropOnTarget(e, day.ymd, slotLabel)}
+                  onclick={() => openCreateModal(day.ymd, hourStr)}
+                  onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && openCreateModal(day.ymd, hourStr)}
+                  class="env-border env-hover min-h-14 cursor-pointer border-r p-1.5 transition-colors last:border-r-0 {dragOverSlotKey === cellKey ? 'env-accent-soft ring-2 ring-inset ring-[var(--env-accent)]' : ''}"
+                >
+                  <div class="space-y-1">
+                    {#each slotEvents as ev}
+                      <div
+                        role="button"
+                        tabindex="0"
+                        draggable={Boolean(ev.id)}
+                        ondragstart={(e) => handleDragStart(e, ev)}
+                        ondragend={handleDragEnd}
+                        onclick={(e) => { e.stopPropagation(); selectedEvent = ev; }}
+                        onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); selectedEvent = ev; } }}
+                        class="env-accent-soft group/ev rounded-lg border border-[#48B17F]/35 px-2 py-1 text-xs {ev.id ? 'cursor-grab active:cursor-grabbing' : ''}"
                       >
-                        ✏️
-                      </button>
-                    {/if}
-                    {#if ev.id}
-                    <button
-                      type="button"
-                      title="Supprimer"
-                      aria-label="Supprimer {ev.title}"
-                      onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
-                      class="rounded px-1.5 py-0.5 text-xs opacity-75 hover:bg-red-500/15 hover:text-red-400 group-hover/ev:opacity-100"
-                    >
-                      🗑️
-                    </button>
-                  {/if}
+                        <div class="flex items-center justify-between gap-1">
+                          <span class="font-mono text-[11px] opacity-85">{formatTime(ev.start)}</span>
+                          {#if ev.id}
+                            <div class="flex shrink-0 items-center gap-0.5 opacity-75 group-hover/ev:opacity-100">
+                              <button
+                                type="button"
+                                title="Modifier"
+                                aria-label="Modifier {ev.title}"
+                                onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
+                                class="rounded px-1 text-[11px] hover:opacity-100"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                type="button"
+                                title="Supprimer"
+                                aria-label="Supprimer {ev.title}"
+                                onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
+                                class="rounded px-1 text-[11px] hover:text-red-400"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          {/if}
+                        </div>
+                        <div class="env-text truncate font-semibold">{badgeFor(ev)}{ev.title}</div>
+                      </div>
+                    {/each}
                   </div>
                 </div>
-                <div class="env-text text-xs font-semibold">{badgeFor(ev)}{ev.title}</div>
-                {#if ev.description}<div class="env-muted mt-0.5 truncate text-xs">{ev.description}</div>{/if}
-              </div>
-            {/each}
-          </div>
+              {/each}
+            </div>
+          {/each}
         </div>
-      {/each}
+      </div>
     </div>
 
   {:else}
+    {@const dayYmd = toYMD(cursor)}
     <div class="flex-1 overflow-y-auto p-5">
       <div class="env-card env-divider mx-auto max-w-3xl divide-y rounded-xl border p-2">
-        {#each HOURS as h}
-          {@const hourStr = String(h).padStart(2, '0')}
-          {@const dayYmd = toYMD(cursor)}
-          {@const slotEvents = eventsForDate(dayYmd).filter((e) => formatTime(e.start).startsWith(hourStr))}
+        {#each HALF_HOUR_SLOTS as slot}
+          {@const cellKey = `${dayYmd}T${slot}`}
+          {@const slotEvents = eventsForHalfHour(dayYmd, slot)}
           <div
             role="button"
             tabindex="0"
-            onclick={() => openCreateModal(dayYmd, hourStr)}
-            onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && openCreateModal(dayYmd, hourStr)}
-            class="env-hover flex min-h-14 cursor-pointer items-start gap-4 rounded-lg px-4 py-2.5 transition-colors"
+            ondragover={(e) => { e.preventDefault(); dragOverSlotKey = cellKey; }}
+            ondragleave={() => { if (dragOverSlotKey === cellKey) dragOverSlotKey = null; }}
+            ondrop={(e) => handleDropOnTarget(e, dayYmd, slot)}
+            onclick={() => openCreateModal(dayYmd, slot)}
+            onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && openCreateModal(dayYmd, slot)}
+            class="env-hover flex min-h-10 cursor-pointer items-start gap-4 rounded-lg px-4 py-1.5 transition-colors {slot.endsWith(':30') ? 'opacity-95' : ''} {dragOverSlotKey === cellKey ? 'env-accent-soft ring-2 ring-[var(--env-accent)]' : ''}"
           >
-            <span class="env-faint w-14 shrink-0 font-mono text-xs">{hourStr}:00</span>
-            <div class="flex-1 space-y-1.5">
+            <span class="env-faint w-14 shrink-0 font-mono text-xs">{slot}</span>
+            <div class="flex-1 space-y-1">
               {#each slotEvents as ev}
                 <div
                   role="button"
                   tabindex="0"
+                  draggable={Boolean(ev.id)}
+                  ondragstart={(e) => handleDragStart(e, ev)}
+                  ondragend={handleDragEnd}
                   onclick={(e) => { e.stopPropagation(); selectedEvent = ev; }}
                   onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); selectedEvent = ev; } }}
-                  class="env-accent-soft rounded-xl border border-[#48B17F]/40 px-3.5 py-2"
+                  class="env-accent-soft rounded-xl border border-[#48B17F]/40 px-3.5 py-1.5 {ev.id ? 'cursor-grab active:cursor-grabbing' : ''}"
                 >
                   <div class="flex items-center justify-between gap-2">
                     <span class="env-text text-sm font-semibold">{badgeFor(ev)}{ev.title}</span>
                     <div class="flex items-center gap-2">
-                      <span class="font-mono text-xs">{formatTime(ev.start)}</span>
+                      <span class="font-mono text-xs opacity-80">{formatTime(ev.start)}</span>
                       {#if ev.id}
                         <button
                           type="button"
                           title="Modifier"
                           aria-label="Modifier {ev.title}"
                           onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
-                          class="rounded-lg px-1.5 py-0.5 text-xs hover:bg-white/10"
+                          class="rounded px-1.5 py-0.5 text-xs opacity-75 hover:opacity-100"
                         >
                           ✏️
                         </button>
@@ -766,7 +839,7 @@ interface ContactEntry { name: string; email: string; }
                           title="Supprimer"
                           aria-label="Supprimer {ev.title}"
                           onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
-                          class="rounded-lg px-1.5 py-0.5 text-xs hover:bg-red-500/15 hover:text-red-400"
+                          class="rounded px-1.5 py-0.5 text-xs opacity-75 hover:bg-red-500/15 hover:text-red-400"
                         >
                           🗑️
                         </button>
@@ -774,11 +847,6 @@ interface ContactEntry { name: string; email: string; }
                     </div>
                   </div>
                   {#if ev.description}<p class="env-muted mt-0.5 text-xs">{ev.description}</p>{/if}
-                  {#if ev.participants && Object.keys(ev.participants).length > 0}
-                    <p class="env-faint mt-1 text-xs">
-                      👥 {Object.values(ev.participants).map((p) => p.email || p.name).filter(Boolean).join(', ')}
-                    </p>
-                  {/if}
                 </div>
               {/each}
             </div>
@@ -787,7 +855,6 @@ interface ContactEntry { name: string; email: string; }
       </div>
     </div>
   {/if}
-</div>
 
 {#if selectedEvent}
   <div
@@ -1037,3 +1104,4 @@ interface ContactEntry { name: string; email: string; }
     onCancel={() => (eventToDelete = null)}
   />
 {/if}
+</div>

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { createDraftDebounceController } from './lib/draftDebounce';
+  import { computeNextSelectionIndex, resolveMailShortcut } from './lib/keyboardShortcuts';
   import { onDestroy, onMount } from 'svelte';
   import { db, type CachedEmail } from './lib/db/cache';
   import {
@@ -35,7 +37,7 @@
     themeMode === 'bowiz' ? '💠' : themeMode === 'dark' ? '🌙' : '☀️'
   );
 
-  let appVersion = $state(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.8.6');
+  let appVersion = $state(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.8.7');
   let accounts = $state<Account[]>([]);
   let loaded = $state(false);
   let activeAccountId = $state<string | null>(null);
@@ -320,19 +322,27 @@
     }));
   }
 
+  let showShortcutsModal = $state(false);
+  let searchInputEl = $state<HTMLInputElement | null>(null);
+
+  async function resumeDraft(mail: CachedEmail) {
+    const body = await fetchEmailBody(mail.accountId, mail.id);
+    composeTo = (body.to ?? []).map((a) => (a.name ? `${a.name} <${a.email}>` : a.email)).join(', ');
+    composeSubject = mail.subject || '';
+    composeText = body.text || '';
+    composeFiles = body.attachments ?? [];
+    composeDraftId = mail.id;
+    draftStatus = 'Enregistré';
+    showComposer = true;
+  }
+
   async function openEmail(mail: CachedEmail) {
     const isDraft = Boolean(mail.keywords?.['$draft']) || mailboxes.find((m) => m.id === activeMailboxId)?.role === 'drafts';
-    const body = await fetchEmailBody(mail.accountId, mail.id);
     if (isDraft) {
-      composeTo = (body.to ?? []).map((a) => (a.name ? `${a.name} <${a.email}>` : a.email)).join(', ');
-      composeSubject = mail.subject || '';
-      composeText = body.text || '';
-      composeFiles = body.attachments ?? [];
-      composeDraftId = mail.id;
-      draftStatus = 'Brouillon ouvert';
-      showComposer = true;
+      await resumeDraft(mail);
       return;
     }
+    const body = await fetchEmailBody(mail.accountId, mail.id);
     const wasUnread = mail.isUnread;
     selectedEmail = mail;
     mail.isUnread = false;
@@ -763,18 +773,88 @@
       selectedIds = [];
     } finally { batchBusy = false; }
   }
+  const draftDebounce = createDraftDebounceController(() => {
+    draftStatus = 'Enregistré';
+  });
+
+  $effect(() => {
+    if (!showComposer || !activeAccountId) {
+      draftDebounce.cancel();
+      return;
+    }
+    const fields = { to: composeTo, subject: composeSubject, text: composeText };
+    const nextPhase = draftDebounce.schedule(fields, true);
+    if (nextPhase === 'saving') {
+      draftStatus = 'Sauvegarde…';
+    }
+    return () => draftDebounce.cancel();
+  });
+  function selectRelativeMail(delta: 1 | -1) {
+    const list = serverSearchResults ?? emails;
+    if (!list.length) return;
+    const curIdx = selectedEmail ? list.findIndex((m) => m.id === selectedEmail!.id) : -1;
+    const nextIdx = computeNextSelectionIndex(list.length, curIdx, delta);
+    const target = nextIdx >= 0 ? list[nextIdx] : undefined;
+    if (target) openEmail(target);
+  }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (confirmDialog || showComposer || showAccountModal || activeTab !== 'mail') return;
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
-    const k = e.key.toLowerCase();
-    if (k === 'c') { e.preventDefault(); openNewComposer(); }
-    else if (k === 'e' && selectedEmail) { e.preventDefault(); handleArchive(selectedEmail); }
-    else if (k === 'r' && selectedEmail) { e.preventDefault(); startReply(e.shiftKey); }
-    else if (k === 'a' && selectedEmail) { e.preventDefault(); startReply(true); }
-    else if (k === 'f' && selectedEmail) { e.preventDefault(); startForward(); }
-    else if (e.key === 'Delete' && selectedEmail) { e.preventDefault(); requestDeleteMail(selectedEmail); }
+    const isEditable =
+      e.target instanceof HTMLInputElement ||
+      e.target instanceof HTMLTextAreaElement ||
+      e.target instanceof HTMLSelectElement;
+
+    const action = resolveMailShortcut(
+      { key: e.key, shiftKey: e.shiftKey },
+      {
+        activeTab,
+        isEditableTarget: isEditable,
+        showShortcutsModal,
+        hasBlockedModal: Boolean(confirmDialog || showComposer || showAccountModal),
+        hasSelectedEmail: Boolean(selectedEmail)
+      }
+    );
+
+    if (!action) return;
+    e.preventDefault();
+
+    switch (action.type) {
+      case 'toggle-help':
+        showShortcutsModal = !showShortcutsModal;
+        break;
+      case 'close-help':
+        showShortcutsModal = false;
+        break;
+      case 'focus-search':
+        searchInputEl?.focus();
+        break;
+      case 'select-next':
+        selectRelativeMail(1);
+        break;
+      case 'select-prev':
+        selectRelativeMail(-1);
+        break;
+      case 'compose':
+        openNewComposer();
+        break;
+      case 'archive':
+        if (selectedEmail) handleArchive(selectedEmail);
+        break;
+      case 'reply':
+        if (selectedEmail) startReply(action.all);
+        break;
+      case 'reply-all':
+        if (selectedEmail) startReply(true);
+        break;
+      case 'forward':
+        if (selectedEmail) startForward();
+        break;
+      case 'delete':
+        if (selectedEmail) requestDeleteMail(selectedEmail);
+        break;
+    }
   }
+
 
   onMount(loadAccounts);
   onDestroy(() => sse?.close());
@@ -861,7 +941,6 @@
         <div class="env-border flex h-14 shrink-0 items-center justify-between border-b px-3.5">
           {#if railExpanded}
             <div class="flex items-center gap-2.5">
-              <span class="env-accent-bg flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold">✉</span>
               <div class="flex items-baseline gap-1.5 leading-tight">
                 <span class="env-text text-sm font-bold tracking-tight">enveloppe</span>
                 <span class="env-faint text-xs font-normal">jmap</span>
@@ -1060,7 +1139,7 @@
             <div class="env-border space-y-2 border-b p-3.5">
               <div class="relative flex items-center">
                 <input
-                  bind:value={searchQuery}
+                  bind:this={searchInputEl} bind:value={searchQuery}
                   type="search"
                   aria-label="Rechercher dans les messages"
                   placeholder="Rechercher (expéditeur, objet, texte)..."
@@ -1125,6 +1204,10 @@
               {#each displayedEntries as entry}
                 {@const mail = entry.lead}
                 {@const isRowUnread = entry.unreadCount > 0 || mail.isUnread}
+                {@const _isDraft = Boolean(mail.keywords?.['$draft']) || mailboxes.find((m) => m.id === activeMailboxId)?.role === 'drafts'}
+                {#if _isDraft}
+                  <button type="button" onclick={(e) => { e.stopPropagation(); resumeDraft(mail); }} class="env-accent-soft env-accent-text rounded-lg border border-[#48B17F]/35 px-2 py-0.5 text-[11px] font-semibold">Reprendre le brouillon</button>
+                {/if}
                 <button
                   type="button"
                   draggable={true}
@@ -1296,4 +1379,30 @@
     onConfirm={confirmDialog.onConfirm}
     onCancel={() => (confirmDialog = null)}
   />
+{/if}
+
+{#if showShortcutsModal}
+  <div
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="shortcuts-title"
+    tabindex="-1"
+    onclick={() => (showShortcutsModal = false)}
+    onkeydown={(e) => e.key === 'Escape' && (showShortcutsModal = false)}
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
+  >
+    <div role="presentation" onclick={(e) => e.stopPropagation()} class="env-card w-full max-w-md space-y-4 rounded-xl border p-6 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 id="shortcuts-title" class="env-text text-base font-semibold">Raccourcis clavier</h3>
+        <button type="button" onclick={() => (showShortcutsModal = false)} aria-label="Fermer" class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
+      </div>
+      <dl class="divide-y env-divider text-xs">
+        <div class="flex items-center justify-between py-2"><dt class="env-muted">Message suivant / précédent</dt><dd class="font-mono"><kbd>j</kbd> / <kbd>k</kbd></dd></div>
+        <div class="flex items-center justify-between py-2"><dt class="env-muted">Répondre</dt><dd class="font-mono"><kbd>r</kbd></dd></div>
+        <div class="flex items-center justify-between py-2"><dt class="env-muted">Archiver</dt><dd class="font-mono"><kbd>e</kbd></dd></div>
+        <div class="flex items-center justify-between py-2"><dt class="env-muted">Rechercher</dt><dd class="font-mono"><kbd>/</kbd></dd></div>
+        <div class="flex items-center justify-between py-2"><dt class="env-muted">Afficher cette aide</dt><dd class="font-mono"><kbd>?</kbd></dd></div>
+      </dl>
+    </div>
+  </div>
 {/if}

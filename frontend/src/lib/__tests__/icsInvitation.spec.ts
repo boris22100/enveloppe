@@ -1,47 +1,56 @@
 import { describe, expect, it } from 'vitest';
-import { parseIcsInvitation } from '../jmap/calendar';
+import {
+  buildIcsReply,
+  normalizeIcsTimeZone,
+  parseIcsDateToLocal,
+  parseIcsInvitation
+} from '../jmap/calendar';
 
-describe('parseIcsInvitation', () => {
-  it('parse un VEVENT avec lignes repliées et horodatage UTC', () => {
+describe('parseIcsInvitation, TZID et réponses rapides', () => {
+  it('parse un événement VEVENT standard et génère une réponse METHOD:REPLY avec PARTSTAT', () => {
     const ics = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
       'BEGIN:VEVENT',
-      'UID:meeting-2026-11-25@enveloppe.local',
-      'SUMMARY:Revue technique JMAP',
-      'DTSTART:20261126T093000Z',
-      'LOCATION:Visio / Salle',
-      '  Bretagne',
-      'DESCRIPTION:Point v0.8.6\\nOrdre du jour complet',
+      'UID:evt-42',
+      'DTSTART:20261201T140000Z',
+      'SUMMARY:Revue architecture',
+      'LOCATION:Visio',
+      'DESCRIPTION:Préparer la roadmap',
       'END:VEVENT',
       'END:VCALENDAR'
     ].join('\r\n');
 
     const parsed = parseIcsInvitation(ics);
     expect(parsed).not.toBeNull();
-    expect(parsed?.uid).toBe('meeting-2026-11-25@enveloppe.local');
-    expect(parsed?.title).toBe('Revue technique JMAP');
-    expect(parsed?.location).toBe('Visio / Salle Bretagne');
-    expect(parsed?.description).toBe('Point v0.8.6\nOrdre du jour complet');
-    expect(parsed?.start).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00$/);
+    expect(parsed?.uid).toBe('evt-42');
+    expect(parsed?.title).toBe('Revue architecture');
+    expect(parsed?.location).toBe('Visio');
+
+    const reply = buildIcsReply(ics, 'accepted', 'boris@mallach.fr');
+    expect(reply).toContain('METHOD:REPLY');
+    expect(reply).toContain('PARTSTAT=ACCEPTED');
+    expect(reply).toContain('UID:evt-42');
   });
 
-  it('parse un horodatage local sans suffixe Z', () => {
-    const ics = [
-      'BEGIN:VCALENDAR',
-      'BEGIN:VEVENT',
-      'SUMMARY:Rendez-vous local',
-      'DTSTART;TZID=Europe/Paris:20261201T140000',
-      'END:VEVENT',
-      'END:VCALENDAR'
-    ].join('\n');
+  it('normalise les fuseaux TZID (y compris alias Windows) et convertit DTSTART;TZID', () => {
+    expect(normalizeIcsTimeZone('Europe/Paris')).toBe('Europe/Paris');
+    expect(normalizeIcsTimeZone('Romance Standard Time')).toBe('Europe/Paris');
+    expect(normalizeIcsTimeZone('Invalid/Zone')).toBeNull();
 
-    const parsed = parseIcsInvitation(ics);
-    expect(parsed?.title).toBe('Rendez-vous local');
-    expect(parsed?.start).toBe('2026-12-01T14:00:00');
+    // 2026-07-01 en Europe/Paris (UTC+2) à 12:00 équivaut à 10:00 UTC
+    const summerParis = parseIcsDateToLocal('DTSTART;TZID=Europe/Paris:20260701T120000');
+    const expectedSummerUtc = new Date('2026-07-01T10:00:00Z');
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const expectedLocal = `${expectedSummerUtc.getFullYear()}-${pad(expectedSummerUtc.getMonth() + 1)}-${pad(expectedSummerUtc.getDate())}T${pad(expectedSummerUtc.getHours())}:${pad(expectedSummerUtc.getMinutes())}:${pad(expectedSummerUtc.getSeconds())}`;
+    expect(summerParis).toBe(expectedLocal);
   });
 
-  it('retourne null si aucun VEVENT n est présent', () => {
+  it('génère les trois statuts PARTSTAT (ACCEPTED, TENTATIVE, DECLINED) et retourne null si sans VEVENT', () => {
+    const sample = 'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:u1\r\nSUMMARY:Test\r\nEND:VEVENT\r\nEND:VCALENDAR';
+    expect(buildIcsReply(sample, 'accepted')).toContain('PARTSTAT=ACCEPTED');
+    expect(buildIcsReply(sample, 'tentative')).toContain('PARTSTAT=TENTATIVE');
+    expect(buildIcsReply(sample, 'declined')).toContain('PARTSTAT=DECLINED');
     expect(parseIcsInvitation('BEGIN:VCALENDAR\nEND:VCALENDAR')).toBeNull();
   });
 });

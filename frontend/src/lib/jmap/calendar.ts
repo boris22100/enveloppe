@@ -226,17 +226,126 @@ export interface ParsedIcsInvitation {
   description: string;
 }
 
-function parseIcsDateToLocal(raw: string): string {
-  const clean = raw.trim().replace(/^.*:/, '');
+const WINDOWS_TZ_TO_IANA: Record<string, string> = {
+  'romance standard time': 'Europe/Paris',
+  'central europe standard time': 'Europe/Budapest',
+  'central european standard time': 'Europe/Berlin',
+  'gmt standard time': 'Europe/London',
+  'utc': 'UTC',
+  'eastern standard time': 'America/New_York',
+  'pacific standard time': 'America/Los_Angeles'
+};
+
+export function normalizeIcsTimeZone(tzid?: string | null): string | null {
+  if (!tzid) return null;
+  const cleaned = tzid.trim().replace(/^"|"$/g, '');
+  if (!cleaned) return null;
+  const mapped = WINDOWS_TZ_TO_IANA[cleaned.toLowerCase()];
+  const candidate = mapped ?? cleaned;
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: candidate }).format(new Date(0));
+    return candidate;
+  } catch {
+    return null;
+  }
+}
+
+function formatPartsAsLocalIso(dt: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+}
+
+function zonedWallTimeToUtcDate(
+  y: number,
+  mo: number,
+  d: number,
+  h: number,
+  mi: number,
+  s: number,
+  timeZone: string
+): Date {
+  const utcGuess = new Date(Date.UTC(y, mo - 1, d, h, mi, s));
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  const parts = Object.fromEntries(
+    fmt.formatToParts(utcGuess).filter((p) => p.type !== 'literal').map((p) => [p.type, p.value])
+  );
+  const asIfUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour === '24' ? '0' : parts.hour),
+    Number(parts.minute),
+    Number(parts.second)
+  );
+  const offsetMs = asIfUtc - utcGuess.getTime();
+  return new Date(utcGuess.getTime() - offsetMs);
+}
+
+export function parseIcsDateToLocal(raw: string, explicitTzid?: string): string {
+  const trimmed = raw.trim();
+  const tzMatch = trimmed.match(/TZID=([^:;]+)/i);
+  const clean = trimmed.replace(/^.*:/, '');
   const m = clean.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/);
   if (!m) return new Date().toISOString().slice(0, 19);
   const [, y, mo, d, h = '09', mi = '00', s = '00', z] = m;
+
   if (z === 'Z') {
-    const dt = new Date(`${y}-${mo}-${d}T${h}:${mi}:${s}Z`);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+    return formatPartsAsLocalIso(new Date(`${y}-${mo}-${d}T${h}:${mi}:${s}Z`));
   }
+
+  const ianaTz = normalizeIcsTimeZone(explicitTzid ?? tzMatch?.[1]);
+  if (ianaTz && ianaTz.toUpperCase() !== 'UTC') {
+    const utcDate = zonedWallTimeToUtcDate(
+      Number(y),
+      Number(mo),
+      Number(d),
+      Number(h),
+      Number(mi),
+      Number(s),
+      ianaTz
+    );
+    return formatPartsAsLocalIso(utcDate);
+  }
+
   return `${y}-${mo}-${d}T${h}:${mi}:${s}`;
+}
+
+export function buildIcsReply(
+  icsText: string,
+  response: 'accepted' | 'tentative' | 'declined',
+  attendeeEmail = 'attendee@example.invalid'
+): string {
+  const partstatMap = {
+    accepted: 'ACCEPTED',
+    tentative: 'TENTATIVE',
+    declined: 'DECLINED'
+  } as const;
+  const inv = parseIcsInvitation(icsText);
+  const uid = inv?.uid ?? `reply-${Date.now()}`;
+  const summary = (inv?.title ?? 'Événement').replace(/([,;\\])/g, '\\$1');
+  const dtstart = (inv?.start ?? '').replace(/[-:]/g, '');
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Enveloppe//JMAP PWA//FR',
+    'METHOD:REPLY',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    ...(dtstart ? [`DTSTART:${dtstart}`] : []),
+    `SUMMARY:${summary}`,
+    `ATTENDEE;PARTSTAT=${partstatMap[response]}:mailto:${attendeeEmail}`,
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n') + '\r\n';
 }
 
 export function parseIcsInvitation(icsText: string): ParsedIcsInvitation | null {
@@ -258,7 +367,8 @@ export function parseIcsInvitation(icsText: string): ParsedIcsInvitation | null 
     return '';
   };
   const title = getField('SUMMARY') || 'Invitation';
-  const dtstart = getField('DTSTART');
+  const rawDtStartLine = lines.find((l) => /^DTSTART([;:])/i.test(l.trim())) ?? '';
+  const dtstart = rawDtStartLine || getField('DTSTART');
   return {
     uid: getField('UID') || `ics-${Date.now()}`,
     title,
