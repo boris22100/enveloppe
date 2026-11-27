@@ -752,6 +752,17 @@ interface ContactEntry { name: string; email: string; }
 
                 {#if ev.id}
                   <div class="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover/ev:opacity-100">
+                    {#if ev.categories?.['Tâche']}
+                      <button
+                        type="button"
+                        title={taskProgressOf(ev) === 'completed' ? 'Marquer comme à faire' : 'Marquer comme terminée'}
+                        aria-label="{taskProgressOf(ev) === 'completed' ? 'Marquer comme à faire' : 'Marquer comme terminée'} {ev.title}"
+                        onclick={(e) => { e.stopPropagation(); void toggleTaskDone(ev); }}
+                        class="rounded px-1 text-[11px] font-semibold hover:opacity-100"
+                      >
+                        {taskProgressOf(ev) === 'completed' ? '↩️' : '✓'}
+                      </button>
+                    {/if}
                     <button
                       type="button"
                       title="Modifier"
@@ -903,6 +914,15 @@ interface ContactEntry { name: string; email: string; }
                     <div class="flex items-center gap-2">
                       <span class="font-mono text-xs opacity-80">{formatTime(ev.start)}</span>
                       {#if ev.id}
+                        {#if ev.categories?.['Tâche']}
+                          <button
+                            type="button"
+                            onclick={(e) => { e.stopPropagation(); void toggleTaskDone(ev); }}
+                            class="rounded border px-2 py-0.5 text-[11px] font-medium env-btn-secondary"
+                          >
+                            {taskProgressOf(ev) === 'completed' ? 'À faire' : 'Terminée'}
+                          </button>
+                        {/if}
                         <button
                           type="button"
                           title="Modifier"
@@ -956,7 +976,18 @@ interface ContactEntry { name: string; email: string; }
             {selectedEvent.start ? new Date(selectedEvent.start).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: selectedEvent.showWithoutTime ? undefined : 'short' }) : ''}
           </p>
         </div>
-        <button type="button" onclick={() => (selectedEvent = null)} aria-label="Fermer" class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
+        <div class="flex items-center gap-2">
+          {#if selectedEvent.id && selectedEvent.categories?.['Tâche']}
+            <button
+              type="button"
+              onclick={() => { const cur = selectedEvent; selectedEvent = null; if (cur) void toggleTaskDone(cur); }}
+              class="rounded-xl border px-3 py-1 text-xs font-semibold env-btn-secondary"
+            >
+              {taskProgressOf(selectedEvent) === 'completed' ? 'Marquer à faire' : 'Marquer terminée'}
+            </button>
+          {/if}
+          <button type="button" onclick={() => (selectedEvent = null)} aria-label="Fermer" class="env-muted env-hover rounded-xl px-2 py-1 text-sm">✕</button>
+        </div>
       </div>
       {#if selectedEvent.description}
         <p class="env-subtle env-text whitespace-pre-wrap rounded-lg border p-3.5 text-sm">{selectedEvent.description}</p>
