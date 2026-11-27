@@ -1,24 +1,16 @@
 # <img src="frontend/public/pwa-192.png" alt="Enveloppe" width="32" align="absmiddle" /> Enveloppe
 
-
-## Nouveautés v0.8.8
-
-- **Calendrier & invitations ICS** : extraction `DTEND;TZID=...`, `ORGANIZER`, `ATTENDEE` (`PARTSTAT`), `EXDATE`, envoi automatique de réponse `METHOD:REPLY` par e-mail JMAP vers l'organisateur et sélection de plage par glisser-déposer dans `CalendarView`.
-- **Rédaction & clavier** : synchronisation serveur JMAP des brouillons (`$draft`), sélection clavier (`x`, `Shift+J`, `Shift+K`) avec extension d'intervalle et aperçu rapide des pièces jointes (images, PDF sandboxé, texte brut).
-- **Mode sombre HTML** : détection et assombrissement des fonds clairs inline (`rgb()`, `rgba()`, `hsl()`) dans `buildSandboxedEmailDoc`.
-
-## Nouveautés v0.8.7
-
-- **Brouillons** : sauvegarde automatique *debounced* sur 2 s (`draftDebounce`) et bouton *Reprendre le brouillon* dans la liste des messages.
-- **Raccourcis clavier** : navigation (`j`/`k`), réponse (`r`), archivage (`e`), recherche (`/`), aide (`?`) et calcul d'index borné (`keyboardShortcuts.ts`).
-- **Invitations calendrier (.ics)** : normalisation des fuseaux horaires `TZID` (incluant les alias Windows vers IANA) et génération de réponses `METHOD:REPLY` (`ACCEPTED`, `TENTATIVE`, `DECLINED`).
-- **Lecture HTML sombre** : neutralisation des fonds clairs et textes sombres inline dans `buildSandboxedEmailDoc`.
-- **Tests unitaires** : 30 tests Vitest (9 suites) et tests HTTP Go (`httptest`) sur `internal/httpapi`.
-[![CI/CD](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml/badge.svg?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Version](https://img.shields.io/badge/version-v0.8.8-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/releases/tag/v0.8.8) [![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)](https://github.com/boris22100/enveloppe/pkgs/container/enveloppe) [![Vitest](https://img.shields.io/badge/vitest-30%20passed-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Lighthouse A11y](https://img.shields.io/badge/A11y-Lighthouse%20%E2%89%A590%25-2ea043?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Green IT](https://img.shields.io/badge/Green%20IT-budgets%20enforced-1f7a52?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)](LICENSE)
+[![CI/CD](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml/badge.svg?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Version](https://img.shields.io/badge/version-v0.8.8-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/releases/tag/v0.8.8) [![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)](https://github.com/boris22100/enveloppe/pkgs/container/enveloppe) [![Vitest](https://img.shields.io/badge/vitest-28%20passed-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Lighthouse A11y](https://img.shields.io/badge/A11y-Lighthouse%20%E2%89%A590%25-2ea043?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Green IT](https://img.shields.io/badge/Green%20IT-budgets%20enforced-1f7a52?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)](LICENSE)
 
 Webmail **PWA** ultraléger, moderne, **100 % français** et **100 % JMAP** (*Mail, Contacts JSContact, Calendrier JSCalendar*), conçu pour **Stalwart Mail Server** et compatible multi-serveurs.
 
 > 📖 **Documentation complète** : consultez le **[Wiki Enveloppe](https://github.com/boris22100/enveloppe/wiki)** pour les guides détaillés d'[installation](https://github.com/boris22100/enveloppe/wiki/Installation), de [configuration avec ou sans SSO](https://github.com/boris22100/enveloppe/wiki/Configuration) et d'[utilisation](https://github.com/boris22100/enveloppe/wiki/Utilisation).
+
+## 🆕 Nouveautés v0.8.8
+
+- **Calendrier & invitations `.ics`** : support `DTEND;TZID=...`, `ORGANIZER`, `ATTENDEE` (`PARTSTAT`), `EXDATE`, envoi automatique de réponse `METHOD:REPLY` par e-mail JMAP vers l'organisateur et sélection de plage par glisser-déposer dans `CalendarView`.
+- **Messagerie, brouillons & clavier** : synchronisation serveur JMAP des brouillons (`$draft`), sélection clavier (`x`, `Shift+J`, `Shift+K`) avec extension d'intervalle et aperçu rapide des pièces jointes (images, PDF sandboxé, texte brut).
+- **Lecteur HTML sombre** : détection et assombrissement des fonds clairs inline (`rgb()`, `rgba()`, `hsl()`) dans `buildSandboxedEmailDoc`.
 
 ## ✨ Fonctionnalités
 
