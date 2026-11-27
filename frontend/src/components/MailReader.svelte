@@ -277,6 +277,29 @@
           Images
         </button>
       {/if}
+      <div class="inline-flex items-center rounded-lg border p-0.5 text-[11px] env-border" role="group" aria-label="Thème du message">
+        <button
+          type="button"
+          onclick={() => setMailThemeMode('auto')}
+          aria-pressed={mailThemeMode === 'auto'}
+          class="rounded-md px-2 py-1 font-medium transition {mailThemeMode === 'auto' ? 'env-accent-soft env-accent-text' : 'env-muted env-hover'}"
+          title="Suivre le thème global"
+        >Auto</button>
+        <button
+          type="button"
+          onclick={() => setMailThemeMode('light')}
+          aria-pressed={mailThemeMode === 'light'}
+          class="rounded-md px-2 py-1 font-medium transition {mailThemeMode === 'light' ? 'env-accent-soft env-accent-text' : 'env-muted env-hover'}"
+          title="Afficher le message sur fond clair"
+        >Clair</button>
+        <button
+          type="button"
+          onclick={() => setMailThemeMode('dark')}
+          aria-pressed={mailThemeMode === 'dark'}
+          class="rounded-md px-2 py-1 font-medium transition {mailThemeMode === 'dark' ? 'env-accent-soft env-accent-text' : 'env-muted env-hover'}"
+          title="Afficher le message sur fond sombre"
+        >Sombre</button>
+      </div>
       <button
         type="button"
         onclick={onArchive}
@@ -386,29 +409,6 @@
           class="max-h-96 w-auto rounded-lg object-contain"
         />
       {:else if canInlinePreview(previewAtt) === 'pdf'}
-          <div class="inline-flex items-center rounded-lg border p-0.5 text-[11px] env-border" role="group" aria-label="Thème du message">
-            <button
-              type="button"
-              onclick={() => setMailThemeMode('auto')}
-              aria-pressed={mailThemeMode === 'auto'}
-              class="rounded-md px-2 py-0.5 font-medium transition {mailThemeMode === 'auto' ? 'env-accent-soft env-accent-text' : 'env-muted env-hover'}"
-              title="Suivre le thème global"
-            >Auto</button>
-            <button
-              type="button"
-              onclick={() => setMailThemeMode('light')}
-              aria-pressed={mailThemeMode === 'light'}
-              class="rounded-md px-2 py-0.5 font-medium transition {mailThemeMode === 'light' ? 'env-accent-soft env-accent-text' : 'env-muted env-hover'}"
-              title="Afficher le message sur fond clair"
-            >Clair</button>
-            <button
-              type="button"
-              onclick={() => setMailThemeMode('dark')}
-              aria-pressed={mailThemeMode === 'dark'}
-              class="rounded-md px-2 py-0.5 font-medium transition {mailThemeMode === 'dark' ? 'env-accent-soft env-accent-text' : 'env-muted env-hover'}"
-              title="Afficher le message sur fond sombre"
-            >Sombre</button>
-          </div>
         <iframe
           src={getDownloadUrl(accountId, jmapAccountId, previewAtt)}
           title={previewAtt.name}
@@ -432,7 +432,9 @@
         class="h-full w-full rounded-lg border-0"
       ></iframe>
     {:else}
-      <pre class="env-text whitespace-pre-wrap font-sans text-sm leading-relaxed">{text}</pre>
+      <pre
+        class="whitespace-pre-wrap rounded-lg p-3 font-sans text-sm leading-relaxed transition-colors {isDarkTheme ? 'bg-[#111518] text-[#e6edf3]' : 'bg-white text-[#111827]'}"
+      >{text}</pre>
     {/if}
   </div>
 </div>
