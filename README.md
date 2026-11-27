@@ -141,6 +141,12 @@ Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
 * **Green IT** : contrôle automatique de la taille du bundle compilé (`frontend/dist`) et de la taille de l'image Docker finale, avec mise en cache des dépendances et couches de build.
 * **Sécurité conteneur** : scan de l'image Docker construite avec Trivy (`CRITICAL` et `HIGH` bloquants, `ignore-unfixed: true`) avant publication multi-architecture (`linux/amd64`, `linux/arm64`) sur `ghcr.io`.
 
+## 🆕 Nouveautés v0.9.2
+
+- **Résilience hors-ligne (`outbox.ts` & `App.svelte`)** : mise en file persistante des envois lorsque le réseau est indisponible, rejeu ordonné automatique au retour en ligne (`online`) et indicateur d'état hors-ligne / Outbox.
+- **Ergonomie sélection multiple (`App.svelte`)** : barre d'actions flottante en bas d'écran (`Archiver`, désélection `✕`) dès qu'au moins un message est sélectionné.
+- **Tests unitaires** : nouvelle suite `outbox.spec.ts` (12 suites Vitest, 34 tests au total).
+
 ## 🆕 Nouveautés v0.9.1
 
 - **Contacts (`JSContact` — `contacts.ts` & `ContactsView.svelte`)** : ajout de `updateContact` via JMAP `ContactCard/set` (`update`) avec repli automatique sur les routes REST si nécessaire.
