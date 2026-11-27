@@ -140,3 +140,8 @@ Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
 * **Frontend & A11y** : `svelte-check`, `tsc --noEmit`, suite Vitest, puis audit d'accessibilité automatisé via Lighthouse CI (`>= 90%`) sur l'application servie en local.
 * **Green IT** : contrôle automatique de la taille du bundle compilé (`frontend/dist`) et de la taille de l'image Docker finale, avec mise en cache des dépendances et couches de build.
 * **Sécurité conteneur** : scan de l'image Docker construite avec Trivy (`CRITICAL` et `HIGH` bloquants, `ignore-unfixed: true`) avant publication multi-architecture (`linux/amd64`, `linux/arm64`) sur `ghcr.io`.
+
+## 🆕 Nouveautés v0.9.0
+
+- **Fils de discussion (`threadHelpers.ts` & `App.svelte`)** : calcul automatique de `replyTargetEmailId` via `pickReplyTargetId` pour cibler le dernier message non lu du fil, et cumul `attachmentCount` via `countThreadAttachments`.
+- **Calendrier (`CalendarView.svelte`)** : ajout du sélecteur de récurrence (*Aucune*, *Quotidienne*, *Hebdomadaire*, *Mensuelle*, *Annuelle*) et de la durée en minutes (`duration`) lors de la création d'un événement.
