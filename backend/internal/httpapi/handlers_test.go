@@ -134,3 +134,63 @@ func TestLogoutAndUnauthenticatedJmapSession(t *testing.T) {
 		t.Fatalf("unexpected 500 on unauthenticated session request")
 	}
 }
+
+func TestJmapSessionWithMockUpstreamAndCookie(t *testing.T) {
+	mockJmap := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"accounts":{"acc-1":{"name":"Perso"}},"primaryAccounts":{"urn:ietf:params:jmap:mail":"acc-1"}}`))
+	}))
+	defer mockJmap.Close()
+
+	vault, err := crypto.NewVault("test-secret-key-for-httpapi", false)
+	if err != nil {
+		t.Fatalf("NewVault: %v", err)
+	}
+	staticFS := fstest.MapFS{
+		"index.html": {Data: []byte("<!doctype html><html><body>Enveloppe</body></html>")},
+	}
+	handler := httpapi.NewHandler(httpapi.Config{
+		Vault:    vault,
+		Proxy:    jmap.NewProxy("*", "", vault, ""),
+		StaticFS: staticFS,
+		Version:  "0.9.3-test",
+	})
+
+	cookieRec := httptest.NewRecorder()
+	if err := vault.Save(cookieRec, []crypto.Account{
+		{
+			ID:       "acc-1",
+			Label:    "Perso",
+			Username: "boris@mallach.fr",
+			Password: "secret",
+			Host:     mockJmap.URL,
+		},
+	}); err != nil {
+		t.Fatalf("vault.Save: %v", err)
+	}
+	setCookie := cookieRec.Header().Get("Set-Cookie")
+	if setCookie == "" {
+		t.Fatal("expected Set-Cookie header")
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/api/jmap/session?accountId=acc-1", nil)
+	req.Header.Set("Cookie", setCookie)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK && rec.Code != http.StatusBadRequest {
+		t.Fatalf("unexpected /api/jmap/session status: %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestOidcEndpointWhenUnconfigured(t *testing.T) {
+	h, _ := newTestServer(t)
+	req := httptest.NewRequest(http.MethodGet, "/api/auth/oidc/config", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code >= http.StatusInternalServerError {
+		t.Fatalf("unexpected 5xx on /api/auth/oidc/config: %d", rec.Code)
+	}
+}

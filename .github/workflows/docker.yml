@@ -73,6 +73,13 @@ jobs:
         working-directory: frontend
         run: |
           npm run build
+      - name: Check frontend dist bundle budget
+        run: |
+          DIST_BYTES=$(du -sb frontend/dist | cut -f1)
+          MAX_BYTES=$((1500 * 1024))
+          echo "frontend/dist size: ${DIST_BYTES} bytes (limit: ${MAX_BYTES} bytes)"
+          test "$DIST_BYTES" -le "$MAX_BYTES"
+
           DIST_BYTES=$(du -sb dist | awk '{print $1}')
           echo "frontend/dist size: ${DIST_BYTES} bytes (limit: ${MAX_DIST_BYTES})"
           if [ "$DIST_BYTES" -gt "$MAX_DIST_BYTES" ]; then
