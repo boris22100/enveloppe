@@ -28,8 +28,11 @@ function installMockApi(page: import('@playwright/test').Page) {
     attachments: []
   };
 
-  return page.route('**/api/**', async (route) => {
+  return page.route('**', async (route) => {
     const url = new URL(route.request().url());
+    if (!url.pathname.startsWith('/api/')) {
+      return route.continue();
+    }
     const method = route.request().method();
 
     if (url.pathname === '/api/version') {
