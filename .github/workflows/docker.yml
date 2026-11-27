@@ -140,6 +140,47 @@ jobs:
 
           npx --yes @lhci/cli@0.14.x autorun --config=/tmp/lhci.json
 
+
+  playwright-e2e:
+    name: Playwright E2E (Critical Flows)
+    needs: [frontend-green-it-a11y]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.26"
+
+      - name: Build frontend & Go BFF binary
+        run: |
+          npm --prefix frontend ci --prefer-offline || npm --prefix frontend install
+          npm --prefix frontend run build
+          rm -rf backend/static && cp -r frontend/dist backend/static
+          (cd backend && CGO_ENABLED=0 go build -ldflags="-s -w -X main.appVersion=0.10.2" -o /tmp/jmap-pwa-e2e .)
+
+      - name: Install Playwright Chromium & run E2E suite
+        working-directory: frontend
+        run: |
+          SESSION_SECRET="ci-e2e-secret-2026-enveloppe" PORT="8080" /tmp/jmap-pwa-e2e >/tmp/jmap-pwa-e2e.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true; rm -f /tmp/jmap-pwa-e2e /tmp/jmap-pwa-e2e.log' EXIT
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:8080/api/version >/dev/null 2>&1; then
+              break
+            fi
+            sleep 0.5
+          done
+          ./node_modules/.bin/playwright install --with-deps chromium
+          E2E_BASE_URL="http://127.0.0.1:8080" npm run test:e2e
+
   docker-trivy-publish:
     name: Docker Build, Green IT Size, Trivy Scan & Push
     needs: [go-checks, frontend-green-it-a11y]
