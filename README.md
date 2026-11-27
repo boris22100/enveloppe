@@ -1,42 +1,58 @@
 # <img src="frontend/public/pwa-192.png" alt="Enveloppe" width="32" align="absmiddle" /> Enveloppe
 
-[![CI/CD](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml/badge.svg?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Version](https://img.shields.io/badge/version-v0.9.4-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/releases/tag/v0.9.4) [![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)](https://github.com/boris22100/enveloppe/pkgs/container/enveloppe) [![Vitest](https://img.shields.io/badge/vitest-34%20passed-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Lighthouse A11y](https://img.shields.io/badge/A11y-Lighthouse%20100%25-2ea043?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Green IT](https://img.shields.io/badge/Green%20IT-budgets%20enforced-1f7a52?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)](LICENSE)
+[![CI/CD](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml/badge.svg?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Release](https://img.shields.io/github/v/release/boris22100/enveloppe?include_prereleases&style=flat-square&color=48B17F)](https://github.com/boris22100/enveloppe/releases) [![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)](https://github.com/boris22100/enveloppe/pkgs/container/enveloppe) [![Go](https://img.shields.io/badge/Go-1.26-00ADD8?style=flat-square)](backend/go.mod) [![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?style=flat-square)](frontend/package.json) [![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)](LICENSE)
 
 Webmail **PWA** ultraléger, moderne, **100 % français** et **100 % JMAP** (*Mail, Contacts JSContact, Calendrier JSCalendar*), conçu pour **Stalwart Mail Server** et compatible multi-serveurs.
 
-> 📖 **Documentation complète** : consultez le **[Wiki Enveloppe](https://github.com/boris22100/enveloppe/wiki)** pour les guides détaillés d'[installation](https://github.com/boris22100/enveloppe/wiki/Installation), de [configuration avec ou sans SSO](https://github.com/boris22100/enveloppe/wiki/Configuration) et d'[utilisation](https://github.com/boris22100/enveloppe/wiki/Utilisation).
+> 📖 **Documentation complète** : consultez le **[Wiki Enveloppe](https://github.com/boris22100/enveloppe/wiki)** (guides d'[installation](https://github.com/boris22100/enveloppe/wiki/Installation), [configuration](https://github.com/boris22100/enveloppe/wiki/Configuration), [utilisation](https://github.com/boris22100/enveloppe/wiki/Utilisation)) ainsi que le **[CHANGELOG](CHANGELOG.md)**.
+
+---
+
+## 🎯 Périmètre de la version 1.0
+
+- **Interface 100 % française** : choix de périmètre assumé pour la v1.0 afin de garantir une terminologie homogène (messagerie, calendrier JSCalendar, filtres Sieve) et un bundle minimaliste sans surcoût i18n. Les contributions de localisation pourront être envisagées après la 1.0.
+- **Périmètre fonctionnel figé** : messagerie JMAP complète (fils de discussion, brouillons auto, *Undo Send*, Outbox hors-ligne, pièces jointes et images `cid:`), contacts JSContact, calendrier JSCalendar (vues Mois/Semaine/Jour, récurrences, invitations `.ics`, tâches), filtres Sieve (RFC 9661) et authentification OIDC PKCE / CIMD ou mot de passe d'application.
+
+---
 
 ## ✨ Fonctionnalités
 
-* **Connexion OIDC / SSO automatique (PKCE)** : saisie de l'URL du serveur JMAP, détection automatique de `/.well-known/openid-configuration`, support **Authorization Code + PKCE (`S256`)** avec rafraîchissement transparent des jetons et support **CIMD** (`/oauth-client.json`). La connexion par identifiant/mot de passe d'application reste disponible en secours.
-* **Messagerie JMAP complète** : gestion des dossiers et sous-dossiers, menus contextuels au clic droit sur les emails (*Archiver, Supprimer, Lu/Non lu, Favori, Spam, Déplacer vers, Exporter en `.eml`, Imprimer*) et sur les dossiers (*Nouveau sous-dossier, Renommer, Supprimer*).
-* **Calendrier (JSCalendar)** : vues *Mois*, *Semaine* et *Jour*, création directe au clic sur une date ou une tranche horaire (**Événement** avec invitation de participants, **Tâche**, **Anniversaire** à récurrence annuelle), import/export `.ics` et `.json`.
-* **Contacts (JSContact)** : consultation et gestion synchronisée avec le serveur.
-* **Recherche instantanée, filtres et fils de discussion** : filtrage en direct (expéditeur, objet, aperçu, *Non lus*, *PJ*) et regroupement par fil (`threadId`) avec navigation dans la conversation.
-* **Réponse, transfert et signatures par compte** : actions *Répondre*, *Répondre à tous* et *Transférer* avec citation automatique, raccourcis clavier (`R`, `A`, `F`) et signatures dédiées par compte.
-* **Trois thèmes harmonisés (BoWiz, Sombre, Clair)** : sélecteur instantané dans le rail latéral sur la même charte graphique, persisté localement et adapté au lecteur d'emails.
-* **Interface adoucie et accessibilité (`a11y`)** : panneaux flottants arrondis, espacement et typographie confortables, focus clavier visible, attributs ARIA et labels associés.
-* **Filtres serveur Sieve (JMAP RFC 9661)** : éditeur hybride façon *SievePad* combinant un constructeur visuel de règles (*Conditions → Actions* + répondeur *Vacances*) et un éditeur de code Sieve brut avec coloration syntaxique, modèles prêts à l'emploi, validation syntaxique auprès de Stalwart et gestion multi-scripts.
-* **Sécurité du compte** : changement de mot de passe intégré (API Stalwart) avec déconnexion automatique immédiate.
-* **Expérience PWA** : installable sur desktop et mobile, cache hors-ligne (IndexedDB avec persistance navigateur `navigator.storage.persist()`), notifications push (auto-découverte de la clé VAPID du serveur).
+- **Connexion OIDC / SSO automatique (PKCE & CIMD)** : découverte automatique via `/.well-known/openid-configuration`, support **Authorization Code + PKCE (`S256`)** avec rafraîchissement transparent des jetons, support **CIMD** (`/oauth-client.json`) et connexion classique par mot de passe d'application en secours.
+- **Messagerie JMAP complète** : gestion des dossiers et sous-dossiers, menus contextuels (*Archiver, Supprimer, Lu/Non lu, Favori, Spam, Déplacer vers, Exporter en `.eml`, Imprimer*), actions groupées avec barre flottante, regroupement par fil (`threadId`), brouillons automatiques, *Undo Send* et file d'attente hors-ligne (`Outbox`).
+- **Calendrier (JSCalendar)** : vues *Mois*, *Semaine* et *Jour*, glisser-déposer, création et édition d'événements récurrents, invitations `.ics` interactives, tâches et anniversaires.
+- **Contacts (JSContact)** : consultation, création, édition synchronisée (`ContactCard/set`) et autocomplétion des destinataires.
+- **Filtres serveur Sieve (JMAP RFC 9661)** : éditeur hybride combinant un constructeur visuel (*Conditions → Actions* + répondeur *Vacances*) et un éditeur de code Sieve avec validation serveur.
+- **Sécurité & thèmes** : changement de mot de passe intégré (API Stalwart), trois thèmes harmonisés (*BoWiz*, *Sombre*, *Clair*) et accessibilité clavier/ARIA vérifiée.
+- **Expérience PWA** : installable sur desktop et mobile, cache hors-ligne (`IndexedDB` + Service Worker) et notifications Web Push (auto-découverte VAPID).
+
+---
+
+## 📋 Matrice de support
+
+| Composant | Version / Cible supportée | Notes |
+| :--- | :--- | :--- |
+| **Serveur JMAP** | **Stalwart Mail Server** (recommandé) & serveurs conformes RFC 8620 / 8621 | Extensions optionnelles : JSContact, JSCalendar, JMAP Sieve (RFC 9661), OIDC PKCE/CIMD |
+| **Backend BFF** | **Go 1.26+** (compilé en binaire statique Linux `amd64` / `arm64`) | Image Distroless non-root (`read_only: true`), zéro dépendance runtime |
+| **Frontend Build** | **Node.js 22 LTS**, Svelte 5, Vite, TypeScript | Bundle statique embarqué directement dans le binaire Go (`go:embed`) |
+| **Navigateurs cibles** | Chromium / Chrome / Edge, Firefox, Safari (Desktop & Mobile récents) | HTTPS obligatoire pour Service Worker, Web Push et cookies `Secure` |
 
 ---
 
 ## 🌱 Sobriété & Green-IT
 
-* **Taille de l'image Docker** : `10,03 Mo` (`9,56 MiB`) (binaire Go statique sur `distroless/static-debian12:nonroot`, multi-arch `linux/amd64` & `linux/arm64`).
-* **Empreinte mémoire** : `~9,67 MiB` de RAM (`0,03 %` sur 31,09 GiB, `0,00 %` CPU au repos) et `412,8 Ko` (`422 680` octets) d'assets `dist/`.
-* **Réseau optimisé** : compression **Gzip** native, cache immuable (`max-age=31536000, immutable`) sur les assets statiques et requêtes JMAP groupées.
+- **Image Docker minimale** : ~10 Mo (binaire Go statique sur `gcr.io/distroless/static-debian12:nonroot`, multi-arch `linux/amd64` & `linux/arm64`).
+- **Empreinte runtime** : ~10 MiB de RAM et ~0 % CPU au repos, assets `dist/` ~413 Ko (budget CI strictement plafonné à 2 MiB).
+- **Réseau optimisé** : compression Gzip native, cache immuable (`max-age=31536000, immutable`) sur les assets versionnés et requêtes JMAP groupées.
 
 ---
 
 ## 🏗️ Architecture & Persistance
 
-Enveloppe repose sur un **BFF (Backend-for-Frontend) en Go** qui sert l'interface **Svelte/Vite** et proxyfie les appels JMAP vers votre serveur de messagerie.
+Enveloppe repose sur un **BFF (Backend-for-Frontend) en Go** qui sert l'interface **Svelte 5** et proxyfie les appels JMAP vers votre serveur de messagerie.
 
-* **Backend 100 % *stateless*** : aucun volume Docker n'est requis, le conteneur tourne en lecture seule (`read_only: true`).
-* **Données persistantes** : vos emails, dossiers, contacts et calendriers restent exclusivement sur votre serveur Stalwart. Tant que la variable `SESSION_SECRET` est conservée, les sessions survivent aux mises à jour du conteneur.
-* **Cache local** : les préférences et le cache hors-ligne sont stockés dans le navigateur (`localStorage` + `IndexedDB`).
+- **Backend 100 % *stateless*** : aucun volume Docker requis, exécution en lecture seule (`read_only: true`).
+- **Données persistantes** : emails, dossiers, contacts, calendriers et scripts Sieve restent exclusivement sur votre serveur JMAP. Tant que `SESSION_SECRET` est conservé, les sessions survivent aux redémarrages.
+- **Cache local** : préférences, brouillons/outbox et cache de lecture stockés dans le navigateur (`localStorage` + `IndexedDB`).
 
 ---
 
@@ -61,7 +77,7 @@ sed -i "s/remplace_moi_par_une_chaine_aleatoire_longue/$(openssl rand -hex 32)/"
 
 | Variable | Description | Exemple / Défaut |
 | :--- | :--- | :--- |
-| `PUBLIC_APP_URL` | URL HTTPS publique de votre instance | `https://webmail.mondomaine.fr` |
+| `PUBLIC_APP_URL` | URL HTTPS publique de votre instance | `[https://webmail.mondomaine.fr](https://webmail.mondomaine.fr)` |
 | `SESSION_SECRET` | Clé secrète (64 caractères hex) pour chiffrer les cookies de session en AES-GCM | *(générée via `openssl rand -hex 32`)* |
 | `ALLOWED_JMAP_SERVERS` | Domaines JMAP autorisés (`*` pour tous, ou liste séparée par des virgules) | `mail.mondomaine.fr` |
 | `OIDC_USE_CIMD` | *(Optionnel)* Utilise l'URL `https://<PUBLIC_APP_URL>/oauth-client.json` comme `client_id` (CIMD) | `false` *(défaut)* |
@@ -69,8 +85,6 @@ sed -i "s/remplace_moi_par_une_chaine_aleatoire_longue/$(openssl rand -hex 32)/"
 | `OIDC_CLIENT_SECRET` | *(Optionnel)* Secret client uniquement pour un client confidentiel (inutile en PKCE public) | *(vide par défaut)* |
 
 ### 3. Activer la connexion OIDC dans Stalwart (Optionnel)
-
-Deux modes sont possibles selon votre préférence :
 
 #### Option A — Automatique via CIMD (sans créer de client)
 1. Dans `.env`, ajoutez `OIDC_USE_CIMD=true`.
@@ -80,10 +94,10 @@ Deux modes sont possibles selon votre préférence :
 #### Option B — Client OAuth classique
 1. Laissez `OIDC_USE_CIMD` désactivé (le `client_id` par défaut est `enveloppe`).
 2. Dans Stalwart (**Settings → OAuth2 → Create OAuth client**) :
-   * **Client ID** : `enveloppe` (laissez **Client Secret** vide pour PKCE public) et **Description** : `Enveloppe`.
-   * **Redirect URIs** : `https://<votre-domaine>/api/auth/oidc/callback` (puis cliquez sur `+`).
-   * **Allowed Scopes** : cochez **Mail**, **Contacts** et **Calendars**.
-   * **Allowed Grant Types** : laissez cochés **Authorization code** et **Refresh token**.
+   - **Client ID** : `enveloppe` (laissez **Client Secret** vide pour PKCE public) et **Description** : `Enveloppe`.
+   - **Redirect URIs** : `https://<votre-domaine>/api/auth/oidc/callback` (puis cliquez sur `+`).
+   - **Allowed Scopes** : cochez **Mail**, **Contacts** et **Calendars**.
+   - **Allowed Grant Types** : laissez cochés **Authorization code** et **Refresh token**.
 
 ### 4. Lancer le conteneur
 
@@ -91,7 +105,7 @@ Deux modes sont possibles selon votre préférence :
 docker compose up -d
 ```
 
-L'application écoute sur le port `8080` du conteneur (mappé sur `8089` par défaut dans `docker-compose.yml` — adaptez le port et le réseau à votre reverse-proxy). Exposez-la impérativement en **HTTPS** afin d'activer les cookies `Secure`, OIDC et l'installation PWA.
+L'application écoute sur le port `8080` du conteneur (mappé sur `8089` par défaut dans `docker-compose.yml`). Exposez-la impérativement en **HTTPS** afin d'activer les cookies `Secure`, OIDC et l'installation PWA.
 
 > **Note SSO (Pangolin, Authelia, Authentik...)** : si vous placez Enveloppe derrière un portail SSO, autorisez l'accès public à `/manifest.webmanifest` (et à `/oauth-client.json` si vous utilisez CIMD) afin que le navigateur et Stalwart puissent les lire sans blocage.
 
@@ -103,65 +117,28 @@ docker compose pull && docker compose up -d
 
 ---
 
-## 🛡️ Sécurité & Audit
+## 🛡️ Sécurité, CI/CD & Limites connues
 
 ### Mesures intégrées
-* **Sessions chiffrées** : identifiants ou jetons OAuth2 (`access_token` / `refresh_token`) stockés uniquement dans un cookie chiffré en **AES-GCM** côté client (`HttpOnly`, `Secure`, `SameSite=Lax`).
-* **Isolation du conteneur** : image Distroless sans shell, utilisateur non-root, système de fichiers `read_only: true`, `no-new-privileges:true`.
-* **Durcissement HTTP** : `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` et `Permissions-Policy`.
-* **Proxy sécurisé** : timeouts HTTP serveur (`ReadHeaderTimeout`, `IdleTimeout`), non-propagation du header `Authorization` sur redirection cross-domain, sanitisation des logs.
+- **Sessions chiffrées** : identifiants ou jetons OAuth2 (`access_token` / `refresh_token`) stockés uniquement dans un cookie chiffré en **AES-GCM** côté client (`HttpOnly`, `Secure`, `SameSite=Lax`).
+- **Isolation du conteneur** : image Distroless sans shell, utilisateur non-root, système de fichiers `read_only: true`, `no-new-privileges:true`.
+- **Durcissement HTTP & Anti-SSRF** : `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, blocage des plages IP privées RFC 1918 (`ip.IsPrivate()`) sur le proxy et non-propagation du header `Authorization` sur redirection cross-domain.
+- **Pipeline CI/CD automatisé** : `go vet`, `go test -race`, `govulncheck`, `svelte-check`, `tsc --noEmit`, `Vitest`, contrôle des budgets Green IT (`dist/` et taille image Docker), audit Lighthouse Accessibility (`>= 90 %`) et scan Trivy (`CRITICAL`/`HIGH` bloquants).
 
-### Résultats de l'audit automatisé
-
-| Outil | Périmètre analysé | Résultat |
-| :--- | :--- | :--- |
-| **Trivy** | Image Docker finale (`debian 12.15` + binaire Go) | **0** vulnérabilité (`HIGH` / `CRITICAL`) |
-| **govulncheck** | Code source et dépendances Go (`go1.26.11`) | **0** vulnérabilité |
-| **npm audit** | Dépendances de production Frontend | **0** vulnérabilité |
-| **Gitleaks** | Historique Git complet | **0** secret exposé |
-| **OWASP ZAP** | Scan passif en production (HTTPS) | **0 FAIL** / **63 PASS** *(5 WARN informatifs attendus pour une PWA webmail)* |
-| **Lighthouse** | Performance, Accessibilité, Bonnes pratiques | **99** Perf / **100** Accessibilité / **100** Bonnes pratiques |
+### Limites connues & compromis assumés (v1.0)
+- **Cookie de session *stateless* (30 jours)** : le BFF ne conservant aucune base de données serveur, la révocation côté serveur avant expiration du cookie passe par la rotation de `SESSION_SECRET` ou la révocation du jeton OAuth2 dans Stalwart.
+- **Liste blanche JMAP par défaut (`ALLOWED_JMAP_SERVERS=*`)** : activée par défaut pour faciliter l'usage multi-serveurs dès le premier démarrage ; en production mono-serveur, restreignez explicitement cette variable à votre domaine (`mail.mondomaine.fr`).
+- **File d'attente hors-ligne (`Outbox`) *best-effort*** : stockée dans `localStorage` et rejouée séquentiellement au retour de la connexion (`online`), sans garantie transactionnelle ni persistance des pièces jointes lourdes entre rechargements hors-ligne.
+- **Interface uniquement en français** : aucune bascule multilingue intégrée en v1.0.
 
 ---
 
 ## 📦 Image officielle
 
-```
+```text
 ghcr.io/boris22100/enveloppe:latest
 ```
 
 ## 📄 Licence
 
 Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
-
-## Qualité, Sécurité, Green IT & Accessibilité (CI/CD)
-
-* **Backend Go** : `go vet ./...`, tests unitaires avec détecteur de *race conditions* (`go test -race ./...`) et audit des vulnérabilités (`govulncheck ./...`).
-* **Frontend & A11y** : `svelte-check`, `tsc --noEmit`, suite Vitest, puis audit d'accessibilité automatisé via Lighthouse CI (`>= 90%`) sur l'application servie en local.
-* **Green IT** : contrôle automatique de la taille du bundle compilé (`frontend/dist`) et de la taille de l'image Docker finale, avec mise en cache des dépendances et couches de build.
-* **Sécurité conteneur** : scan de l'image Docker construite avec Trivy (`CRITICAL` et `HIGH` bloquants, `ignore-unfixed: true`) avant publication multi-architecture (`linux/amd64`, `linux/arm64`) sur `ghcr.io`.
-
-## 🆕 Nouveautés v0.9.4
-
-- **Version unifiée et dynamique (`package.json`, `main.go`, `router.go`, `Dockerfile`, `.github/workflows/docker.yml`)** : alignement de la version par défaut sur `0.9.4` et injection dynamique via `APP_VERSION` / `-ldflags "-X main.appVersion=..."` au build Docker et en CI.
-
-## 🆕 Nouveautés v0.9.3
-
-- **Tests backend (`backend/internal/httpapi/handlers_test.go`)** : ajout de tests `httptest` couvrant `/api/jmap/session` avec cookie chiffré et serveur JMAP simulé, ainsi que `/api/auth/oidc/config`.
-- **Budget bundle CI (`.github/workflows/docker.yml`)** : contrôle automatique de la taille de `frontend/dist` (`<= 1500 KiB`, mesuré à ~413 KiB).
-
-## 🆕 Nouveautés v0.9.2
-
-- **Résilience hors-ligne (`outbox.ts` & `App.svelte`)** : mise en file persistante des envois lorsque le réseau est indisponible, rejeu ordonné automatique au retour en ligne (`online`) et indicateur d'état hors-ligne / Outbox.
-- **Ergonomie sélection multiple (`App.svelte`)** : barre d'actions flottante en bas d'écran (`Archiver`, désélection `✕`) dès qu'au moins un message est sélectionné.
-- **Tests unitaires** : nouvelle suite `outbox.spec.ts` (12 suites Vitest, 34 tests au total).
-
-## 🆕 Nouveautés v0.9.1
-
-- **Contacts (`JSContact` — `contacts.ts` & `ContactsView.svelte`)** : ajout de `updateContact` via JMAP `ContactCard/set` (`update`) avec repli automatique sur les routes REST si nécessaire.
-- **Compositeur (`App.svelte`)** : suggestion automatique des destinataires (`<datalist id="compose-to-suggestions">`) à partir des adresses connues dans les messages chargés.
-
-## 🆕 Nouveautés v0.9.0
-
-- **Fils de discussion (`threadHelpers.ts` & `App.svelte`)** : calcul automatique de `replyTargetEmailId` via `pickReplyTargetId` pour cibler le dernier message non lu du fil, et cumul `attachmentCount` via `countThreadAttachments`.
-- **Calendrier (`CalendarView.svelte`)** : ajout du sélecteur de récurrence (*Aucune*, *Quotidienne*, *Hebdomadaire*, *Mensuelle*, *Annuelle*) et de la durée en minutes (`duration`) lors de la création d'un événement.
