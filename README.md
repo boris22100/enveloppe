@@ -8,9 +8,9 @@ Webmail **PWA** ultraléger, moderne, **100 % français** et **100 % JMAP** (*Ma
 
 ## 🆕 Nouveautés v0.8.9
 
-- **Annulation d'envoi différée (*Undo Send*)** : file d'envoi différée sur 5 s (`undoSend.ts`) permettant d'annuler ou de forcer l'expédition avant validation JMAP.
-- **Fils de discussion & suivi des tâches (`JSCalendar`)** : ciblage automatique du dernier message non lu d'un fil, cumul des pièces jointes par conversation et bascule/filtrage de statut des tâches (`threadHelpers.ts`).
-- **Tests unitaires & backend** : 11 suites Vitest (32 tests) et couverture HTTP Go (`httptest`) étendue sur `/api/auth/logout` et `/api/jmap/session`.
+- **Annulation d'envoi différée (*Undo Send*)** : file d'envoi différée sur 5 s (`undoSend.ts`) avec bandeau et bouton **Annuler** dans `App.svelte` (restauration de la composition si annulé, ou expédition JMAP à l'expiration).
+- **Calendrier & gestion des tâches (`JSCalendar`)** : filtre par statut (*Toutes*, *À faire*, *Terminées*) et bouton de bascule *Terminée / À faire* directement sur les tâches (vues mois, jour et modale de détail) dans `CalendarView.svelte`.
+- **Fils de discussion & tests** : ciblage du dernier message non lu d'un fil, cumul des pièces jointes par conversation (`threadHelpers.ts`), 11 suites Vitest (32 tests) et tests Go `httptest` sur `/api/auth/logout` et `/api/jmap/session`.
 
 ## 🆕 Nouveautés v0.8.8
 
