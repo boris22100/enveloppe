@@ -20,7 +20,7 @@ function installMockApi(page: import('@playwright/test').Page) {
     to: [{ name: 'Boris', email: 'boris@mallach.fr' }],
     subject: 'Revue technique v1.0',
     preview: 'Tout est prêt pour la recette finale.',
-    receivedAt: new Date().toISOString(),
+    receivedAt: '2026-11-28T00:00:00.000Z',
     keywords: { $seen: true },
     textBody: [{ partId: '1', type: 'text/plain' }],
     htmlBody: [],
@@ -49,6 +49,15 @@ function installMockApi(page: import('@playwright/test').Page) {
             username: 'boris@mallach.fr'
           }
         ])
+      });
+    }
+
+    if (url.pathname.endsWith('/events')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'text/event-stream',
+        headers: { 'Cache-Control': 'no-cache' },
+        body: ': ping\n\n'
       });
     }
 
