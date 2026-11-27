@@ -1,6 +1,7 @@
 <script lang="ts">
   import { countThreadAttachments, pickReplyTargetId } from './lib/threadHelpers';
   import { createUndoSendQueue, UNDO_SEND_DELAY_MS } from './lib/undoSend';
+  import { createOutboxStore } from './lib/outbox';
   import { createDraftDebounceController } from './lib/draftDebounce';
   import { computeNextSelectionIndex, resolveMailShortcut } from './lib/keyboardShortcuts';
   import { onDestroy, onMount } from 'svelte';
@@ -270,11 +271,57 @@
 
   let undoSendBanner = $state<{ id: string; label: string } | null>(null);
 
+  const offlineOutbox = createOutboxStore<PendingSendItem>();
+  let isOffline = $state(typeof navigator !== 'undefined' ? !navigator.onLine : false);
+  let outboxCount = $state(offlineOutbox.list().length);
+
+  async function flushOfflineOutbox() {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+    const res = await offlineOutbox.flush(async (entry) => {
+      const p = entry.payload;
+      await sendEmail(p.accountId, p.to, p.subject, p.text, p.files, p.draftId);
+    });
+    outboxCount = res.remaining;
+    if (res.processed > 0) {
+      if (activeAccountId) mailboxes = await fetchMailboxes(activeAccountId);
+      showToast(`${res.processed} message(s) en attente envoyé(s).`);
+    }
+  }
+
+  $effect(() => {
+    if (typeof window === 'undefined') return;
+    const onOnline = () => {
+      isOffline = false;
+      void flushOfflineOutbox();
+    };
+    const onOffline = () => {
+      isOffline = true;
+    };
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  });
+
   const undoSendQueue = createUndoSendQueue<PendingSendItem>(async (item) => {
     undoSendBanner = null;
-    await sendEmail(item.accountId, item.to, item.subject, item.text, item.files, item.draftId);
-    mailboxes = await fetchMailboxes(item.accountId);
-    showToast('Message envoyé.');
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      offlineOutbox.enqueue('send_email', item);
+      outboxCount = offlineOutbox.list().length;
+      showToast('Hors-ligne : message placé dans la boîte d’envoi.');
+      return;
+    }
+    try {
+      await sendEmail(item.accountId, item.to, item.subject, item.text, item.files, item.draftId);
+      mailboxes = await fetchMailboxes(item.accountId);
+      showToast('Message envoyé.');
+    } catch {
+      offlineOutbox.enqueue('send_email', item);
+      outboxCount = offlineOutbox.list().length;
+      showToast('Réseau indisponible : message mis en file Outbox.');
+    }
   }, UNDO_SEND_DELAY_MS);
 
   function cancelPendingSend() {
@@ -1482,3 +1529,34 @@
     <option value={addr}></option>
   {/each}
 </datalist>
+
+{#if selectedIds.length > 0}
+  <div
+    data-testid="floating-bulk-bar"
+    class="env-card fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-2xl border px-4 py-2.5 shadow-2xl backdrop-blur-md"
+  >
+    <span class="env-text text-xs font-semibold">{selectedIds.length} sélectionné(s)</span>
+    <button
+      type="button"
+      onclick={() => void handleBulkArchive()}
+      class="env-accent-bg rounded-xl px-3 py-1.5 text-xs font-semibold"
+    >
+      Archiver
+    </button>
+    <button
+      type="button"
+      onclick={() => (selectedIds = [])}
+      class="env-input env-muted rounded-xl border px-2.5 py-1.5 text-xs"
+    >
+      ✕
+    </button>
+  </div>
+{/if}
+{#if isOffline || outboxCount > 0}
+  <div class="env-subtle env-border fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs shadow-lg">
+    <span>{isOffline ? '📡 Hors-ligne' : '📤 En attente'}</span>
+    {#if outboxCount > 0}
+      <span class="font-semibold">({outboxCount} Outbox)</span>
+    {/if}
+  </div>
+{/if}
