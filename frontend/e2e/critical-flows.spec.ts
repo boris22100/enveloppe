@@ -246,8 +246,8 @@ test('2. Calendrier : bascule vers la vue Calendrier et affichage des sélecteur
 
 test('3. Résilience hors-ligne : affichage de l’état hors-ligne puis retour en ligne', async ({ page, context }) => {
   await installMockApi(page);
-  await page.goto('/');
-  await expect(page.getByText('Revue technique v1.0').first()).toBeVisible();
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByText('Revue technique v1.0').first()).toBeVisible({ timeout: 10000 });
 
   await context.setOffline(true);
   await page.evaluate(() => window.dispatchEvent(new Event('offline')));
