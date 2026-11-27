@@ -220,7 +220,11 @@ function installMockApi(page: import('@playwright/test').Page) {
 
 test('1. Messagerie : affichage du message, lecture du contenu et thème clair/sombre', async ({ page }) => {
   await installMockApi(page);
+  const jmapApiDone = page.waitForResponse(
+    (res) => res.url().includes('/api/jmap/') && res.url().endsWith('/api') && res.request().method() === 'POST'
+  );
   await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await jmapApiDone;
 
   const subjectItem = page.getByText('Revue technique v1.0').first();
   await expect(subjectItem).toBeVisible({ timeout: 10000 });
