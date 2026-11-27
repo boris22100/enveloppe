@@ -236,6 +236,8 @@ interface ContactEntry { name: string; email: string; }
   }
 
   let taskFilter = $state<'all' | 'todo' | 'completed'>('all');
+  let createRecurrencePreset = $state<'none' | 'daily' | 'weekly' | 'monthly' | 'yearly'>('none');
+  let createDurationMinutes = $state<number>(60);
 
   function taskProgressOf(ev: JSCalendarEvent): 'completed' | 'needs-action' {
     return ev.categories?.['Terminée'] ? 'completed' : 'needs-action';
@@ -454,7 +456,22 @@ interface ContactEntry { name: string; email: string; }
       const invitees = kind === 'event'
         ? inviteesText.split(/[,;\s]+/).map((s) => s.trim()).filter((s) => s.includes('@'))
         : [];
-      await createEvent(accountId, defaultCalId, title, start, description, kind, invitees);
+      const created = await createEvent(accountId, defaultCalId, title, start, description, kind, invitees);
+      const createdId = (created as any)?.id || (created as any)?.event?.id;
+      if (createdId && kind === 'event') {
+        const extraPatch: Record<string, any> = {};
+        if (createDurationMinutes > 0 && createDurationMinutes !== 60) {
+          extraPatch.duration = `PT${createDurationMinutes}M`;
+        }
+        if (createRecurrencePreset !== 'none') {
+          extraPatch.recurrenceRules = [{ '@type': 'RecurrenceRule', frequency: createRecurrencePreset }];
+        }
+        if (Object.keys(extraPatch).length > 0) {
+          await updateEvent(accountId, createdId, extraPatch);
+        }
+      }
+      createRecurrencePreset = 'none';
+      createDurationMinutes = 60;
       if (kind === 'event' && invitees.length > 0) {
         await dispatchEventInvitationIcs(title, start, description, invitees);
       }
@@ -1056,6 +1073,22 @@ interface ContactEntry { name: string; email: string; }
         </div>
 
         <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <label class="space-y-1">
+              <span class="env-muted block">Récurrence</span>
+              <select bind:value={createRecurrencePreset} class="env-input w-full rounded-lg border px-2.5 py-1.5">
+                <option value="none">Aucune</option>
+                <option value="daily">Quotidienne</option>
+                <option value="weekly">Hebdomadaire</option>
+                <option value="monthly">Mensuelle</option>
+                <option value="yearly">Annuelle</option>
+              </select>
+            </label>
+            <label class="space-y-1">
+              <span class="env-muted block">Durée (min)</span>
+              <input type="number" min="5" max="1440" step="5" bind:value={createDurationMinutes} class="env-input w-full rounded-lg border px-2.5 py-1.5" />
+            </label>
+          </div>
           <input
             bind:value={title}
             aria-label="Titre"

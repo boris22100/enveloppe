@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { countThreadAttachments, pickReplyTargetId } from './lib/threadHelpers';
   import { createUndoSendQueue, UNDO_SEND_DELAY_MS } from './lib/undoSend';
   import { createDraftDebounceController } from './lib/draftDebounce';
   import { computeNextSelectionIndex, resolveMailShortcut } from './lib/keyboardShortcuts';
@@ -182,6 +183,7 @@
     threadItems: CachedEmail[];
     unreadCount: number;
     hasAttachment: boolean;
+    attachmentCount: number;
   }
 
   let displayedEntries = $derived.by<MailListEntry[]>(() => {
@@ -191,7 +193,8 @@
         lead: m,
         threadItems: [m],
         unreadCount: m.isUnread ? 1 : 0,
-        hasAttachment: Boolean(m.hasAttachment)
+        hasAttachment: Boolean(m.hasAttachment),
+        attachmentCount: m.hasAttachment ? 1 : 0
       }));
     }
     const map = new Map<string, CachedEmail[]>();
@@ -212,9 +215,24 @@
         lead,
         threadItems: items,
         unreadCount: items.filter((x) => x.isUnread).length,
-        hasAttachment: items.some((x) => Boolean(x.hasAttachment))
+        hasAttachment: items.some((x) => Boolean(x.hasAttachment)),
+        attachmentCount: countThreadAttachments(
+          items.map((x) => ({ id: x.id, isUnread: x.isUnread, attachmentCount: x.hasAttachment ? 1 : 0 }))
+        )
       };
     });
+  });
+
+  let replyTargetEmailId = $derived.by<string>(() => {
+    if (!selectedEmail) return '';
+    const tKey = selectedEmail.threadId || selectedEmail.id;
+    const sameThread = emails.filter((m) => (m.threadId || m.id) === tKey);
+    const meta = [...sameThread].reverse().map((m) => ({
+      id: m.id,
+      isUnread: m.isUnread,
+      attachmentCount: m.hasAttachment ? 1 : 0
+    }));
+    return pickReplyTargetId(meta, selectedEmail.id);
   });
 
   let activeThreadMessages = $derived.by<ThreadMessageItem[]>(() => {
