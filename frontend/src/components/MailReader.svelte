@@ -49,6 +49,49 @@
   } = $props();
 
   let allowImages = $state(false);
+  let previewAtt = $state<Attachment | null>(null);
+  let previewText = $state<string>('');
+  let previewLoading = $state(false);
+
+  function canInlinePreview(att: Attachment): 'image' | 'pdf' | 'text' | null {
+    const mime = (att.type || '').toLowerCase();
+    const name = (att.name || '').toLowerCase();
+    if (mime.startsWith('image/')) return 'image';
+    if (mime === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
+    if (
+      mime.startsWith('text/') ||
+      mime === 'application/json' ||
+      mime === 'application/xml' ||
+      /\.(txt|md|csv|json|xml|log|yaml|yml)$/i.test(name)
+    ) {
+      return 'text';
+    }
+    return null;
+  }
+
+  async function toggleAttachmentPreview(att: Attachment) {
+    if (previewAtt?.blobId === att.blobId) {
+      previewAtt = null;
+      previewText = '';
+      return;
+    }
+    previewAtt = att;
+    previewText = '';
+    if (canInlinePreview(att) === 'text') {
+      previewLoading = true;
+      try {
+        const res = await fetch(getDownloadUrl(accountId, jmapAccountId, att));
+        if (res.ok) {
+          const raw = await res.text();
+          previewText = raw.slice(0, 20000);
+        }
+      } catch {
+        previewText = 'Impossible de charger l\'aperçu texte.';
+      } finally {
+        previewLoading = false;
+      }
+    }
+  }
   let cidDataUrls = $state<Record<string, string>>({});
 
   let visibleAttachments = $derived(
@@ -142,7 +185,7 @@
     icsBusy = true;
     icsError = '';
     try {
-      await respondToIcsInvitation(accountId, icsRaw, choice);
+      await respondToIcsInvitation(accountId, icsRaw, choice, { sendReplyMail: true, attendeeEmail: to || undefined });
       icsStatus = choice;
     } catch (err: any) {
       icsError = err?.message || 'Impossible de mettre à jour le calendrier';
@@ -242,6 +285,13 @@
           {new Date(icsInvite.start).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })}
           {#if icsInvite.location} · {icsInvite.location}{/if}
         </p>
+        {#if icsInvite.organizerEmail || icsInvite.attendees.length > 0 || icsInvite.exdates.length > 0}
+          <p class="env-faint text-xs">
+            {#if icsInvite.organizerEmail}Organisateur : {icsInvite.organizerName || icsInvite.organizerEmail}{/if}
+            {#if icsInvite.attendees.length > 0} · {icsInvite.attendees.length} participant(s) ({icsInvite.attendees.map((a) => `${a.name || a.email}: ${a.partstat}`).join(', ')}){/if}
+            {#if icsInvite.exdates.length > 0} · {icsInvite.exdates.length} exclusion(s) EXDATE{/if}
+          </p>
+        {/if}
         {#if icsStatus === 'accepted' || icsStatus === 'tentative'}
           <p class="env-accent-text text-xs font-medium">✓ Rendez-vous intégré au calendrier ({icsStatus === 'accepted' ? 'confirmé' : 'provisoire'})</p>
         {:else if icsStatus === 'declined'}
@@ -286,6 +336,39 @@
           <span class="env-faint">({Math.max(1, Math.round(att.size / 1024))} Ko)</span>
         </a>
       {/each}
+    </div>
+  {/if}
+
+  {#if previewAtt}
+    <div class="mt-3 rounded-xl border p-3 env-card">
+      <div class="mb-2 flex items-center justify-between gap-2">
+        <span class="text-xs font-semibold">Aperçu : {previewAtt.name}</span>
+        <button
+          type="button"
+          onclick={() => { previewAtt = null; previewText = ''; }}
+          class="rounded border px-2 py-0.5 text-xs env-btn-secondary"
+        >
+          Fermer l'aperçu
+        </button>
+      </div>
+      {#if canInlinePreview(previewAtt) === 'image'}
+        <img
+          src={getDownloadUrl(accountId, jmapAccountId, previewAtt)}
+          alt={previewAtt.name}
+          class="max-h-96 w-auto rounded-lg object-contain"
+        />
+      {:else if canInlinePreview(previewAtt) === 'pdf'}
+        <iframe
+          src={getDownloadUrl(accountId, jmapAccountId, previewAtt)}
+          title={previewAtt.name}
+          sandbox=""
+          class="h-96 w-full rounded-lg border-0 bg-white"
+        ></iframe>
+      {:else if previewLoading}
+        <p class="text-xs env-faint">Chargement de l'aperçu…</p>
+      {:else}
+        <pre class="max-h-80 overflow-auto rounded-lg p-2.5 text-xs whitespace-pre-wrap">{previewText}</pre>
+      {/if}
     </div>
   {/if}
 

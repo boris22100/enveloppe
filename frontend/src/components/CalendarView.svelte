@@ -103,6 +103,10 @@ interface ContactEntry { name: string; email: string; }
   let cursor = $state(new Date());
 
   let showModal = $state(false);
+  let dragRangeYmd = $state<string | null>(null);
+  let dragRangeStartSlot = $state<string | null>(null);
+  let dragRangeEndSlot = $state<string | null>(null);
+  let rangeEndTime = $state('');
   let kind = $state<CalendarItemKind>('event');
   let title = $state('');
   let participantsInput = $state('');
@@ -152,7 +156,15 @@ interface ContactEntry { name: string; email: string; }
     return copy;
   }
 
-  function openCreateModal(ymd: string, hour = '09') {
+  function addMinutesToSlot(slotHHMM: string, mins: number): string {
+    const [hStr, mStr = '00'] = normalizeSlotTime(slotHHMM).split(':');
+    const total = Math.min(23 * 60 + 59, Math.max(0, Number(hStr) * 60 + Number(mStr) + mins));
+    const nh = String(Math.floor(total / 60)).padStart(2, '0');
+    const nm = String(total % 60).padStart(2, '0');
+    return `${nh}:${nm}`;
+  }
+
+  function openCreateModal(ymd: string, hour = '09', endSlot?: string) {
     draggedEvent = null;
     dragOverYmd = null;
     dragOverSlotKey = null;
@@ -161,8 +173,42 @@ interface ContactEntry { name: string; email: string; }
     title = '';
     description = '';
     inviteesText = '';
-    start = `${ymd}T${normalizeSlotTime(hour)}:00`;
+    const normStart = normalizeSlotTime(hour);
+    start = `${ymd}T${normStart}:00`;
+    const normEnd = endSlot ? addMinutesToSlot(endSlot, 30) : addMinutesToSlot(normStart, 60);
+    rangeEndTime = `${ymd}T${normEnd}:00`;
     showModal = true;
+  }
+
+  function handleSlotRangeStart(ymd: string, slot: string) {
+    dragRangeYmd = ymd;
+    dragRangeStartSlot = normalizeSlotTime(slot);
+    dragRangeEndSlot = normalizeSlotTime(slot);
+  }
+
+  function handleSlotRangeMove(ymd: string, slot: string) {
+    if (dragRangeYmd === ymd && dragRangeStartSlot) {
+      const norm = normalizeSlotTime(slot);
+      dragRangeEndSlot = norm >= dragRangeStartSlot ? norm : dragRangeStartSlot;
+    }
+  }
+
+  function handleSlotRangeCommit(ymd: string, slot: string) {
+    if (dragRangeYmd === ymd && dragRangeStartSlot) {
+      const sSlot = dragRangeStartSlot;
+      const eSlot = normalizeSlotTime(slot) >= sSlot ? normalizeSlotTime(slot) : sSlot;
+      dragRangeYmd = null;
+      dragRangeStartSlot = null;
+      dragRangeEndSlot = null;
+      if (eSlot !== sSlot) {
+        openCreateModal(ymd, sSlot, eSlot);
+        return true;
+      }
+    }
+    dragRangeYmd = null;
+    dragRangeStartSlot = null;
+    dragRangeEndSlot = null;
+    return false;
   }
 
   function eventsForDate(ymd: string): JSCalendarEvent[] {
@@ -803,7 +849,9 @@ interface ContactEntry { name: string; email: string; }
             ondragover={(e) => { e.preventDefault(); dragOverSlotKey = cellKey; }}
             ondragleave={() => { if (dragOverSlotKey === cellKey) dragOverSlotKey = null; }}
             ondrop={(e) => handleDropOnTarget(e, dayYmd, slot)}
-            onclick={() => openCreateModal(dayYmd, slot)}
+            onmousedown={() => handleSlotRangeStart(dayYmd, slot)}
+            onmouseenter={() => handleSlotRangeMove(dayYmd, slot)}
+            onclick={() => { if (!handleSlotRangeCommit(dayYmd, slot)) openCreateModal(dayYmd, slot); }}
             onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && openCreateModal(dayYmd, slot)}
             class="env-hover flex min-h-10 cursor-pointer items-start gap-4 rounded-lg px-4 py-1.5 transition-colors {slot.endsWith(':30') ? 'opacity-95' : ''} {dragOverSlotKey === cellKey ? 'env-accent-soft ring-2 ring-[var(--env-accent)]' : ''}"
           >

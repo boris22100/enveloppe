@@ -73,7 +73,7 @@
       loading = false;
     }
   }
-  let appVersion = $state('0.8.7');
+  let appVersion = $state('0.8.8');
   $effect(() => {
     fetch('/api/version')
       .then((r) => (r.ok ? r.json() : null))

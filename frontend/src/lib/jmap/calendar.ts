@@ -1,4 +1,4 @@
-import { getPrimaryAccountId, jmapCall } from './client';
+import { getPrimaryAccountId, jmapCall, sendEmail, uploadAttachment } from './client';
 
 const CAP = 'urn:ietf:params:jmap:calendars';
 
@@ -218,12 +218,23 @@ export function expandEventOccurrences(
   return out;
 }
 
+export interface IcsAttendee {
+  email: string;
+  name?: string;
+  partstat: 'ACCEPTED' | 'DECLINED' | 'TENTATIVE' | 'NEEDS-ACTION';
+}
+
 export interface ParsedIcsInvitation {
   uid: string;
   title: string;
   start: string;
+  end?: string;
   location: string;
   description: string;
+  organizerEmail?: string;
+  organizerName?: string;
+  attendees: IcsAttendee[];
+  exdates: string[];
 }
 
 const WINDOWS_TZ_TO_IANA: Record<string, string> = {
@@ -366,22 +377,99 @@ export function parseIcsInvitation(icsText: string): ParsedIcsInvitation | null 
     }
     return '';
   };
+
   const title = getField('SUMMARY') || 'Invitation';
   const rawDtStartLine = lines.find((l) => /^DTSTART([;:])/i.test(l.trim())) ?? '';
   const dtstart = rawDtStartLine || getField('DTSTART');
+  const rawDtEndLine = lines.find((l) => /^DTEND([;:])/i.test(l.trim())) ?? '';
+  const dtend = rawDtEndLine || getField('DTEND');
+
+  let organizerEmail: string | undefined;
+  let organizerName: string | undefined;
+  const orgLine = lines.find((l) => /^ORGANIZER([;:])/i.test(l.trim()));
+  if (orgLine) {
+    const cnMatch = orgLine.match(/CN="?([^";:]+)"?/i);
+    if (cnMatch) organizerName = cnMatch[1].trim();
+    const mailMatch = orgLine.match(/mailto:([^\s;]+)/i);
+    if (mailMatch) organizerEmail = mailMatch[1].trim();
+  }
+
+  const validPartstats = new Set(['ACCEPTED', 'DECLINED', 'TENTATIVE', 'NEEDS-ACTION']);
+  const attendees: IcsAttendee[] = [];
+  for (const line of lines) {
+    if (!/^ATTENDEE([;:])/i.test(line.trim())) continue;
+    const mailMatch = line.match(/mailto:([^\s;]+)/i);
+    if (!mailMatch) continue;
+    const psMatch = line.match(/PARTSTAT=([A-Z-]+)/i);
+    const rawPs = (psMatch?.[1] || 'NEEDS-ACTION').toUpperCase();
+    const partstat = (validPartstats.has(rawPs) ? rawPs : 'NEEDS-ACTION') as IcsAttendee['partstat'];
+    const cnMatch = line.match(/CN="?([^";:]+)"?/i);
+    attendees.push({
+      email: mailMatch[1].trim(),
+      name: cnMatch?.[1]?.trim(),
+      partstat
+    });
+  }
+
+  const exdates: string[] = [];
+  for (const line of lines) {
+    if (!/^EXDATE([;:])/i.test(line.trim())) continue;
+    const colonIdx = line.indexOf(':');
+    if (colonIdx === -1) continue;
+    for (const token of line.slice(colonIdx + 1).split(',')) {
+      if (token.trim()) {
+        exdates.push(parseIcsDateToLocal(`${line.slice(0, colonIdx)}:${token.trim()}`));
+      }
+    }
+  }
+
   return {
     uid: getField('UID') || `ics-${Date.now()}`,
     title,
     start: dtstart ? parseIcsDateToLocal(dtstart) : new Date().toISOString().slice(0, 19),
+    end: dtend ? parseIcsDateToLocal(dtend) : undefined,
     location: getField('LOCATION'),
-    description: getField('DESCRIPTION')
+    description: getField('DESCRIPTION'),
+    organizerEmail,
+    organizerName,
+    attendees,
+    exdates
   };
+}
+
+export async function sendIcsReplyEmail(
+  accountId: string,
+  icsText: string,
+  response: 'accepted' | 'tentative' | 'declined',
+  attendeeEmail = 'attendee@example.invalid'
+): Promise<boolean> {
+  const inv = parseIcsInvitation(icsText);
+  if (!inv?.organizerEmail) return false;
+  const replyIcs = buildIcsReply(icsText, response, attendeeEmail);
+  const replyFile = new File([replyIcs], 'reply.ics', {
+    type: 'text/calendar; charset=utf-8; method=REPLY'
+  });
+  const uploaded = await uploadAttachment(accountId, replyFile);
+  const labelMap = {
+    accepted: 'Accepté',
+    tentative: 'Peut-être',
+    declined: 'Refusé'
+  } as const;
+  await sendEmail(
+    accountId,
+    inv.organizerEmail,
+    `Réponse (${labelMap[response]}) : ${inv.title}`,
+    `Réponse à l'invitation "${inv.title}" : ${labelMap[response]}.`,
+    [uploaded]
+  );
+  return true;
 }
 
 export async function respondToIcsInvitation(
   accountId: string,
   icsText: string,
-  response: 'accepted' | 'tentative' | 'declined'
+  response: 'accepted' | 'tentative' | 'declined',
+  options?: { sendReplyMail?: boolean; attendeeEmail?: string }
 ): Promise<ParsedIcsInvitation> {
   const inv = parseIcsInvitation(icsText);
   if (!inv) throw new Error('Invitation .ics invalide');
@@ -429,6 +517,9 @@ export async function respondToIcsInvitation(
       },
       'icsc0'
     ]], [CAP]);
+  }
+  if (options?.sendReplyMail) {
+    await sendIcsReplyEmail(accountId, icsText, response, options.attendeeEmail);
   }
   return inv;
 }

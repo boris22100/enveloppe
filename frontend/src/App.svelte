@@ -37,7 +37,7 @@
     themeMode === 'bowiz' ? '💠' : themeMode === 'dark' ? '🌙' : '☀️'
   );
 
-  let appVersion = $state(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.8.7');
+  let appVersion = $state(typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.8.8');
   let accounts = $state<Account[]>([]);
   let loaded = $state(false);
   let activeAccountId = $state<string | null>(null);

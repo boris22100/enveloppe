@@ -1,5 +1,35 @@
 import DOMPurify from 'dompurify';
 
+function darkenLightInlineColors(html: string): string {
+  return html.replace(
+    /style\s*=\s*(["'])(.*?)\1/gi,
+    (_full, quote: string, styleBody: string) => {
+      let updated = styleBody.replace(
+        /(background(?:-color)?\s*:\s*)(rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*([\d.]+))?\s*\))/gi,
+        (m, prop: string, _fn: string, rStr: string, gStr: string, bStr: string, aStr?: string) => {
+          const r = Number(rStr), g = Number(gStr), b = Number(bStr);
+          const alpha = aStr !== undefined ? Number(aStr) : 1;
+          const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          if (alpha > 0.2 && luminance > 185) {
+            return `${prop}#1e242d`;
+          }
+          return m;
+        }
+      );
+      updated = updated.replace(
+        /(background(?:-color)?\s*:\s*)(hsla?\(\s*\d{1,3}(?:deg)?\s*,\s*\d{1,3}%\s*,\s*(\d{1,3})%(?:\s*,\s*[\d.]+)?\s*\))/gi,
+        (m, prop: string, _fn: string, lStr: string) => {
+          if (Number(lStr) > 75) {
+            return `${prop}#1e242d`;
+          }
+          return m;
+        }
+      );
+      return `style=${quote}${updated}${quote}`;
+    }
+  );
+}
+
 export function buildSandboxedEmailDoc(
   rawHtml: string,
   allowRemoteImages = false,
@@ -81,6 +111,6 @@ export function buildSandboxedEmailDoc(
   ${themeCss}
 </style>
 </head>
-<body>${clean}</body>
+<body>${isDark ? darkenLightInlineColors(clean) : clean}</body>
 </html>`;
 }

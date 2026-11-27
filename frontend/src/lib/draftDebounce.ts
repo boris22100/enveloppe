@@ -8,14 +8,23 @@ export interface DraftFields {
   text: string;
 }
 
+export interface DraftDebounceHooks {
+  onSyncRemote?: (fields: DraftFields) => Promise<void> | void;
+  delayMs?: number;
+}
+
 export function hasDraftContent(fields: DraftFields): boolean {
   return Boolean(fields.to.trim() || fields.subject.trim() || fields.text.trim());
 }
 
 export function createDraftDebounceController(
   onSaveComplete: () => void,
-  delayMs = DRAFT_SAVE_DEBOUNCE_MS
+  delayOrHooks: number | DraftDebounceHooks = DRAFT_SAVE_DEBOUNCE_MS
 ) {
+  const delayMs =
+    typeof delayOrHooks === 'number' ? delayOrHooks : (delayOrHooks.delayMs ?? DRAFT_SAVE_DEBOUNCE_MS);
+  const onSyncRemote = typeof delayOrHooks === 'number' ? undefined : delayOrHooks.onSyncRemote;
+
   let phase: DraftSavePhase = 'idle';
   let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -35,6 +44,14 @@ export function createDraftDebounceController(
     timer = setTimeout(() => {
       timer = null;
       phase = 'saved';
+      try {
+        const res = onSyncRemote?.(fields);
+        if (res && typeof (res as Promise<void>).catch === 'function') {
+          void (res as Promise<void>).catch(() => {});
+        }
+      } catch {
+        // ignore sync errors
+      }
       onSaveComplete();
     }, delayMs);
     return phase;
