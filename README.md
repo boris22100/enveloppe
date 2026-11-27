@@ -141,6 +141,11 @@ Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
 * **Green IT** : contrôle automatique de la taille du bundle compilé (`frontend/dist`) et de la taille de l'image Docker finale, avec mise en cache des dépendances et couches de build.
 * **Sécurité conteneur** : scan de l'image Docker construite avec Trivy (`CRITICAL` et `HIGH` bloquants, `ignore-unfixed: true`) avant publication multi-architecture (`linux/amd64`, `linux/arm64`) sur `ghcr.io`.
 
+## 🆕 Nouveautés v0.9.3
+
+- **Tests backend (`backend/internal/httpapi/handlers_test.go`)** : ajout de tests `httptest` couvrant `/api/jmap/session` avec cookie chiffré et serveur JMAP simulé, ainsi que `/api/auth/oidc/config`.
+- **Budget bundle CI (`.github/workflows/docker.yml`)** : contrôle automatique de la taille de `frontend/dist` (`<= 1500 KiB`, mesuré à ~413 KiB).
+
 ## 🆕 Nouveautés v0.9.2
 
 - **Résilience hors-ligne (`outbox.ts` & `App.svelte`)** : mise en file persistante des envois lorsque le réseau est indisponible, rejeu ordonné automatique au retour en ligne (`online`) et indicateur d'état hors-ligne / Outbox.
