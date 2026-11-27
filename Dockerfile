@@ -11,7 +11,8 @@ FROM golang:alpine AS backend-builder
 WORKDIR /build
 COPY backend/ ./
 COPY --from=frontend-builder /build/dist ./static
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /jmap-pwa .
+ARG APP_VERSION=""
+RUN LDFLAGS="-s -w"; if [ -n "$APP_VERSION" ]; then LDFLAGS="$LDFLAGS -X main.appVersion=$APP_VERSION"; fi; CGO_ENABLED=0 GOOS=linux go build -ldflags="$LDFLAGS" -o /jmap-pwa .
 
 # Étape 3 : Image finale minimale (~12 Mo)
 FROM gcr.io/distroless/static-debian12:nonroot
