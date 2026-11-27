@@ -16,7 +16,7 @@
     x: number;
     y: number;
     type: 'mail' | 'mailbox';
-    mail?: CachedEmail | Record<string, unknown>;
+    mail?: CachedEmail & { keywords?: Record<string, boolean> };
     mailbox?: Mailbox;
     mailboxes?: Mailbox[];
     onClose: () => void;

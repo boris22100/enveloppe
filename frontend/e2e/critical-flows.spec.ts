@@ -9,7 +9,6 @@ const JUNK_ID = 'mb-junk';
 const ARCHIVE_ID = 'mb-archive';
 
 function installMockApi(page: import('@playwright/test').Page) {
-  const sentPayloads: unknown[] = [];
   let queryIdsByCall: Record<string, string[]> = {};
 
   const sampleEmail = {
@@ -34,7 +33,7 @@ function installMockApi(page: import('@playwright/test').Page) {
     const method = route.request().method();
 
     if (url.pathname === '/api/version') {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ version: '0.10.2-e2e' }) });
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ version: '0.10.3-e2e' }) });
     }
 
     if (url.pathname === '/api/accounts') {
@@ -45,9 +44,9 @@ function installMockApi(page: import('@playwright/test').Page) {
           {
             id: ACCOUNT_ID,
             label: 'Boris E2E',
-            username: 'boris@mallach.fr',
-            serverUrl: 'https://jmap.example.test',
-            authType: 'password'
+            color: '#48B17F',
+            host: 'https://jmap.example.test',
+            username: 'boris@mallach.fr'
           }
         ])
       });
@@ -95,12 +94,12 @@ function installMockApi(page: import('@playwright/test').Page) {
               accountId: ACCOUNT_ID,
               state: 's-mb-1',
               list: [
-                { id: INBOX_ID, name: 'Boîte de réception', role: 'inbox', unreadEmails: 1, totalEmails: 1 },
-                { id: SENT_ID, name: 'Messages envoyés', role: 'sent', unreadEmails: 0, totalEmails: 0 },
-                { id: DRAFTS_ID, name: 'Brouillons', role: 'drafts', unreadEmails: 0, totalEmails: 0 },
-                { id: TRASH_ID, name: 'Corbeille', role: 'trash', unreadEmails: 0, totalEmails: 0 },
-                { id: JUNK_ID, name: 'Courrier indésirable', role: 'junk', unreadEmails: 0, totalEmails: 0 },
-                { id: ARCHIVE_ID, name: 'Archives', role: 'archive', unreadEmails: 0, totalEmails: 0 }
+                { id: INBOX_ID, name: 'Boîte de réception', role: 'inbox', parentId: null, sortOrder: 1, unreadEmails: 1, totalEmails: 1 },
+                { id: SENT_ID, name: 'Messages envoyés', role: 'sent', parentId: null, sortOrder: 2, unreadEmails: 0, totalEmails: 0 },
+                { id: DRAFTS_ID, name: 'Brouillons', role: 'drafts', parentId: null, sortOrder: 3, unreadEmails: 0, totalEmails: 0 },
+                { id: TRASH_ID, name: 'Corbeille', role: 'trash', parentId: null, sortOrder: 4, unreadEmails: 0, totalEmails: 0 },
+                { id: JUNK_ID, name: 'Courrier indésirable', role: 'junk', parentId: null, sortOrder: 5, unreadEmails: 0, totalEmails: 0 },
+                { id: ARCHIVE_ID, name: 'Archives', role: 'archive', parentId: null, sortOrder: 6, unreadEmails: 0, totalEmails: 0 }
               ],
               notFound: []
             },
@@ -146,13 +145,6 @@ function installMockApi(page: import('@playwright/test').Page) {
             },
             callId
           ]);
-        } else if (fn === 'Email/set') {
-          sentPayloads.push(args);
-          responses.push([
-            'Email/set',
-            { accountId: ACCOUNT_ID, oldState: 's-em-1', newState: 's-em-2', created: { 'draft-1': { id: 'm-sent-1' } } },
-            callId
-          ]);
         } else if (fn === 'Calendar/get') {
           responses.push([
             'Calendar/get',
@@ -174,12 +166,6 @@ function installMockApi(page: import('@playwright/test').Page) {
           responses.push([
             'CalendarEvent/get',
             { accountId: ACCOUNT_ID, state: 's-ce-1', list: [], notFound: [] },
-            callId
-          ]);
-        } else if (fn === 'CalendarEvent/set') {
-          responses.push([
-            'CalendarEvent/set',
-            { accountId: ACCOUNT_ID, oldState: 's-ce-1', newState: 's-ce-2', created: { 'ev-1': { id: 'ev-created-1' } } },
             callId
           ]);
         } else if (fn === 'ContactCard/get' || fn === 'ContactCard/query') {
@@ -204,35 +190,45 @@ function installMockApi(page: import('@playwright/test').Page) {
   });
 }
 
-test('1. Messagerie : chargement de l’interface et lecture d’un message', async ({ page }) => {
+test('1. Messagerie : affichage du message, lecture du contenu et thème clair/sombre', async ({ page }) => {
   await installMockApi(page);
   await page.goto('/');
-  await expect(page.locator('body')).not.toBeEmpty();
-  const subject = page.getByText('Revue technique v1.0').first();
-  if (await subject.isVisible()) {
-    await subject.click();
-    await expect(page.getByText(/Tout est prêt pour la recette finale/i).first()).toBeVisible();
-  }
+
+  const subjectItem = page.getByText('Revue technique v1.0').first();
+  await expect(subjectItem).toBeVisible();
+  await subjectItem.click();
+
+  await expect(page.getByText(/Tout est prêt pour la recette finale/i).first()).toBeVisible();
+
+  const lightBtn = page.getByRole('button', { name: 'Clair' });
+  await expect(lightBtn).toBeVisible();
+  await lightBtn.click();
+  await expect(lightBtn).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('2. Calendrier : bascule vers la vue Calendrier et affichage des vues', async ({ page }) => {
+test('2. Calendrier : bascule vers la vue Calendrier et affichage des sélecteurs de vue', async ({ page }) => {
   await installMockApi(page);
   await page.goto('/');
+
   const calBtn = page.getByRole('button', { name: /calendrier/i }).first();
-  if (await calBtn.isVisible()) {
-    await calBtn.click();
-    await expect(page.getByText(/Mois|Semaine|Jour/i).first()).toBeVisible();
-  }
+  await expect(calBtn).toBeVisible();
+  await calBtn.click();
+
+  await expect(page.getByRole('button', { name: /^mois$/i }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /^semaine$/i }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /^jour$/i }).first()).toBeVisible();
 });
 
-test('3. Résilience hors-ligne : passage offline puis retour online', async ({ page, context }) => {
+test('3. Résilience hors-ligne : affichage de l’état hors-ligne puis retour en ligne', async ({ page, context }) => {
   await installMockApi(page);
   await page.goto('/');
-  await expect(page.locator('body')).not.toBeEmpty();
+  await expect(page.getByText('Revue technique v1.0').first()).toBeVisible();
 
   await context.setOffline(true);
   await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+  await expect(page.getByText(/hors-ligne/i).first()).toBeVisible();
+
   await context.setOffline(false);
   await page.evaluate(() => window.dispatchEvent(new Event('online')));
-  await expect(page.locator('body')).not.toBeEmpty();
+  await expect(page.getByText('Revue technique v1.0').first()).toBeVisible();
 });

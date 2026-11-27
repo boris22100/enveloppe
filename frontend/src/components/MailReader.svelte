@@ -144,7 +144,34 @@
     });
   });
 
-  let isDarkTheme = $derived(getSavedTheme() !== 'light');
+  type MailThemeOverride = 'auto' | 'light' | 'dark';
+  const MAIL_THEME_KEY = 'enveloppe_mail_theme';
+
+  function loadMailThemeOverride(): MailThemeOverride {
+    if (typeof localStorage === 'undefined') return 'auto';
+    try {
+      const v = localStorage.getItem(MAIL_THEME_KEY);
+      if (v === 'light' || v === 'dark' || v === 'auto') return v;
+    } catch {}
+    return 'auto';
+  }
+
+  let mailThemeMode = $state<MailThemeOverride>(loadMailThemeOverride());
+
+  function setMailThemeMode(mode: MailThemeOverride): void {
+    mailThemeMode = mode;
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(MAIL_THEME_KEY, mode);
+      } catch {}
+    }
+  }
+
+  let isDarkTheme = $derived.by(() => {
+    if (mailThemeMode === 'light') return false;
+    if (mailThemeMode === 'dark') return true;
+    return getSavedTheme() !== 'light';
+  });
   let srcdoc = $derived(resolvedHtml ? buildSandboxedEmailDoc(resolvedHtml, allowImages, isDarkTheme) : '');
 
   let icsAttachment = $derived(
@@ -359,6 +386,29 @@
           class="max-h-96 w-auto rounded-lg object-contain"
         />
       {:else if canInlinePreview(previewAtt) === 'pdf'}
+          <div class="inline-flex items-center rounded-lg border p-0.5 text-[11px] env-border" role="group" aria-label="Thème du message">
+            <button
+              type="button"
+              onclick={() => setMailThemeMode('auto')}
+              aria-pressed={mailThemeMode === 'auto'}
+              class="rounded-md px-2 py-0.5 font-medium transition {mailThemeMode === 'auto' ? 'env-accent-soft env-accent-text' : 'env-muted env-hover'}"
+              title="Suivre le thème global"
+            >Auto</button>
+            <button
+              type="button"
+              onclick={() => setMailThemeMode('light')}
+              aria-pressed={mailThemeMode === 'light'}
+              class="rounded-md px-2 py-0.5 font-medium transition {mailThemeMode === 'light' ? 'env-accent-soft env-accent-text' : 'env-muted env-hover'}"
+              title="Afficher le message sur fond clair"
+            >Clair</button>
+            <button
+              type="button"
+              onclick={() => setMailThemeMode('dark')}
+              aria-pressed={mailThemeMode === 'dark'}
+              class="rounded-md px-2 py-0.5 font-medium transition {mailThemeMode === 'dark' ? 'env-accent-soft env-accent-text' : 'env-muted env-hover'}"
+              title="Afficher le message sur fond sombre"
+            >Sombre</button>
+          </div>
         <iframe
           src={getDownloadUrl(accountId, jmapAccountId, previewAtt)}
           title={previewAtt.name}

@@ -134,8 +134,8 @@
         limit: 100
       });
       serverSearchResults = list.map((e: any) => ({
-        uid: activeAccountId + ':' + e.id,
-        accountId: activeAccountId,
+        uid: (activeAccountId ?? '') + ':' + e.id,
+        accountId: activeAccountId ?? '',
         id: e.id,
         blobId: e.blobId,
         subject: e.subject || '(Sans objet)',
