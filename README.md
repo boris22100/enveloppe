@@ -6,18 +6,6 @@ Webmail **PWA** ultraléger, moderne, **100 % français** et **100 % JMAP** (*Ma
 
 > 📖 **Documentation complète** : consultez le **[Wiki Enveloppe](https://github.com/boris22100/enveloppe/wiki)** pour les guides détaillés d'[installation](https://github.com/boris22100/enveloppe/wiki/Installation), de [configuration avec ou sans SSO](https://github.com/boris22100/enveloppe/wiki/Configuration) et d'[utilisation](https://github.com/boris22100/enveloppe/wiki/Utilisation).
 
-## 🆕 Nouveautés v0.8.9
-
-- **Annulation d'envoi différée (*Undo Send*)** : file d'envoi différée sur 5 s (`undoSend.ts`) avec bandeau et bouton **Annuler** dans `App.svelte` (restauration de la composition si annulé, ou expédition JMAP à l'expiration).
-- **Calendrier & gestion des tâches (`JSCalendar`)** : filtre par statut (*Toutes*, *À faire*, *Terminées*) et bouton de bascule *Terminée / À faire* directement sur les tâches (vues mois, jour et modale de détail) dans `CalendarView.svelte`.
-- **Fils de discussion & tests** : ciblage du dernier message non lu d'un fil, cumul des pièces jointes par conversation (`threadHelpers.ts`), 11 suites Vitest (32 tests) et tests Go `httptest` sur `/api/auth/logout` et `/api/jmap/session`.
-
-## 🆕 Nouveautés v0.8.8
-
-- **Calendrier & invitations `.ics`** : support `DTEND;TZID=...`, `ORGANIZER`, `ATTENDEE` (`PARTSTAT`), `EXDATE`, envoi automatique de réponse `METHOD:REPLY` par e-mail JMAP vers l'organisateur et sélection de plage par glisser-déposer dans `CalendarView`.
-- **Messagerie, brouillons & clavier** : synchronisation serveur JMAP des brouillons (`$draft`), sélection clavier (`x`, `Shift+J`, `Shift+K`) avec extension d'intervalle et aperçu rapide des pièces jointes (images, PDF sandboxé, texte brut).
-- **Lecteur HTML sombre** : détection et assombrissement des fonds clairs inline (`rgb()`, `rgba()`, `hsl()`) dans `buildSandboxedEmailDoc`.
-
 ## ✨ Fonctionnalités
 
 * **Connexion OIDC / SSO automatique (PKCE)** : saisie de l'URL du serveur JMAP, détection automatique de `/.well-known/openid-configuration`, support **Authorization Code + PKCE (`S256`)** avec rafraîchissement transparent des jetons et support **CIMD** (`/oauth-client.json`). La connexion par identifiant/mot de passe d'application reste disponible en secours.
