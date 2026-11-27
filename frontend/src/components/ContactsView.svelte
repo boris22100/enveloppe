@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { errorMessage } from '../lib/errorMessage';
+  type ContactRecord = Partial<JSContact> & { id?: string; _id?: string; uid?: string; name?: string | { full?: string }; emails?: Record<string, { address?: string; value?: string } | string> | Array<{ value?: string; address?: string } | string>; phones?: Record<string, unknown> | Array<{ value?: string; number?: string } | string>; email?: string; phone?: string; fullName?: string; displayName?: string; note?: string; notes?: string };
   let editingContact = $state<any>(null);
   let editName = $state('');
   let editEmail = $state('');
@@ -6,14 +8,14 @@
   let editNotes = $state('');
   let editSaving = $state(false);
   let editError = $state('');
-  function openEditContact(item: any) {
+  function openEditContact(item: ContactRecord) {
     editingContact = item;
     editName = typeof item?.name === 'string' ? item.name : (item?.name?.full || item?.fullName || item?.displayName || '');
-    const emailVals = item?.emails ? Object.values(item.emails).map((v: any) => (typeof v === 'string' ? v : v?.address || v?.value || '')).filter(Boolean) : [];
+    const emailVals = item?.emails ? Object.values(item.emails).map((v: unknown) => (typeof v === 'string' ? v : (v as { address?: string; value?: string })?.address || (v as { address?: string; value?: string })?.value || '')).filter(Boolean) : [];
     const firstEmail = emailVals[0] || item?.email || '';
     editEmail = firstEmail;
     const firstPhone = Array.isArray(item?.phones)
-      ? (typeof item.phones[0] === 'string' ? item.phones[0] : item.phones[0]?.value || '')
+      ? (typeof item.phones[0] === 'string' ? item.phones[0] : (item.phones[0] as { value?: string; number?: string })?.value || (item.phones[0] as { number?: string })?.number || '')
       : (item?.phone || '');
     editPhone = firstPhone;
     editNotes = item?.notes || item?.note || '';
@@ -45,11 +47,11 @@
             notes: editNotes
           });
           if (typeof contacts !== 'undefined' && Array.isArray(contacts)) {
-            contacts = contacts.map((x: any) =>
-              ((x.id || x._id) === id
+            contacts = contacts.map((x) =>
+              ((x.id) === id
                 ? {
                     ...x,
-                    name: { ...(x.name || {}), full: editName.trim() },
+                    name: { full: editName.trim() },
                     emails: editEmail.trim() ? { e1: { address: editEmail.trim() } } : {},
                     phones: editPhone.trim() ? { p1: { number: editPhone.trim() } } : {}
                   }
@@ -91,11 +93,11 @@
         return;
       }
       if (typeof contacts !== 'undefined' && Array.isArray(contacts)) {
-        contacts = contacts.map((x: any) => ((x.id || x._id) === id ? { ...x, ...payload } : x));
+        contacts = contacts.map((x) => (x.id === id ? ({ ...x, ...payload } as JSContact) : x));
       }
       editingContact = null;
-    } catch (err: any) {
-      editError = err?.message || 'Erreur réseau lors de la mise à jour.';
+    } catch (err: unknown) {
+      editError = errorMessage(err, 'Erreur réseau lors de la mise à jour.');
     } finally {
       editSaving = false;
     }

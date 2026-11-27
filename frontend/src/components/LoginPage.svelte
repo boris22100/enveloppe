@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { errorMessage } from '../lib/errorMessage';
   let legalModal = $state<'legal' | 'privacy' | null>(null);
 
   let { onLoggedIn }: { onLoggedIn: () => void } = $props();
@@ -67,8 +68,8 @@
       });
       if (!res.ok) throw new Error(await res.text());
       onLoggedIn();
-    } catch (err: any) {
-      error = err.message;
+    } catch (err: unknown) {
+      error = errorMessage(err);
     } finally {
       loading = false;
     }

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { errorMessage } from '../lib/errorMessage';
   import type { Account } from '../lib/jmap/client';
   import { getAccountSignature, setAccountSignature } from '../lib/signatures';
   import {
@@ -28,8 +29,8 @@
     appError = '';
     try {
       appPasswords = await fetchAppPasswords(account.id);
-    } catch (err: any) {
-      appError = err.message || 'Impossible de charger les mots de passe d’application.';
+    } catch (err: unknown) {
+      appError = errorMessage(err) || 'Impossible de charger les mots de passe d’application.';
     }
   }
 
@@ -60,8 +61,8 @@
       pwdMessage = 'Mot de passe mis à jour. Déconnexion en cours...';
       currentPassword = newPassword = confirmPassword = '';
       setTimeout(() => onLogout(), 1200);
-    } catch (err: any) {
-      pwdError = err.message || 'Impossible de modifier le mot de passe.';
+    } catch (err: unknown) {
+      pwdError = errorMessage(err) || 'Impossible de modifier le mot de passe.';
     }
   }
 
@@ -74,8 +75,8 @@
       generatedSecret = await createAppPassword(account.id, newAppName.trim());
       newAppName = '';
       await loadAppPasswords();
-    } catch (err: any) {
-      appError = err.message;
+    } catch (err: unknown) {
+      appError = errorMessage(err);
     } finally {
       loading = false;
     }
@@ -86,8 +87,8 @@
     try {
       await deleteAppPassword(account.id, keyId);
       await loadAppPasswords();
-    } catch (err: any) {
-      appError = err.message;
+    } catch (err: unknown) {
+      appError = errorMessage(err);
     }
   }
 </script>

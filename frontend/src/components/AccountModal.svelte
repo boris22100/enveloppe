@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { errorMessage } from '../lib/errorMessage';
   let { onAdded, onClose }: { onAdded: () => void; onClose: () => void } = $props();
 
   let label = $state('');
@@ -58,8 +59,8 @@
       if (!res.ok) throw new Error(await res.text());
       onAdded();
       onClose();
-    } catch (err: any) {
-      error = err.message;
+    } catch (err: unknown) {
+      error = errorMessage(err);
     } finally {
       loading = false;
     }

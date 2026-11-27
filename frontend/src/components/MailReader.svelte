@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { errorMessage } from '../lib/errorMessage';
   import { buildSandboxedEmailDoc } from '../lib/utils/sanitize';
   import { getSavedTheme } from '../lib/theme';
   import { getDownloadUrl, type Attachment } from '../lib/jmap/client';
@@ -187,8 +188,8 @@
     try {
       await respondToIcsInvitation(accountId, icsRaw, choice, { sendReplyMail: true, attendeeEmail: to || undefined });
       icsStatus = choice;
-    } catch (err: any) {
-      icsError = err?.message || 'Impossible de mettre à jour le calendrier';
+    } catch (err: unknown) {
+      icsError = errorMessage(err, 'Impossible de mettre à jour le calendrier');
     } finally {
       icsBusy = false;
     }

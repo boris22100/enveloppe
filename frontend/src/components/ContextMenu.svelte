@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { CachedEmail } from '../lib/db/cache';
   import { onMount, tick } from 'svelte';
   import type { Mailbox } from '../lib/jmap/client';
 
@@ -15,11 +16,11 @@
     x: number;
     y: number;
     type: 'mail' | 'mailbox';
-    mail?: any;
+    mail?: CachedEmail | Record<string, unknown>;
     mailbox?: Mailbox;
     mailboxes?: Mailbox[];
     onClose: () => void;
-    onAction: (action: string, payload?: any) => void;
+    onAction: (action: string, payload?: unknown) => void;
   } = $props();
 
   let menuEl = $state<HTMLDivElement | null>(null);
@@ -104,7 +105,7 @@
     clampMenu();
   });
 
-  function pick(action: string, payload?: any) {
+  function pick(action: string, payload?: unknown) {
     onAction(action, payload);
     onClose();
   }

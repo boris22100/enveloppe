@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { errorMessage } from '../lib/errorMessage';
   import SieveRuleCard from './sieve/SieveRuleCard.svelte';
   import SieveCodeEditor from './sieve/SieveCodeEditor.svelte';
   import SieveVacationCard from './sieve/SieveVacationCard.svelte';
@@ -103,8 +104,8 @@
       const text = await fetchSieveScriptContent(accountId, jmapAccountId, script.blobId);
       rawCode = text;
       applyCodeToVisual(text);
-    } catch (err: any) {
-      notify('err', err.message);
+    } catch (err: unknown) {
+      notify('err', errorMessage(err));
     }
   }
 
@@ -131,8 +132,8 @@
         vacation = { enabled: false, days: 7, subject: 'Absence du bureau', reason: '' };
         rawCode = compileSieveScript(rules, vacation);
       }
-    } catch (err: any) {
-      notify('err', err.message || 'Impossible de charger les scripts Sieve.');
+    } catch (err: unknown) {
+      notify('err', errorMessage(err) || 'Impossible de charger les scripts Sieve.');
     } finally {
       loading = false;
     }
@@ -217,8 +218,8 @@
       } else {
         notify('err', 'Erreur Sieve : ' + (res.error || 'inconnue'));
       }
-    } catch (err: any) {
-      notify('err', err.message);
+    } catch (err: unknown) {
+      notify('err', errorMessage(err));
     } finally {
       validating = false;
     }
@@ -243,8 +244,8 @@
       });
       await loadAll(savedId);
       notify('ok', shouldActivate ? 'Script Sieve enregistré et activé sur Stalwart.' : 'Script Sieve enregistré sur Stalwart.');
-    } catch (err: any) {
-      notify('err', err.message);
+    } catch (err: unknown) {
+      notify('err', errorMessage(err));
     } finally {
       saving = false;
     }
@@ -256,8 +257,8 @@
       await activateSieveScript(accountId, script.isActive ? null : script.id);
       await loadAll(script.id);
       notify('ok', script.isActive ? 'Script « ' + script.name + ' » désactivé.' : 'Script « ' + script.name + ' » activé.');
-    } catch (err: any) {
-      notify('err', err.message);
+    } catch (err: unknown) {
+      notify('err', errorMessage(err));
     }
   }
 
@@ -288,8 +289,8 @@
       await deleteSieveScript(accountId, target.id);
       await loadAll();
       notify('ok', 'Script « ' + target.name + ' » supprimé.');
-    } catch (err: any) {
-      notify('err', err.message);
+    } catch (err: unknown) {
+      notify('err', errorMessage(err));
     }
   }
 

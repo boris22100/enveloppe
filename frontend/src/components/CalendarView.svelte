@@ -1,4 +1,8 @@
 <script lang="ts">
+  import { errorMessage } from '../lib/errorMessage';
+  type AccountLike = { id?: string; username?: string; email?: string; name?: string };
+  type ParticipantLike = string | { email?: string; address?: string; mail?: string };
+  type CalendarEventExt = JSCalendarEvent & { uid?: string; summary?: string; dtstart?: string; sequence?: number };
   import { filterTasksByStatus, toggleTaskProgressValue } from '../lib/threadHelpers';
   import { CALENDAR_VIEW_STORAGE_KEY, loadCalendarView, saveCalendarView, type CalendarViewMode } from '../lib/calendarViewStorage';
   import { computeDropReschedule, DAY_HOURS, filterEventsForHalfHour, filterEventsForHour, HALF_HOUR_SLOTS, normalizeSlotTime } from '../lib/calendarGrid';
@@ -54,7 +58,7 @@ interface ContactEntry { name: string; email: string; }
       const res = await fetch('/api/accounts');
       if (res.ok) {
         const list = await res.json();
-        const found = list.find((a: any) => a.id === accountId) || list[0];
+        const found = (list as AccountLike[]).find((a) => a.id === accountId) || (list as AccountLike[])[0];
         if (found?.username) return found.username;
       }
     } catch {}
@@ -71,7 +75,7 @@ interface ContactEntry { name: string; email: string; }
         for (const item of rawItems) {
           const name = item.name || item.fullName || item.displayName || '';
           const emails = Array.isArray(item.emails)
-            ? item.emails.map((e: any) => (typeof e === 'string' ? e : e?.value || e?.email || ''))
+            ? item.emails.map((e: unknown) => (typeof e === 'string' ? e : (e as { value?: string; email?: string })?.value || (e as { value?: string; email?: string })?.email || ''))
             : [item.email || ''];
           for (const em of emails) {
             const clean = (em || '').trim();
@@ -349,10 +353,10 @@ interface ContactEntry { name: string; email: string; }
     return iso.length >= 16 ? iso.slice(0, 16) : iso;
   }
 
-  function extractParticipantEmails(ev: any): string[] {
+  function extractParticipantEmails(ev: JSCalendarEvent | Record<string, unknown>): string[] {
     if (!ev?.participants || typeof ev.participants !== 'object') return [];
     return Object.values(ev.participants)
-      .map((p: any) => (typeof p === 'string' ? p : (p?.email || p?.address || p?.mail || '')))
+      .map((p: ParticipantLike) => (typeof p === 'string' ? p : (p?.email || p?.address || p?.mail || '')))
       .map((s: string) => s.trim())
       .filter((s: string) => s.includes('@'));
   }
@@ -431,9 +435,9 @@ interface ContactEntry { name: string; email: string; }
           editIcsStatus = { kind: 'ok', message: okMsg };
           inviteSendStatus = okMsg;
           setTimeout(() => (inviteSendStatus = ''), 5000);
-        } catch (mailErr: any) {
+        } catch (mailErr: unknown) {
           console.error('Modification .ics:', mailErr);
-          const errMsg = mailErr?.message || "Échec de l'envoi de la modification (.ics).";
+          const errMsg = errorMessage(mailErr, "Échec de l'envoi de la modification (.ics).");
           editIcsStatus = { kind: 'error', message: errMsg };
           inviteSendStatus = errMsg;
           setTimeout(() => (inviteSendStatus = ''), 6000);
@@ -456,10 +460,11 @@ interface ContactEntry { name: string; email: string; }
       const invitees = kind === 'event'
         ? inviteesText.split(/[,;\s]+/).map((s) => s.trim()).filter((s) => s.includes('@'))
         : [];
-      const created = await createEvent(accountId, defaultCalId, title, start, description, kind, invitees);
-      const createdId = (created as any)?.id || (created as any)?.event?.id;
+      const created = await createEvent(accountId, defaultCalId, title, start, description, kind, invitees) as unknown;
+      const createdObj = created as { id?: string; event?: { id?: string } } | null;
+      const createdId = createdObj?.id || createdObj?.event?.id;
       if (createdId && kind === 'event') {
-        const extraPatch: Record<string, any> = {};
+        const extraPatch: Record<string, unknown> = {};
         if (createDurationMinutes > 0 && createDurationMinutes !== 60) {
           extraPatch.duration = `PT${createDurationMinutes}M`;
         }
@@ -488,9 +493,9 @@ interface ContactEntry { name: string; email: string; }
     await deleteEvent(accountId, targetEv.id!);
     try {
       await dispatchEventCancellationIcs(targetEv);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Annulation .ics:', e);
-      inviteSendStatus = e?.message || "Échec de l'envoi de l'annulation (.ics).";
+      inviteSendStatus = errorMessage(e, "Échec de l'envoi de l'annulation (.ics).");
       setTimeout(() => (inviteSendStatus = ''), 6000);
     }
     if (selectedEvent?.id === eventToDelete.id) selectedEvent = null;
@@ -524,7 +529,7 @@ interface ContactEntry { name: string; email: string; }
         const accRes = await fetch('/api/accounts');
         if (accRes.ok) {
           const accs = await accRes.json();
-          const cur = accs.find((a: any) => a.id === accountId) || accs[0];
+          const cur = (accs as AccountLike[]).find((a) => a.id === accountId) || (accs as AccountLike[])[0];
           sender = cur?.username || '';
         }
       } catch {}
@@ -564,13 +569,13 @@ interface ContactEntry { name: string; email: string; }
     setTimeout(() => (inviteSendStatus = ''), 5000);
   }
 
-  async function dispatchEventUpdateIcs(ev: any, nextStart: string) {
+  async function dispatchEventUpdateIcs(ev: CalendarEventExt, nextStart: string) {
     if (!ev) return;
     const rawParticipants = ev.participants && typeof ev.participants === 'object'
       ? Object.values(ev.participants)
       : [];
     const recipients = rawParticipants
-      .map((part: any) => (typeof part === 'string' ? part : (part?.email || part?.address || part?.mail || '')))
+      .map((part: ParticipantLike) => (typeof part === 'string' ? part : (part?.email || part?.address || part?.mail || '')))
       .map((s: string) => s.trim())
       .filter((s: string) => s.includes('@'));
     if (recipients.length === 0) return;
@@ -581,7 +586,7 @@ interface ContactEntry { name: string; email: string; }
         const accRes = await fetch('/api/accounts');
         if (accRes.ok) {
           const accs = await accRes.json();
-          const cur = accs.find((a: any) => a.id === accountId) || accs[0];
+          const cur = (accs as AccountLike[]).find((a) => a.id === accountId) || (accs as AccountLike[])[0];
           sender = cur?.username || '';
         }
       } catch {}
@@ -627,13 +632,13 @@ interface ContactEntry { name: string; email: string; }
   }
 
 
-  async function dispatchEventCancellationIcs(ev: any) {
+  async function dispatchEventCancellationIcs(ev: CalendarEventExt) {
     if (!ev) return;
     const rawParticipants = ev.participants && typeof ev.participants === 'object'
       ? Object.values(ev.participants)
       : [];
     const recipients = rawParticipants
-      .map((p: any) => (typeof p === 'string' ? p : (p?.email || p?.address || p?.mail || '')))
+      .map((p: ParticipantLike) => (typeof p === 'string' ? p : (p?.email || p?.address || p?.mail || '')))
       .map((s: string) => s.trim())
       .filter((s: string) => s.includes('@'));
     if (recipients.length === 0) return;
@@ -644,7 +649,7 @@ interface ContactEntry { name: string; email: string; }
         const accRes = await fetch('/api/accounts');
         if (accRes.ok) {
           const accs = await accRes.json();
-          const cur = accs.find((a: any) => a.id === accountId) || accs[0];
+          const cur = (accs as AccountLike[]).find((a) => a.id === accountId) || (accs as AccountLike[])[0];
           sender = cur?.username || '';
         }
       } catch {}
