@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { createUndoSendQueue, UNDO_SEND_DELAY_MS } from './lib/undoSend';
   import { createDraftDebounceController } from './lib/draftDebounce';
   import { computeNextSelectionIndex, resolveMailShortcut } from './lib/keyboardShortcuts';
   import { onDestroy, onMount } from 'svelte';
@@ -229,6 +230,40 @@
       isUnread: m.isUnread
     }));
   });
+
+  interface PendingSendItem {
+    accountId: string;
+    to: string;
+    subject: string;
+    text: string;
+    files: Attachment[];
+    draftId: string | null;
+  }
+
+  let undoSendBanner = $state<{ id: string; label: string } | null>(null);
+
+  const undoSendQueue = createUndoSendQueue<PendingSendItem>(async (item) => {
+    undoSendBanner = null;
+    await sendEmail(item.accountId, item.to, item.subject, item.text, item.files, item.draftId);
+    mailboxes = await fetchMailboxes(item.accountId);
+    showToast('Message envoyé.');
+  }, UNDO_SEND_DELAY_MS);
+
+  function cancelPendingSend() {
+    if (!undoSendBanner) return;
+    const pending = undoSendQueue.getPending();
+    undoSendQueue.cancel(undoSendBanner.id);
+    if (pending?.payload) {
+      composeTo = pending.payload.to;
+      composeSubject = pending.payload.subject;
+      composeText = pending.payload.text;
+      composeFiles = pending.payload.files;
+      composeDraftId = pending.payload.draftId;
+      showComposer = true;
+    }
+    undoSendBanner = null;
+    showToast('Envoi annulé.');
+  }
 
   function showToast(msg: string) {
     statusToast = msg;
@@ -691,14 +726,22 @@
     e.preventDefault();
     if (!activeAccountId) return;
     if (draftTimer) { clearTimeout(draftTimer); draftTimer = null; }
-    await sendEmail(activeAccountId, composeTo, composeSubject, composeText, composeFiles, composeDraftId);
+    const jobId = `send-${Date.now()}`;
+    const payload: PendingSendItem = {
+      accountId: activeAccountId,
+      to: composeTo,
+      subject: composeSubject,
+      text: composeText,
+      files: composeFiles,
+      draftId: composeDraftId
+    };
+    undoSendQueue.schedule(jobId, payload);
+    undoSendBanner = { id: jobId, label: `Envoi vers ${composeTo || 'destinataire'} dans 5 s…` };
     composeTo = composeSubject = composeText = '';
     composeFiles = [];
     composeDraftId = null;
     draftStatus = '';
     showComposer = false;
-    if (activeAccountId) mailboxes = await fetchMailboxes(activeAccountId);
-    showToast('Message envoyé.');
   }
 
   function toggleSelectMail(id: string) {

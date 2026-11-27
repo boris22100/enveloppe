@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { filterTasksByStatus, toggleTaskProgressValue } from '../lib/threadHelpers';
   import { CALENDAR_VIEW_STORAGE_KEY, loadCalendarView, saveCalendarView, type CalendarViewMode } from '../lib/calendarViewStorage';
   import { computeDropReschedule, DAY_HOURS, filterEventsForHalfHour, filterEventsForHour, HALF_HOUR_SLOTS, normalizeSlotTime } from '../lib/calendarGrid';
   import { jmapCall, sendEmail, uploadAttachment } from '../lib/jmap/client';
@@ -222,11 +223,35 @@ interface ContactEntry { name: string; email: string; }
         expanded.push(ev);
       }
     }
-    return expanded.sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+    const filtered = expanded.filter((item) => {
+      if (!item.categories?.['Tâche']) return true;
+      const proxyTask = { id: item.id ?? '', progress: taskProgressOf(item), title: item.title };
+      return filterTasksByStatus([proxyTask], taskFilter).length > 0;
+    });
+    return filtered.sort((a, b) => (a.start || '').localeCompare(b.start || ''));
   }
 
   function formatTime(iso: string): string {
     return iso.length >= 16 ? iso.slice(11, 16) : '';
+  }
+
+  let taskFilter = $state<'all' | 'todo' | 'completed'>('all');
+
+  function taskProgressOf(ev: JSCalendarEvent): 'completed' | 'needs-action' {
+    return ev.categories?.['Terminée'] ? 'completed' : 'needs-action';
+  }
+
+  async function toggleTaskDone(ev: JSCalendarEvent) {
+    if (!ev?.id) return;
+    const nextProgress = toggleTaskProgressValue(taskProgressOf(ev));
+    const nextCats: Record<string, boolean> = { ...(ev.categories ?? {}) };
+    if (nextProgress === 'completed') {
+      nextCats['Terminée'] = true;
+    } else {
+      delete nextCats['Terminée'];
+    }
+    await updateEvent(accountId, ev.id, { categories: nextCats });
+    await load();
   }
 
   function badgeFor(ev: JSCalendarEvent): string {
@@ -664,6 +689,11 @@ interface ContactEntry { name: string; email: string; }
       </div>
 
       <button type="button" onclick={() => openCreateModal(toYMD(cursor))} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">+ Nouveau</button>
+      <div class="inline-flex items-center gap-1 rounded-lg border p-0.5 text-xs" role="group" aria-label="Filtre des tâches">
+        <button type="button" onclick={() => (taskFilter = 'all')} class="rounded px-2 py-1 {taskFilter === 'all' ? 'env-accent-soft font-semibold' : 'env-muted'}">Toutes</button>
+        <button type="button" onclick={() => (taskFilter = 'todo')} class="rounded px-2 py-1 {taskFilter === 'todo' ? 'env-accent-soft font-semibold' : 'env-muted'}">À faire</button>
+        <button type="button" onclick={() => (taskFilter = 'completed')} class="rounded px-2 py-1 {taskFilter === 'completed' ? 'env-accent-soft font-semibold' : 'env-muted'}">Terminées</button>
+      </div>
       <button type="button" onclick={() => downloadFile(eventsToIcs(events), 'calendrier.ics', 'text/calendar')} class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium">.ics</button>
       <label class="env-input env-hover cursor-pointer rounded-xl border px-3 py-2 text-xs font-medium">
         Importer
