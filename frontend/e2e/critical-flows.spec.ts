@@ -77,13 +77,15 @@ function installMockApi(page: import('@playwright/test').Page) {
           primaryAccounts: {
             'urn:ietf:params:jmap:mail': ACCOUNT_ID,
             'urn:ietf:params:jmap:contacts': ACCOUNT_ID,
-            'urn:ietf:params:jmap:calendars': ACCOUNT_ID
+            'urn:ietf:params:jmap:calendars': ACCOUNT_ID,
+            'urn:ietf:params:jmap:quota': ACCOUNT_ID
           },
           capabilities: {
             'urn:ietf:params:jmap:core': {},
             'urn:ietf:params:jmap:mail': {},
             'urn:ietf:params:jmap:contacts': {},
-            'urn:ietf:params:jmap:calendars': {}
+            'urn:ietf:params:jmap:calendars': {},
+            'urn:ietf:params:jmap:quota': {}
           }
         })
       });
@@ -142,6 +144,14 @@ function installMockApi(page: import('@playwright/test').Page) {
             },
             callId
           ]);
+        } else if (fn === 'Email/set') {
+          const updatedIds = args?.update && typeof args.update === 'object' ? Object.keys(args.update) : ['m-1'];
+          const updatedMap = Object.fromEntries(updatedIds.map((id) => [id, null]));
+          responses.push([
+            'Email/set',
+            { accountId: ACCOUNT_ID, oldState: 's-em-1', newState: 's-em-2', updated: updatedMap },
+            callId
+          ]);
         } else if (fn === 'Thread/get') {
           const ids = Array.isArray(args?.ids) ? (args.ids as string[]) : ['th-1'];
           responses.push([
@@ -152,6 +162,12 @@ function installMockApi(page: import('@playwright/test').Page) {
               list: ids.map((id) => ({ id, emailIds: ['m-1'] })),
               notFound: []
             },
+            callId
+          ]);
+        } else if (fn === 'Quota/get') {
+          responses.push([
+            'Quota/get',
+            { accountId: ACCOUNT_ID, state: 's-q-1', list: [], notFound: [] },
             callId
           ]);
         } else if (fn === 'Calendar/get') {
