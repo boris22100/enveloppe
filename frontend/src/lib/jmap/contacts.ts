@@ -46,3 +46,31 @@ export async function importContactsJSON(accountId: string, jsonText: string) {
   });
   await jmapCall(accountId, [['ContactCard/set', { accountId: accId, create }, 'imp0']], [CAP]);
 }
+
+export async function updateContact(
+  accountId: string,
+  contactId: string,
+  patch: { fullName?: string; email?: string; phone?: string; notes?: string }
+) {
+  const accId = await getPrimaryAccountId(accountId, CAP);
+  const updateObj: Record<string, any> = {};
+  if (patch.fullName !== undefined) updateObj['name/full'] = patch.fullName;
+  if (patch.email !== undefined) {
+    updateObj['emails'] = patch.email ? { e1: { '@type': 'EmailAddress', address: patch.email } } : {};
+  }
+  if (patch.phone !== undefined) {
+    updateObj['phones'] = patch.phone ? { p1: { '@type': 'Phone', number: patch.phone } } : {};
+  }
+  if (patch.notes !== undefined) {
+    updateObj['notes'] = patch.notes ? { n1: { '@type': 'Note', note: patch.notes } } : {};
+  }
+  const res = await jmapCall(
+    accountId,
+    [['ContactCard/set', { accountId: accId, update: { [contactId]: updateObj } }, 'cu0']],
+    [CAP]
+  );
+  const result = res.methodResponses?.[0]?.[1];
+  if (result?.notUpdated?.[contactId]) {
+    throw new Error(result.notUpdated[contactId].description || 'Mise à jour du contact refusée');
+  }
+}

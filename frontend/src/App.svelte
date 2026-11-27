@@ -77,6 +77,16 @@
   let draftStatus = $state('');
   let draftTimer: ReturnType<typeof setTimeout> | null = null;
   let selectedIds = $state<string[]>([]);
+  let composeSuggestions = $derived.by<string[]>(() => {
+    const seen = new Set<string>();
+    for (const m of emails) {
+      for (const f of m.from ?? []) {
+        const addr = (f.email || '').trim();
+        if (addr && addr.includes('@')) seen.add(addr);
+      }
+    }
+    return Array.from(seen).slice(0, 30);
+  });
   let draftsMailboxId = $derived(mailboxes.find((m) => m.role === 'drafts')?.id ?? '');
   let draftsCount = $derived.by(() => {
     const box = mailboxes.find((m) => m.role === 'drafts');
@@ -1375,7 +1385,7 @@
             <span class="env-faint text-xs">{draftStatus}</span>
           {/if}
         </div>
-        <input bind:value={composeTo} type="text" aria-label="Destinataire" placeholder="Destinataire(s)" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
+        <input list="compose-to-suggestions" bind:value={composeTo} type="text" aria-label="Destinataire" placeholder="Destinataire(s)" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
         <input bind:value={composeSubject} aria-label="Objet" placeholder="Objet" required class="env-input w-full rounded-xl border px-3.5 py-2.5 text-sm" />
         <textarea bind:value={composeText} onpaste={handleComposePaste} rows="9" aria-label="Message" placeholder="Message... (collez une image pour l'insérer inline)" required class="env-input w-full rounded-lg border p-3.5 text-sm"></textarea>
         <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
@@ -1467,3 +1477,8 @@
     </div>
   </div>
 {/if}
+<datalist id="compose-to-suggestions">
+  {#each composeSuggestions as addr}
+    <option value={addr}></option>
+  {/each}
+</datalist>

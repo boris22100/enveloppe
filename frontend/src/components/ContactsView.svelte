@@ -36,6 +36,32 @@
       notes: editNotes
     };
     try {
+      if (id) {
+        try {
+          await updateContact(accountId, String(id), {
+            fullName: editName.trim(),
+            email: editEmail.trim(),
+            phone: editPhone.trim(),
+            notes: editNotes
+          });
+          if (typeof contacts !== 'undefined' && Array.isArray(contacts)) {
+            contacts = contacts.map((x: any) =>
+              ((x.id || x._id) === id
+                ? {
+                    ...x,
+                    name: { ...(x.name || {}), full: editName.trim() },
+                    emails: editEmail.trim() ? { e1: { address: editEmail.trim() } } : {},
+                    phones: editPhone.trim() ? { p1: { number: editPhone.trim() } } : {}
+                  }
+                : x)
+            );
+          }
+          editingContact = null;
+          return;
+        } catch {
+          // Repli sur endpoints REST si le serveur n'expose pas ContactCard/set update
+        }
+      }
       let ok = false;
       if (id) {
         for (const [method, url] of [
@@ -83,7 +109,7 @@
       window.dispatchEvent(new CustomEvent('enveloppe:compose', { detail: { email: clean, name } }));
     }
   }
-  import { createContact, deleteContact, fetchContacts, importContactsJSON, type JSContact } from '../lib/jmap/contacts';
+  import { createContact, deleteContact, fetchContacts, importContactsJSON, updateContact, type JSContact } from '../lib/jmap/contacts';
   import { contactsToVcf, vcfToContacts } from '../lib/utils/formats';
   import ConfirmModal from './ConfirmModal.svelte';
   let { accountId, onComposeTo }: { accountId: string; onComposeTo?: (email: string, name?: string) => void } = $props();
