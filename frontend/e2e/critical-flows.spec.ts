@@ -52,7 +52,7 @@ function installMockApi(page: import('@playwright/test').Page) {
       });
     }
 
-    if (url.pathname === `/api/jmap/${ACCOUNT_ID}/session`) {
+    if (url.pathname.includes('/session')) {
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -80,7 +80,7 @@ function installMockApi(page: import('@playwright/test').Page) {
       });
     }
 
-    if (url.pathname === `/api/jmap/${ACCOUNT_ID}/api` && method === 'POST') {
+    if (url.pathname.endsWith('/api') && method === 'POST') {
       const body = route.request().postDataJSON() as { methodCalls?: Array<[string, Record<string, unknown>, string]> };
       const calls = body?.methodCalls || [];
       const responses: unknown[] = [];
