@@ -1,6 +1,6 @@
 # <img src="frontend/public/pwa-192.png" alt="Enveloppe" width="32" align="absmiddle" /> Enveloppe
 
-[![CI/CD](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml/badge.svg?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Version](https://img.shields.io/badge/version-v0.8.9-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/releases/tag/v0.8.9) [![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)](https://github.com/boris22100/enveloppe/pkgs/container/enveloppe) [![Vitest](https://img.shields.io/badge/vitest-32%20passed-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Lighthouse A11y](https://img.shields.io/badge/A11y-Lighthouse%20%E2%89%A590%25-2ea043?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Green IT](https://img.shields.io/badge/Green%20IT-budgets%20enforced-1f7a52?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)](LICENSE)
+[![CI/CD](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml/badge.svg?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Version](https://img.shields.io/badge/version-v0.9.4-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/releases/tag/v0.9.4) [![Docker](https://img.shields.io/badge/docker-ghcr.io-0D3A4D?style=flat-square)](https://github.com/boris22100/enveloppe/pkgs/container/enveloppe) [![Vitest](https://img.shields.io/badge/vitest-34%20passed-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Lighthouse A11y](https://img.shields.io/badge/A11y-Lighthouse%20100%25-2ea043?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Trivy](https://img.shields.io/badge/Trivy-0%20CVE-48B17F?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![Green IT](https://img.shields.io/badge/Green%20IT-budgets%20enforced-1f7a52?style=flat-square)](https://github.com/boris22100/enveloppe/actions/workflows/docker.yml) [![License](https://img.shields.io/badge/license-MIT-0D3A4D?style=flat-square)](LICENSE)
 
 Webmail **PWA** ultraléger, moderne, **100 % français** et **100 % JMAP** (*Mail, Contacts JSContact, Calendrier JSCalendar*), conçu pour **Stalwart Mail Server** et compatible multi-serveurs.
 
@@ -24,8 +24,8 @@ Webmail **PWA** ultraléger, moderne, **100 % français** et **100 % JMAP** (*Ma
 
 ## 🌱 Sobriété & Green-IT
 
-* **Taille de l'image Docker** : `9,99 Mo` (binaire Go statique sur `distroless/static-debian12:nonroot`, multi-arch `linux/amd64` & `linux/arm64`).
-* **Empreinte mémoire** : `~9,67 MiB` de RAM (`0,03 %` sur 31,09 GiB, `0,00 %` CPU au repos) et `412 Ko` d'assets `dist/`.
+* **Taille de l'image Docker** : `10,03 Mo` (`9,56 MiB`) (binaire Go statique sur `distroless/static-debian12:nonroot`, multi-arch `linux/amd64` & `linux/arm64`).
+* **Empreinte mémoire** : `~9,67 MiB` de RAM (`0,03 %` sur 31,09 GiB, `0,00 %` CPU au repos) et `412,8 Ko` (`422 680` octets) d'assets `dist/`.
 * **Réseau optimisé** : compression **Gzip** native, cache immuable (`max-age=31536000, immutable`) sur les assets statiques et requêtes JMAP groupées.
 
 ---

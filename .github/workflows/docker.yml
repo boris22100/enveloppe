@@ -73,13 +73,7 @@ jobs:
         working-directory: frontend
         run: |
           npm run build
-      - name: Check frontend dist bundle budget
-        run: |
-          DIST_BYTES=$(du -sb frontend/dist | cut -f1)
-          MAX_BYTES=$((1500 * 1024))
-          echo "frontend/dist size: ${DIST_BYTES} bytes (limit: ${MAX_BYTES} bytes)"
-          test "$DIST_BYTES" -le "$MAX_BYTES"
-
+      
           DIST_BYTES=$(du -sb dist | awk '{print $1}')
           echo "frontend/dist size: ${DIST_BYTES} bytes (limit: ${MAX_DIST_BYTES})"
           if [ "$DIST_BYTES" -gt "$MAX_DIST_BYTES" ]; then
@@ -87,9 +81,6 @@ jobs:
             exit 1
           fi
 
-      - name: Accessibility audit with Lighthouse CI
-        run: |
-          rm -rf backend/static
       - name: Resolve dynamic app version
         id: ver
         run: |
@@ -99,6 +90,9 @@ jobs:
           echo "version=${RESOLVED}" >> "$GITHUB_OUTPUT"
           echo "Resolved APP_VERSION=${RESOLVED}"
 
+      - name: Accessibility audit with Lighthouse CI
+        run: |
+          rm -rf backend/static
           cp -r frontend/dist backend/static
           cd backend
           APP_VERSION="${{ steps.ver.outputs.version }}" go build -ldflags="-X main.appVersion=${{ steps.ver.outputs.version }}" -o /tmp/jmap-pwa-audit .
@@ -173,6 +167,14 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
+      - name: Resolve dynamic app version
+        id: ver
+        run: |
+          TAG_VER=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || true)
+          PKG_VER=$(node -p "require('./frontend/package.json').version" 2>/dev/null || echo "0.9.4")
+          RESOLVED="${TAG_VER:-$PKG_VER}"
+          echo "version=${RESOLVED}" >> "$GITHUB_OUTPUT"
+
       - name: Build local image for size & Trivy audit
         uses: docker/build-push-action@v7
         with:
@@ -220,5 +222,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ steps.ver.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
