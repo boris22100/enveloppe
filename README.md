@@ -141,6 +141,10 @@ Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
 * **Green IT** : contrôle automatique de la taille du bundle compilé (`frontend/dist`) et de la taille de l'image Docker finale, avec mise en cache des dépendances et couches de build.
 * **Sécurité conteneur** : scan de l'image Docker construite avec Trivy (`CRITICAL` et `HIGH` bloquants, `ignore-unfixed: true`) avant publication multi-architecture (`linux/amd64`, `linux/arm64`) sur `ghcr.io`.
 
+## 🆕 Nouveautés v0.9.4
+
+- **Version unifiée et dynamique (`package.json`, `main.go`, `router.go`, `Dockerfile`, `.github/workflows/docker.yml`)** : alignement de la version par défaut sur `0.9.4` et injection dynamique via `APP_VERSION` / `-ldflags "-X main.appVersion=..."` au build Docker et en CI.
+
 ## 🆕 Nouveautés v0.9.3
 
 - **Tests backend (`backend/internal/httpapi/handlers_test.go`)** : ajout de tests `httptest` couvrant `/api/jmap/session` avec cookie chiffré et serveur JMAP simulé, ainsi que `/api/auth/oidc/config`.
