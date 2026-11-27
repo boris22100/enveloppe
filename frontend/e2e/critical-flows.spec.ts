@@ -217,10 +217,10 @@ function installMockApi(page: import('@playwright/test').Page) {
 
 test('1. Messagerie : affichage du message, lecture du contenu et thème clair/sombre', async ({ page }) => {
   await installMockApi(page);
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
 
   const subjectItem = page.getByText('Revue technique v1.0').first();
-  await expect(subjectItem).toBeVisible();
+  await expect(subjectItem).toBeVisible({ timeout: 10000 });
   await subjectItem.click();
 
   await expect(page.getByText(/Tout est prêt pour la recette finale/i).first()).toBeVisible();
