@@ -141,6 +141,11 @@ Distribué sous licence **MIT**. Voir `LICENSE` pour plus d'informations.
 * **Green IT** : contrôle automatique de la taille du bundle compilé (`frontend/dist`) et de la taille de l'image Docker finale, avec mise en cache des dépendances et couches de build.
 * **Sécurité conteneur** : scan de l'image Docker construite avec Trivy (`CRITICAL` et `HIGH` bloquants, `ignore-unfixed: true`) avant publication multi-architecture (`linux/amd64`, `linux/arm64`) sur `ghcr.io`.
 
+## 🆕 Nouveautés v0.9.1
+
+- **Contacts (`JSContact` — `contacts.ts` & `ContactsView.svelte`)** : ajout de `updateContact` via JMAP `ContactCard/set` (`update`) avec repli automatique sur les routes REST si nécessaire.
+- **Compositeur (`App.svelte`)** : suggestion automatique des destinataires (`<datalist id="compose-to-suggestions">`) à partir des adresses connues dans les messages chargés.
+
 ## 🆕 Nouveautés v0.9.0
 
 - **Fils de discussion (`threadHelpers.ts` & `App.svelte`)** : calcul automatique de `replyTargetEmailId` via `pickReplyTargetId` pour cibler le dernier message non lu du fil, et cumul `attachmentCount` via `countThreadAttachments`.
