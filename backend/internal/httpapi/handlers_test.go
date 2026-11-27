@@ -116,3 +116,21 @@ func TestStaticSPAFallback(t *testing.T) {
 		t.Fatalf("unexpected SPA body: %q", rec.Body.String())
 	}
 }
+
+func TestLogoutAndUnauthenticatedJmapSession(t *testing.T) {
+	h, _ := newTestServer(t)
+
+	logoutReq := httptest.NewRequest(http.MethodPost, "/api/auth/logout", nil)
+	logoutRec := httptest.NewRecorder()
+	h.ServeHTTP(logoutRec, logoutReq)
+	if logoutRec.Code != http.StatusOK && logoutRec.Code != http.StatusNoContent {
+		t.Fatalf("unexpected logout status: %d", logoutRec.Code)
+	}
+
+	sessReq := httptest.NewRequest(http.MethodGet, "/api/jmap/session", nil)
+	sessRec := httptest.NewRecorder()
+	h.ServeHTTP(sessRec, sessReq)
+	if sessRec.Code == http.StatusInternalServerError {
+		t.Fatalf("unexpected 500 on unauthenticated session request")
+	}
+}

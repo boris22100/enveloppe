@@ -27,7 +27,7 @@ type Server struct {
 func NewHandler(cfg Config) http.Handler {
 	version := cfg.Version
 	if version == "" {
-		version = "0.8.8"
+		version = "0.8.9"
 	}
 	s := &Server{
 		vault:            cfg.Vault,
