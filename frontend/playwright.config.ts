@@ -12,6 +12,7 @@ export default defineConfig({
   expect: { timeout: 8_000 },
   reporter: [['list']],
   use: {
+    serviceWorkers: 'block',
     baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure'
