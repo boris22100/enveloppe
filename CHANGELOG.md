@@ -3,6 +3,11 @@
 Toutes les évolutions notables d'**Enveloppe** sont documentées dans ce fichier.
 Le format s'inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le projet suit le [Gestionnaire sémantique de versions](https://semver.org/lang/fr/).
 
+## [0.10.4] - 2026-11-28
+
+### Fixed
+- **Injection dynamique de version (`APP_VERSION`)** : transmission systématique de `APP_VERSION` aux étapes de build Frontend (Vite) et Backend (Go `-ldflags`) dans le `Dockerfile` et `.github/workflows/docker.yml`, éliminant l'affichage `vdev`.
+
 ## [0.10.3] - 2026-11-28
 
 ### Added
