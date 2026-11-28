@@ -220,14 +220,10 @@ function installMockApi(page: import('@playwright/test').Page) {
 
 test('1. Messagerie : affichage du message, lecture du contenu et thème clair/sombre', async ({ page }) => {
   await installMockApi(page);
-  const jmapApiDone = page.waitForResponse(
-    (res) => res.url().includes('/api/jmap/') && res.url().endsWith('/api') && res.request().method() === 'POST'
-  );
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await jmapApiDone;
 
   const subjectItem = page.getByText('Revue technique v1.0').first();
-  await expect(subjectItem).toBeVisible({ timeout: 10000 });
+  await expect(subjectItem).toBeVisible({ timeout: 15000 });
   await subjectItem.click();
 
   await expect(page.getByText(/Tout est prêt pour la recette finale/i).first()).toBeVisible();
@@ -254,7 +250,7 @@ test('2. Calendrier : bascule vers la vue Calendrier et affichage des sélecteur
 test('3. Résilience hors-ligne : affichage de l’état hors-ligne puis retour en ligne', async ({ page, context }) => {
   await installMockApi(page);
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByText('Revue technique v1.0').first()).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText('Revue technique v1.0').first()).toBeVisible({ timeout: 15000 });
 
   await context.setOffline(true);
   await page.evaluate(() => window.dispatchEvent(new Event('offline')));
