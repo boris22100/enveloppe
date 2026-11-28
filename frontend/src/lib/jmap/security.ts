@@ -78,7 +78,7 @@ export async function updateAccountPassword(accountId: string, currentPassword: 
     throw new Error(`Erreur JMAP Stalwart (${result?.type || 'unknown'}) : ${result?.description || 'méthode non reconnue'}`);
   }
   if (result?.notUpdated) {
-    const err = Object.values(result.notUpdated)[0] as any;
+    const err = Object.values(result.notUpdated)[0] as { description?: string; type?: string } | undefined;
     throw new Error(err?.description || err?.type || 'Modification refusée par Stalwart');
   }
 }

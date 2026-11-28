@@ -17,7 +17,7 @@ export async function fetchContacts(accountId: string): Promise<JSContact[]> {
 
 export async function createContact(accountId: string, fullName: string, email: string, phone = '') {
   const accId = await getPrimaryAccountId(accountId, CAP);
-  const card: any = {
+  const card: Record<string, unknown> = {
     '@type': 'Card',
     version: '1.0',
     name: { full: fullName },
@@ -38,8 +38,8 @@ export async function deleteContact(accountId: string, contactId: string) {
 
 export async function importContactsJSON(accountId: string, jsonText: string) {
   const accId = await getPrimaryAccountId(accountId, CAP);
-  const items = JSON.parse(jsonText) as any[];
-  const create: Record<string, any> = {};
+  const items = JSON.parse(jsonText) as Array<Record<string, unknown>>;
+  const create: Record<string, unknown> = {};
   items.forEach((item, idx) => {
     const { id, uid, ...clean } = item;
     create['imp_' + idx] = { '@type': 'Card', version: '1.0', ...clean };
@@ -53,7 +53,7 @@ export async function updateContact(
   patch: { fullName?: string; email?: string; phone?: string; notes?: string }
 ) {
   const accId = await getPrimaryAccountId(accountId, CAP);
-  const updateObj: Record<string, any> = {};
+  const updateObj: Record<string, unknown> = {};
   if (patch.fullName !== undefined) updateObj['name/full'] = patch.fullName;
   if (patch.email !== undefined) {
     updateObj['emails'] = patch.email ? { e1: { '@type': 'EmailAddress', address: patch.email } } : {};

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import CalendarToolbar from './CalendarToolbar.svelte';
+  import CalendarGrid from './CalendarGrid.svelte';
   import { errorMessage } from '../lib/errorMessage';
   type AccountLike = { id?: string; username?: string; email?: string; name?: string };
   type ParticipantLike = string | { email?: string; address?: string; mail?: string };
@@ -694,288 +696,49 @@ interface ContactEntry { name: string; email: string; }
 </script>
 
 <div class="flex h-full flex-col overflow-hidden">
-  <header class="env-border flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
-    <div class="flex items-center gap-3">
-      <div class="env-input flex items-center overflow-hidden rounded-xl border">
-        <button type="button" onclick={() => shift(-1)} aria-label="Période précédente" class="env-hover px-3 py-1.5 text-sm font-medium">‹</button>
-        <button type="button" onclick={() => (cursor = new Date())} class="env-border env-hover border-x px-3.5 py-1.5 text-xs font-semibold">Aujourd'hui</button>
-        <button type="button" onclick={() => shift(1)} aria-label="Période suivante" class="env-hover px-3 py-1.5 text-sm font-medium">›</button>
-      </div>
-      <h2 class="env-text text-lg font-bold capitalize">{headerLabel}</h2>
-    </div>
+  <CalendarToolbar
+    {headerLabel}
+    {view}
+    {taskFilter}
+    onShift={shift}
+    onToday={() => (cursor = new Date())}
+    onViewChange={(v) => (view = v)}
+    onNewEvent={() => openCreateModal(toYMD(cursor))}
+    onTaskFilterChange={(f) => (taskFilter = f)}
+    onExportIcs={() => downloadFile(eventsToIcs(events), 'calendrier.ics', 'text/calendar')}
+    onImport={handleImport}
+  />
 
-    <div class="flex flex-wrap items-center gap-2">
-      <div class="env-subtle env-border flex rounded-xl border p-0.5 text-xs">
-        <button type="button" onclick={() => (view = 'month')} class="rounded-lg px-3 py-1.5 {view === 'month' ? 'env-accent-soft font-semibold' : 'env-muted'}">Mois</button>
-        <button type="button" onclick={() => (view = 'week')} class="rounded-lg px-3 py-1.5 {view === 'week' ? 'env-accent-soft font-semibold' : 'env-muted'}">Semaine</button>
-        <button type="button" onclick={() => (view = 'day')} class="rounded-lg px-3 py-1.5 {view === 'day' ? 'env-accent-soft font-semibold' : 'env-muted'}">Jour</button>
-      </div>
-
-      <button type="button" onclick={() => openCreateModal(toYMD(cursor))} class="env-accent-bg rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-95">+ Nouveau</button>
-      <div class="inline-flex items-center gap-1 rounded-lg border p-0.5 text-xs" role="group" aria-label="Filtre des tâches">
-        <button type="button" onclick={() => (taskFilter = 'all')} class="rounded px-2 py-1 {taskFilter === 'all' ? 'env-accent-soft font-semibold' : 'env-muted'}">Toutes</button>
-        <button type="button" onclick={() => (taskFilter = 'todo')} class="rounded px-2 py-1 {taskFilter === 'todo' ? 'env-accent-soft font-semibold' : 'env-muted'}">À faire</button>
-        <button type="button" onclick={() => (taskFilter = 'completed')} class="rounded px-2 py-1 {taskFilter === 'completed' ? 'env-accent-soft font-semibold' : 'env-muted'}">Terminées</button>
-      </div>
-      <button type="button" onclick={() => downloadFile(eventsToIcs(events), 'calendrier.ics', 'text/calendar')} class="env-input env-hover rounded-xl border px-3 py-2 text-xs font-medium">.ics</button>
-      <label class="env-input env-hover cursor-pointer rounded-xl border px-3 py-2 text-xs font-medium">
-        Importer
-        <input type="file" accept=".ics,.json" onchange={handleImport} class="hidden" aria-label="Importer un calendrier (.ics ou .json)" />
-      </label>
-    </div>
-  </header>
-
-  {#if view === 'month'}
-    <div class="env-subtle env-border env-muted grid grid-cols-7 border-b text-center text-xs font-semibold uppercase tracking-wider">
-      {#each DAYS as d}<div class="py-2.5">{d}</div>{/each}
-    </div>
-    <div class="env-divider grid flex-1 grid-cols-7 grid-rows-6 gap-1.5 overflow-hidden p-2">
-      {#each monthCells as cell}
-        <div
-          role="button"
-          tabindex="0"
-          ondragover={(e) => { e.preventDefault(); dragOverYmd = cell.ymd; }}
-          ondragleave={() => { if (dragOverYmd === cell.ymd) dragOverYmd = null; }}
-          ondrop={(e) => handleDropOnTarget(e, cell.ymd)}
-          onclick={(e) => {
-            if (e.target instanceof Element && e.target.closest('button')) return;
-            openCreateModal(cell.ymd);
-          }}
-          onkeydown={(e) => {
-            if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-              e.preventDefault();
-              openCreateModal(cell.ymd);
-            }
-          }}
-          class="env-card env-hover flex cursor-pointer flex-col overflow-hidden rounded-lg border p-2 text-left transition-colors {cell.inMonth ? '' : 'opacity-45'} {dragOverYmd === cell.ymd ? 'ring-2 ring-[var(--env-accent)]' : ''}"
-        >
-          <button
-            type="button"
-            title="Voir cette journée"
-            onclick={(e) => { e.stopPropagation(); cursor = cell.date; view = 'day'; }}
-            class="mb-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs {cell.ymd === todayYMD ? 'env-accent-bg font-bold' : 'env-muted hover:ring-1 hover:ring-[var(--env-accent)]'}"
-          >
-            {cell.date.getDate()}
-          </button>
-          <div class="space-y-1 overflow-y-auto">
-            {#each eventsForDate(cell.ymd).slice(0, 3) as ev}
-              <div
-                role="button"
-                tabindex="0"
-                draggable={Boolean(ev.id)}
-                ondragstart={(e) => handleDragStart(e, ev)}
-                ondragend={handleDragEnd}
-                onclick={(e) => { e.stopPropagation(); selectedEvent = ev; }}
-                onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); selectedEvent = ev; } }}
-                class="env-accent-soft group/ev flex items-center justify-between gap-1 rounded-lg px-2 py-0.5 text-xs font-medium {ev.id ? 'cursor-grab active:cursor-grabbing' : ''}"
-              >
-                <span class="truncate">
-                  {badgeFor(ev)}{#if !ev.showWithoutTime}<span class="font-mono text-[11px] opacity-80">{formatTime(ev.start)} </span>{/if}{ev.title}
-                </span>
-
-                {#if ev.id}
-                  <div class="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover/ev:opacity-100">
-                    {#if ev.categories?.['Tâche']}
-                      <button
-                        type="button"
-                        title={taskProgressOf(ev) === 'completed' ? 'Marquer comme à faire' : 'Marquer comme terminée'}
-                        aria-label="{taskProgressOf(ev) === 'completed' ? 'Marquer comme à faire' : 'Marquer comme terminée'} {ev.title}"
-                        onclick={(e) => { e.stopPropagation(); void toggleTaskDone(ev); }}
-                        class="rounded px-1 text-[11px] font-semibold hover:opacity-100"
-                      >
-                        {taskProgressOf(ev) === 'completed' ? '↩️' : '✓'}
-                      </button>
-                    {/if}
-                    <button
-                      type="button"
-                      title="Modifier"
-                      aria-label="Modifier {ev.title}"
-                      onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
-                      class="text-xs hover:opacity-100"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      type="button"
-                      title="Supprimer"
-                      aria-label="Supprimer {ev.title}"
-                      onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
-                      class="text-xs hover:text-red-400"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                {/if}
-              </div>
-            {/each}
-          </div>
-        </div>
-      {/each}
-    </div>
-
-  {:else if view === 'week'}
-    <div class="flex-1 overflow-auto p-3">
-      <div class="env-card env-border min-w-[760px] overflow-hidden rounded-xl border">
-        <div class="env-subtle env-border grid grid-cols-[68px_repeat(7,minmax(0,1fr))] border-b text-center text-xs">
-          <div class="env-faint flex items-center justify-center border-r py-2 font-mono text-[11px]">Heure</div>
-          {#each weekDays as day, idx}
-            <button
-              type="button"
-              onclick={() => { cursor = day.date; view = 'day'; }}
-              class="env-border env-hover border-r py-2.5 last:border-r-0"
-            >
-              <div class="env-muted text-[11px] uppercase">{DAYS[idx]}</div>
-              <div class="mx-auto mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold {day.ymd === todayYMD ? 'env-accent-bg font-bold' : 'env-text'}">
-                {day.date.getDate()}
-              </div>
-            </button>
-          {/each}
-        </div>
-
-        <div class="divide-y env-divider">
-          {#each HOURS as h}
-            {@const hourStr = String(h).padStart(2, '0')}
-            {@const slotLabel = `${hourStr}:00`}
-            <div class="grid grid-cols-[68px_repeat(7,minmax(0,1fr))]">
-              <div class="env-faint border-r px-2 py-2 text-right font-mono text-[11px]">{slotLabel}</div>
-              {#each weekDays as day}
-                {@const cellKey = `${day.ymd}T${slotLabel}`}
-                {@const slotEvents = eventsForHour(day.ymd, hourStr)}
-                <div
-                  role="button"
-                  tabindex="0"
-                  ondragover={(e) => { e.preventDefault(); dragOverSlotKey = cellKey; }}
-                  ondragleave={() => { if (dragOverSlotKey === cellKey) dragOverSlotKey = null; }}
-                  ondrop={(e) => handleDropOnTarget(e, day.ymd, slotLabel)}
-                  onclick={() => openCreateModal(day.ymd, hourStr)}
-                  onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && openCreateModal(day.ymd, hourStr)}
-                  class="env-border env-hover min-h-14 cursor-pointer border-r p-1.5 transition-colors last:border-r-0 {dragOverSlotKey === cellKey ? 'env-accent-soft ring-2 ring-inset ring-[var(--env-accent)]' : ''}"
-                >
-                  <div class="space-y-1">
-                    {#each slotEvents as ev}
-                      <div
-                        role="button"
-                        tabindex="0"
-                        draggable={Boolean(ev.id)}
-                        ondragstart={(e) => handleDragStart(e, ev)}
-                        ondragend={handleDragEnd}
-                        onclick={(e) => { e.stopPropagation(); selectedEvent = ev; }}
-                        onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); selectedEvent = ev; } }}
-                        class="env-accent-soft group/ev rounded-lg border border-[#48B17F]/35 px-2 py-1 text-xs {ev.id ? 'cursor-grab active:cursor-grabbing' : ''}"
-                      >
-                        <div class="flex items-center justify-between gap-1">
-                          <span class="font-mono text-[11px] opacity-85">{formatTime(ev.start)}</span>
-                          {#if ev.id}
-                            <div class="flex shrink-0 items-center gap-0.5 opacity-75 group-hover/ev:opacity-100">
-                              <button
-                                type="button"
-                                title="Modifier"
-                                aria-label="Modifier {ev.title}"
-                                onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
-                                class="rounded px-1 text-[11px] hover:opacity-100"
-                              >
-                                ✏️
-                              </button>
-                              <button
-                                type="button"
-                                title="Supprimer"
-                                aria-label="Supprimer {ev.title}"
-                                onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
-                                class="rounded px-1 text-[11px] hover:text-red-400"
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          {/if}
-                        </div>
-                        <div class="env-text truncate font-semibold">{badgeFor(ev)}{ev.title}</div>
-                      </div>
-                    {/each}
-                  </div>
-                </div>
-              {/each}
-            </div>
-          {/each}
-        </div>
-      </div>
-    </div>
-
-  {:else}
-    {@const dayYmd = toYMD(cursor)}
-    <div class="flex-1 overflow-y-auto p-5">
-      <div class="env-card env-divider mx-auto max-w-3xl divide-y rounded-xl border p-2">
-        {#each HALF_HOUR_SLOTS as slot}
-          {@const cellKey = `${dayYmd}T${slot}`}
-          {@const slotEvents = eventsForHalfHour(dayYmd, slot)}
-          <div
-            role="button"
-            tabindex="0"
-            ondragover={(e) => { e.preventDefault(); dragOverSlotKey = cellKey; }}
-            ondragleave={() => { if (dragOverSlotKey === cellKey) dragOverSlotKey = null; }}
-            ondrop={(e) => handleDropOnTarget(e, dayYmd, slot)}
-            onmousedown={() => handleSlotRangeStart(dayYmd, slot)}
-            onmouseenter={() => handleSlotRangeMove(dayYmd, slot)}
-            onclick={() => { if (!handleSlotRangeCommit(dayYmd, slot)) openCreateModal(dayYmd, slot); }}
-            onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && openCreateModal(dayYmd, slot)}
-            class="env-hover flex min-h-10 cursor-pointer items-start gap-4 rounded-lg px-4 py-1.5 transition-colors {slot.endsWith(':30') ? 'opacity-95' : ''} {dragOverSlotKey === cellKey ? 'env-accent-soft ring-2 ring-[var(--env-accent)]' : ''}"
-          >
-            <span class="env-faint w-14 shrink-0 font-mono text-xs">{slot}</span>
-            <div class="flex-1 space-y-1">
-              {#each slotEvents as ev}
-                <div
-                  role="button"
-                  tabindex="0"
-                  draggable={Boolean(ev.id)}
-                  ondragstart={(e) => handleDragStart(e, ev)}
-                  ondragend={handleDragEnd}
-                  onclick={(e) => { e.stopPropagation(); selectedEvent = ev; }}
-                  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); selectedEvent = ev; } }}
-                  class="env-accent-soft rounded-xl border border-[#48B17F]/40 px-3.5 py-1.5 {ev.id ? 'cursor-grab active:cursor-grabbing' : ''}"
-                >
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="env-text text-sm font-semibold">{badgeFor(ev)}{ev.title}</span>
-                    <div class="flex items-center gap-2">
-                      <span class="font-mono text-xs opacity-80">{formatTime(ev.start)}</span>
-                      {#if ev.id}
-                        {#if ev.categories?.['Tâche']}
-                          <button
-                            type="button"
-                            onclick={(e) => { e.stopPropagation(); void toggleTaskDone(ev); }}
-                            class="rounded border px-2 py-0.5 text-[11px] font-medium env-btn-secondary"
-                          >
-                            {taskProgressOf(ev) === 'completed' ? 'À faire' : 'Terminée'}
-                          </button>
-                        {/if}
-                        <button
-                          type="button"
-                          title="Modifier"
-                          aria-label="Modifier {ev.title}"
-                          onclick={(e) => { e.stopPropagation(); openEditModal(ev); }}
-                          class="rounded px-1.5 py-0.5 text-xs opacity-75 hover:opacity-100"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          type="button"
-                          title="Supprimer"
-                          aria-label="Supprimer {ev.title}"
-                          onclick={(e) => { e.stopPropagation(); eventToDelete = ev; }}
-                          class="rounded px-1.5 py-0.5 text-xs opacity-75 hover:bg-red-500/15 hover:text-red-400"
-                        >
-                          🗑️
-                        </button>
-                      {/if}
-                    </div>
-                  </div>
-                  {#if ev.description}<p class="env-muted mt-0.5 text-xs">{ev.description}</p>{/if}
-                </div>
-              {/each}
-            </div>
-          </div>
-        {/each}
-      </div>
-    </div>
-  {/if}
+  <CalendarGrid
+    {view}
+    days={DAYS}
+    hours={HOURS}
+    halfHourSlots={HALF_HOUR_SLOTS}
+    {monthCells}
+    {weekDays}
+    {todayYMD}
+    dayYmd={toYMD(cursor)}
+    bind:dragOverYmd
+    bind:dragOverSlotKey
+    {eventsForDate}
+    {eventsForHour}
+    {eventsForHalfHour}
+    {badgeFor}
+    {formatTime}
+    {taskProgressOf}
+    onDropOnTarget={handleDropOnTarget}
+    onOpenCreateModal={openCreateModal}
+    onSelectDay={(date) => { cursor = date; view = 'day'; }}
+    onDragStart={handleDragStart}
+    onDragEnd={handleDragEnd}
+    onSelectEvent={(ev) => (selectedEvent = ev)}
+    onToggleTaskDone={toggleTaskDone}
+    onOpenEditModal={openEditModal}
+    onRequestDelete={(ev) => (eventToDelete = ev)}
+    onSlotRangeStart={handleSlotRangeStart}
+    onSlotRangeMove={handleSlotRangeMove}
+    onSlotRangeCommit={handleSlotRangeCommit}
+  />
 
   <CalendarEventModals
     bind:selectedEvent

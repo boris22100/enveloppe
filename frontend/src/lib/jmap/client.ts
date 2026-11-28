@@ -37,7 +37,7 @@ export interface EmailSummary {
   mailboxIds: Record<string, boolean>;
 }
 
-const sessionCache = new Map<string, any>();
+const sessionCache = new Map<string, Record<string, unknown>>();
 
 export async function getSession(accountId: string) {
   if (sessionCache.has(accountId)) return sessionCache.get(accountId);
@@ -53,7 +53,7 @@ export async function getPrimaryAccountId(accountId: string, capability = 'urn:i
   return s.primaryAccounts?.[capability] ?? Object.values(s.primaryAccounts)[0];
 }
 
-export async function jmapCall(accountId: string, methodCalls: any[], extraCapabilities: string[] = []) {
+export async function jmapCall(accountId: string, methodCalls: Array<[string, Record<string, unknown>, string]>, extraCapabilities: string[] = []) {
   const using = Array.from(new Set([
     'urn:ietf:params:jmap:core',
     'urn:ietf:params:jmap:mail',
@@ -156,13 +156,13 @@ export interface EmailSearchOptions {
 
 export async function searchEmails(accountId: string, opts: EmailSearchOptions): Promise<EmailSummary[]> {
   const accId = await getPrimaryAccountId(accountId);
-  const conditions: Record<string, any>[] = [];
+  const conditions: Record<string, unknown>[] = [];
   if (opts.mailboxId) conditions.push({ inMailbox: opts.mailboxId });
   if (opts.query && opts.query.trim()) conditions.push({ text: opts.query.trim() });
   if (opts.unreadOnly) conditions.push({ notKeyword: '$seen' });
   if (opts.hasAttachment) conditions.push({ hasAttachment: true });
 
-  const filter: Record<string, any> =
+  const filter: Record<string, unknown> =
     conditions.length === 0
       ? {}
       : conditions.length === 1
@@ -212,7 +212,7 @@ export function getDownloadUrl(accountId: string, jmapAccountId: string, att: At
 
 export async function archiveEmail(accountId: string, emailId: string, currentMailboxId: string, archiveId?: string) {
   const accId = await getPrimaryAccountId(accountId);
-  const update: Record<string, any> = { [`mailboxIds/${currentMailboxId}`]: null };
+  const update: Record<string, unknown> = { [`mailboxIds/${currentMailboxId}`]: null };
   if (archiveId) update[`mailboxIds/${archiveId}`] = true;
   await jmapCall(accountId, [['Email/set', { accountId: accId, update: { [emailId]: update } }, 'a0']]);
 }
@@ -336,7 +336,7 @@ export async function sendEmail(
 export async function bulkSetEmailKeyword(accountId: string, emailIds: string[], keyword: string, value: boolean) {
   if (!emailIds.length) return;
   const accId = await getPrimaryAccountId(accountId);
-  const update: Record<string, Record<string, any>> = {};
+  const update: Record<string, Record<string, unknown>> = {};
   for (const id of emailIds) update[id] = { [`keywords/${keyword}`]: value ? true : null };
   await jmapCall(accountId, [['Email/set', { accountId: accId, update }, 'bkw0']]);
 }
@@ -344,9 +344,9 @@ export async function bulkSetEmailKeyword(accountId: string, emailIds: string[],
 export async function bulkArchiveEmails(accountId: string, emailIds: string[], currentMailboxId: string, archiveId?: string) {
   if (!emailIds.length) return;
   const accId = await getPrimaryAccountId(accountId);
-  const patch: Record<string, any> = { [`mailboxIds/${currentMailboxId}`]: null };
+  const patch: Record<string, unknown> = { [`mailboxIds/${currentMailboxId}`]: null };
   if (archiveId) patch[`mailboxIds/${archiveId}`] = true;
-  const update: Record<string, Record<string, any>> = {};
+  const update: Record<string, Record<string, unknown>> = {};
   for (const id of emailIds) update[id] = patch;
   await jmapCall(accountId, [['Email/set', { accountId: accId, update }, 'bar0']]);
 }
@@ -354,7 +354,7 @@ export async function bulkArchiveEmails(accountId: string, emailIds: string[], c
 export async function bulkMoveEmails(accountId: string, emailIds: string[], targetMailboxId: string) {
   if (!emailIds.length) return;
   const accId = await getPrimaryAccountId(accountId);
-  const update: Record<string, Record<string, any>> = {};
+  const update: Record<string, Record<string, unknown>> = {};
   for (const id of emailIds) update[id] = { mailboxIds: { [targetMailboxId]: true } };
   await jmapCall(accountId, [['Email/set', { accountId: accId, update }, 'bmv0']]);
 }
@@ -379,7 +379,7 @@ export async function fetchQuota(accountId: string): Promise<DiskQuota | null> {
       [['Quota/get', { accountId: accId }, 'q0']],
       ['urn:ietf:params:jmap:quota']
     );
-    const list = res.methodResponses?.[0]?.[1]?.list as any[] | undefined;
+    const list = res.methodResponses?.[0]?.[1]?.list as Array<Record<string, unknown>> | undefined;
     if (!list?.length) return null;
     const storage = list.find((q) => q.resourceType === 'octets') ?? list[0];
     const used = Number(storage.used ?? 0);
@@ -431,7 +431,7 @@ export async function markMailboxesAsRead(accountId: string, mailboxIds: string[
       const ids: string[] = qRes.methodResponses?.[0]?.[1]?.ids ?? [];
       if (ids.length === 0) break;
 
-      const update: Record<string, any> = {};
+      const update: Record<string, unknown> = {};
       for (const id of ids) update[id] = { 'keywords/$seen': true };
 
       const sRes = await jmapCall(accountId, [['Email/set', { accountId: accId, update }, 'sr0']]);

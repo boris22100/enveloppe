@@ -14,6 +14,7 @@ export interface JSCalendarRecurrenceRule {
 }
 
 export interface JSCalendarEvent {
+  uid?: string;
   id?: string;
   title: string;
   start: string;
@@ -53,7 +54,7 @@ export async function createEvent(
   const accId = await getPrimaryAccountId(accountId, CAP);
   const start = startLocal.length === 16 ? `${startLocal}:00` : startLocal;
 
-  const payload: Record<string, any> = {
+  const payload: Record<string, unknown> = {
     '@type': 'Event',
     calendarIds: { [calendarId]: true },
     title,
@@ -64,7 +65,7 @@ export async function createEvent(
   if (kind === 'event') {
     payload.duration = 'PT1H';
     if (invitees.length > 0) {
-      const participants: Record<string, any> = {};
+      const participants: Record<string, unknown> = {};
       invitees.forEach((raw, idx) => {
         const email = raw.trim();
         if (!email) return;
@@ -109,8 +110,8 @@ export async function deleteEvent(accountId: string, eventId: string) {
 
 export async function importEventsJSON(accountId: string, calendarId: string, jsonText: string) {
   const accId = await getPrimaryAccountId(accountId, CAP);
-  const items = JSON.parse(jsonText) as any[];
-  const create: Record<string, any> = {};
+  const items = JSON.parse(jsonText) as Array<Record<string, unknown>>;
+  const create: Record<string, unknown> = {};
   items.forEach((item, idx) => {
     const { id, uid, ...clean } = item;
     create[`ev_${idx}`] = { '@type': 'Event', calendarIds: { [calendarId]: true }, ...clean };
@@ -124,7 +125,7 @@ export async function updateEvent(
   patch: Partial<Pick<JSCalendarEvent, 'title' | 'start' | 'description' | 'showWithoutTime' | 'categories' | 'sequence' | 'participants'>> & { end?: string }
 ) {
   const accId = await getPrimaryAccountId(accountId, CAP);
-  const cleanPatch: Record<string, any> = { ...patch };
+  const cleanPatch: Record<string, unknown> = { ...patch };
   if (typeof cleanPatch.start === 'string' && cleanPatch.start.length === 16) {
     cleanPatch.start = `${cleanPatch.start}:00`;
   }
@@ -479,7 +480,7 @@ export async function respondToIcsInvitation(
 
   const accId = await getPrimaryAccountId(accountId, CAP);
   const statusMap = { accepted: 'confirmed', tentative: 'tentative', declined: 'cancelled' } as const;
-  const existing = events.find((ev: any) => ev.uid === inv.uid || (ev.title === inv.title && ev.start?.slice(0, 16) === inv.start.slice(0, 16)));
+  const existing = events.find((ev) => ev.uid === inv.uid || (ev.title === inv.title && ev.start?.slice(0, 16) === inv.start.slice(0, 16)));
 
   if (existing?.id) {
     await jmapCall(accountId, [[

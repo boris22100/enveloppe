@@ -64,7 +64,7 @@ export async function saveSieveScript(
   const accId = await getPrimaryAccountId(accountId, CAP);
   const blobId = await uploadSieveContent(accountId, opts.content);
 
-  const args: Record<string, any> = { accountId: accId };
+  const args: Record<string, unknown> = { accountId: accId };
   if (opts.id) {
     args.update = { [opts.id]: { name: opts.name, blobId } };
     if (opts.activate) args.onSuccessActivateScript = opts.id;
@@ -90,7 +90,7 @@ export async function saveSieveScript(
 
 export async function activateSieveScript(accountId: string, scriptId: string | null): Promise<void> {
   const accId = await getPrimaryAccountId(accountId, CAP);
-  const args: Record<string, any> = { accountId: accId };
+  const args: Record<string, unknown> = { accountId: accId };
   if (scriptId) {
     args.onSuccessActivateScript = scriptId;
   } else {

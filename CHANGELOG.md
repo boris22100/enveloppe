@@ -3,6 +3,16 @@
 Toutes les évolutions notables d'**Enveloppe** sont documentées dans ce fichier.
 Le format s'inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le projet suit le [Gestionnaire sémantique de versions](https://semver.org/lang/fr/).
 
+## [0.10.5] - 2026-11-28
+
+### Added
+- **Port d'écoute configurable (`PORT`)** : `backend/main.go` lit désormais la variable d'environnement `PORT` (défaut `:8080`).
+- **Attestation & signature d'image** : génération SBOM et signature Cosign *keyless* (OIDC GitHub) ajoutées au pipeline GHCR.
+
+### Changed
+- **Découpage de `CalendarView.svelte`** : extraction de `CalendarToolbar.svelte` et `CalendarGrid.svelte` pour améliorer la maintenabilité.
+- **Typage strict JMAP** : suppression des 24 `any` dans `frontend/src/lib/jmap/` et ajout de `uid?: string` sur `JSCalendarEvent`.
+
 ## [0.10.4] - 2026-11-28
 
 ### Fixed

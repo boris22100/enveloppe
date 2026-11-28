@@ -51,9 +51,17 @@ func main() {
 		Version:          resolveVersion(),
 	})
 
-	log.Println("Enveloppe BFF démarré sur :8080")
+	port := strings.TrimSpace(os.Getenv("PORT"))
+	if port == "" {
+		port = "8080"
+	}
+	addr := port
+	if !strings.HasPrefix(addr, ":") {
+		addr = ":" + addr
+	}
+	log.Printf("Enveloppe BFF démarré sur %s", addr)
 	srv := &http.Server{
-		Addr:              ":8080",
+		Addr:              addr,
 		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       120 * time.Second,
