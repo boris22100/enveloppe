@@ -3,6 +3,15 @@
 Toutes les évolutions notables d'**Enveloppe** sont documentées dans ce fichier.
 Le format s'inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le projet suit le [Gestionnaire sémantique de versions](https://semver.org/lang/fr/).
 
+## [0.10.3] - 2026-11-28
+
+### Added
+- **Thème clair/sombre par message (`MailReader.svelte`)** : sélecteur *Auto / Clair / Sombre* dans l'en-tête du lecteur, appliqué aussi bien au contenu HTML sandboxé qu'au corps texte brut (`<pre>`).
+- **Tests E2E Playwright (`frontend/e2e/critical-flows.spec.ts`)** : couverture des parcours critiques (messagerie + thème, calendrier, résilience hors-ligne / retour en ligne) exécutée face au binaire Go.
+
+### Changed
+- **TypeScript strict (`tsconfig.json`)** : activation du mode `strict` avec validation `svelte-check` (0 erreur, 0 warning), `tsc --noEmit` et `Vitest` (34 tests).
+
 ## [0.10.0] - 2026-11-27
 
 ### Added

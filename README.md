@@ -22,7 +22,7 @@ Webmail **PWA** ultraléger, moderne, **100 % français** et **100 % JMAP** (*Ma
 - **Calendrier (JSCalendar)** : vues *Mois*, *Semaine* et *Jour*, glisser-déposer, création et édition d'événements récurrents, invitations `.ics` interactives, tâches et anniversaires.
 - **Contacts (JSContact)** : consultation, création, édition synchronisée (`ContactCard/set`) et autocomplétion des destinataires.
 - **Filtres serveur Sieve (JMAP RFC 9661)** : éditeur hybride combinant un constructeur visuel (*Conditions → Actions* + répondeur *Vacances*) et un éditeur de code Sieve avec validation serveur.
-- **Sécurité & thèmes** : changement de mot de passe intégré (API Stalwart), trois thèmes harmonisés (*BoWiz*, *Sombre*, *Clair*) et accessibilité clavier/ARIA vérifiée.
+- **Sécurité & thèmes** : changement de mot de passe intégré (API Stalwart), trois thèmes harmonisés (*BoWiz*, *Sombre*, *Clair*) et bascule de thème par message (*Auto / Clair / Sombre*) et accessibilité clavier/ARIA vérifiée.
 - **Expérience PWA** : installable sur desktop et mobile, cache hors-ligne (`IndexedDB` + Service Worker) et notifications Web Push (auto-découverte VAPID).
 
 ---
@@ -33,7 +33,7 @@ Webmail **PWA** ultraléger, moderne, **100 % français** et **100 % JMAP** (*Ma
 | :--- | :--- | :--- |
 | **Serveur JMAP** | **Stalwart Mail Server** (recommandé) & serveurs conformes RFC 8620 / 8621 | Extensions optionnelles : JSContact, JSCalendar, JMAP Sieve (RFC 9661), OIDC PKCE/CIMD |
 | **Backend BFF** | **Go 1.26+** (compilé en binaire statique Linux `amd64` / `arm64`) | Image Distroless non-root (`read_only: true`), zéro dépendance runtime |
-| **Frontend Build** | **Node.js 22 LTS**, Svelte 5, Vite, TypeScript | Bundle statique embarqué directement dans le binaire Go (`go:embed`) |
+| **Frontend Build** | **Node.js 22 LTS**, Svelte 5, Vite, TypeScript (`strict`) | Bundle statique embarqué directement dans le binaire Go (`go:embed`) |
 | **Navigateurs cibles** | Chromium / Chrome / Edge, Firefox, Safari (Desktop & Mobile récents) | HTTPS obligatoire pour Service Worker, Web Push et cookies `Secure` |
 
 ---
@@ -123,7 +123,7 @@ docker compose pull && docker compose up -d
 - **Sessions chiffrées** : identifiants ou jetons OAuth2 (`access_token` / `refresh_token`) stockés uniquement dans un cookie chiffré en **AES-GCM** côté client (`HttpOnly`, `Secure`, `SameSite=Lax`).
 - **Isolation du conteneur** : image Distroless sans shell, utilisateur non-root, système de fichiers `read_only: true`, `no-new-privileges:true`.
 - **Durcissement HTTP & Anti-SSRF** : `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, blocage des plages IP privées RFC 1918 (`ip.IsPrivate()`) sur le proxy et non-propagation du header `Authorization` sur redirection cross-domain.
-- **Pipeline CI/CD automatisé** : `go vet`, `go test -race`, `govulncheck`, `svelte-check`, `tsc --noEmit`, `Vitest`, contrôle des budgets Green IT (`dist/` et taille image Docker), audit Lighthouse Accessibility (`>= 90 %`) et scan Trivy (`CRITICAL`/`HIGH` bloquants).
+- **Pipeline CI/CD automatisé** : `go vet`, `go test -race`, `govulncheck`, `svelte-check`, `tsc --noEmit` (mode `strict`), `Vitest`, tests E2E `Playwright`, contrôle des budgets Green IT (`dist/` et taille image Docker), audit Lighthouse Accessibility (`>= 90 %`) et scan Trivy (`CRITICAL`/`HIGH` bloquants).
 
 ### Limites connues & compromis assumés (v1.0)
 - **Cookie de session *stateless* (30 jours)** : le BFF ne conservant aucune base de données serveur, la révocation côté serveur avant expiration du cookie passe par la rotation de `SESSION_SECRET` ou la révocation du jeton OAuth2 dans Stalwart.
