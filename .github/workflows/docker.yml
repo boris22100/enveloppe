@@ -81,14 +81,6 @@ jobs:
             exit 1
           fi
 
-      - name: Resolve dynamic app version
-        id: ver
-        run: |
-          TAG_VER=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || true)
-          PKG_VER=$(node -p "require('./frontend/package.json').version" 2>/dev/null || echo "0.9.4")
-          RESOLVED="${TAG_VER:-$PKG_VER}"
-          echo "version=${RESOLVED}" >> "$GITHUB_OUTPUT"
-          echo "Resolved APP_VERSION=${RESOLVED}"
 
       - name: Accessibility audit with Lighthouse CI
         run: |
@@ -209,13 +201,6 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
-      - name: Resolve dynamic app version
-        id: ver
-        run: |
-          TAG_VER=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || true)
-          PKG_VER=$(node -p "require('./frontend/package.json').version" 2>/dev/null || echo "0.9.4")
-          RESOLVED="${TAG_VER:-$PKG_VER}"
-          echo "version=${RESOLVED}" >> "$GITHUB_OUTPUT"
 
       - name: Build local image for size & Trivy audit
         uses: docker/build-push-action@v7
