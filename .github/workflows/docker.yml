@@ -72,7 +72,7 @@ jobs:
       - name: Build frontend and enforce Green IT bundle budget
         working-directory: frontend
         run: |
-          npm run build
+          APP_VERSION="${{ steps.ver.outputs.version }}" npm run build
       
           DIST_BYTES=$(du -sb dist | awk '{print $1}')
           echo "frontend/dist size: ${DIST_BYTES} bytes (limit: ${MAX_DIST_BYTES})"
@@ -164,7 +164,7 @@ jobs:
           npm --prefix frontend ci --prefer-offline || npm --prefix frontend install
           npm --prefix frontend run build
           rm -rf backend/static && cp -r frontend/dist backend/static
-          (cd backend && CGO_ENABLED=0 go build -ldflags="-s -w -X main.appVersion=0.10.3" -o /tmp/jmap-pwa-e2e .)
+          (cd backend && CGO_ENABLED=0 go build -ldflags="-s -w -X main.appVersion=${{ steps.ver.outputs.version }}" -o /tmp/jmap-pwa-e2e .)
 
       - name: Install Playwright Chromium & run E2E suite
         working-directory: frontend

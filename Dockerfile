@@ -4,7 +4,8 @@ WORKDIR /build
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ ./
-RUN npm run build
+ARG APP_VERSION=""
+RUN APP_VERSION="${APP_VERSION}" npm run build
 
 # Étape 2 : Build Backend Go (avec embed du frontend)
 FROM golang:alpine AS backend-builder

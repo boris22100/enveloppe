@@ -8,7 +8,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   define: {
-    __APP_VERSION__: JSON.stringify(process.env.APP_VERSION || pkg.version || 'dev'),
+    __APP_VERSION__: JSON.stringify(process.env.APP_VERSION || pkg.version || '0.10.4'),
   },
   plugins: [
     svelte(),
