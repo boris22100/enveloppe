@@ -164,7 +164,7 @@ jobs:
           npm --prefix frontend ci --prefer-offline || npm --prefix frontend install
           npm --prefix frontend run build
           rm -rf backend/static && cp -r frontend/dist backend/static
-          (cd backend && CGO_ENABLED=0 go build -ldflags="-s -w -X main.appVersion=0.10.2" -o /tmp/jmap-pwa-e2e .)
+          (cd backend && CGO_ENABLED=0 go build -ldflags="-s -w -X main.appVersion=0.10.3" -o /tmp/jmap-pwa-e2e .)
 
       - name: Install Playwright Chromium & run E2E suite
         working-directory: frontend
